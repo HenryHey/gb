@@ -24,10 +24,10 @@ Vanilla ES modules. No React. The canvas is 160×144 CSS-scaled (e.g. 3×) with 
 ### Scaffold
 
 ```bash
-npm create vite@latest emu -- --template vanilla
+bun create vite emu --template vanilla
 cd emu
-npm install
-npm run dev
+bun install
+bun dev
 ```
 
 You can keep `emu/` as a sibling of `course/` in this repo. Add `emu/node_modules/` and `emu/dist/` to `.gitignore` if you commit the project. Do not commit `.gb` files.
