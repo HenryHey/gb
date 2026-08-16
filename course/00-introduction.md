@@ -87,12 +87,14 @@ Nazar calls the CPU a Z80 and ships a partial ISA. If you copy his opcode list, 
 ## How each chapter is structured
 
 - **Goal** — what exists when you are done.
-- **Why it is in the hardware** — so the registers are not a shopping list.
+- **Why / the hardware** — what the silicon is doing, so the code is a map of the machine, not a shopping list.
 - **Design** — one pattern, not three alternatives.
 - **Implementation** — snippets you generalize. Not a paste-ready emulator.
 - **Pitfalls** — the bugs everyone hits.
 - **Checkpoint** — something you can *see* or *assert*.
 - **Further reading** — Pan Docs section + local dump.
+
+If a chapter feels like copy-paste, stop at the hardware section and name which part of the machine each snippet is: a latch, a bus decode, a flag, a cycle count, or a host-side convenience. Chapter 2 spells that out for the CPU; later chapters do the same for the bus, interrupts, timer, PPU, joypad, and mappers.
 
 If a checkpoint fails, do not skip ahead. Later chapters assume the bus, the interrupt line, and T-cycle stepping already exist.
 

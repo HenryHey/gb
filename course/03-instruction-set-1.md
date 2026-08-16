@@ -10,9 +10,32 @@ Commercial games are built from these. The `CB` page (chapter 4) is large but me
 
 Keep [the opcode table](https://gbdev.io/gb-opcodes/optables/classic) and [gbz80(7)](https://rgbds.gbdev.io/docs/v0.9.4/gbz80.7) open. Do not memorize 200 rows; implement **families**.
 
+## The ISA is a bitfield, not a list
+
+The SM83 inherited the 8080 trick of stuffing the operand into the opcode. Bits are not random decoration:
+
+```
+8-bit r:  B C D E H L (HL) A     indices 0–7   (6 means “the byte at HL”)
+16-bit:   BC DE HL SP            (PUSH/POP replace SP with AF)
+```
+
+That is why `LD r, r'` is the block `$40–$7F` and why `HALT` is `$76`: `LD (HL), (HL)` would have been that encoding, so they reused the hole. ALU ops `$80–$BF` use the same 3-bit source; the next 3 bits pick ADD/ADC/SUB/SBC/AND/XOR/OR/CP.
+
+`(HL)` as “register 6” is the architectural joke that makes the ISA dense: most 8-bit ops can target memory without a second addressing mode. It also costs extra T-cycles — a memory access is not a register latch.
+
+Other shapes that look like special cases are hardware shortcuts:
+
+- **`LDH`** (`$FF00+n` and `$FF00+C`) exists because I/O lives in the high page. Games talk to the PPU, timer, and joypad constantly; a 2-byte “load from `$FFnn`” beats a 3-byte absolute address.
+- **`LDI` / `LDD`** (`HL+` / `HL-`) are copy-loop helpers: transfer a byte, then bump the pointer. Tile copies and `memcpy`-shaped game code use them.
+- **The stack grows down** because that is how 8080-family chips did it. `CALL`/`RST` push the *already incremented* PC (address of the next instruction), then jump. `RET` pops it. `SP` after skip-boot is `$FFFE`, so the first `PUSH` writes `$FFFD`/`$FFFC` in HRAM — the only RAM the CPU can always reach, even during OAM DMA (chapter 11).
+- **`DAA`** is leftover BCD. Tetris stores scores as packed decimal in `A`, then `ADD` + `DAA` instead of converting binary to decimal. `N` and `H` exist largely so `DAA` knows what just happened. Wrong `DAA` = garbage numbers on the well, sometimes a crash.
+- **Conditional jumps** only test `Z` and `C` (four conditions: NZ, Z, NC, C). There is no “if half-carry” branch. Games that care about `H` inspect `F` or use `DAA`.
+
+Implement one family with a loop over those 3-bit indices. Copying 50 near-identical functions by hand is how this chapter turns into a month.
+
 ## Design: operand tables
 
-The unprefixed map is not random. Bits encode the register:
+Same 3-bit encoding as above, now as tables:
 
 ```
 8-bit r: B C D E H L (HL) A     indices 0–7

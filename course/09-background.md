@@ -8,6 +8,28 @@ When a scanline finishes mode 3, **draw the background** into that row of the fr
 
 The PPU does not store a bitmap. Games write **tile bitmaps** into VRAM (`$8000–$97FF`) and **tile maps** (`$9800–$9FFF`) that say which tile goes in each 8×8 slot. The PPU indexes those every line. Once you decode 2bpp, you have a Game Boy on screen.
 
+## Why tiles, not a bitmap
+
+160 × 144 × 2 bits ≈ 6 KiB for a raw framebuffer — almost all of VRAM — and scrolling would mean rewriting every pixel. Instead VRAM holds:
+
+- **Tile data** (`$8000–$97FF`): up to 384 unique 8×8 patterns, 16 bytes each (2 bits per pixel).
+- **Tile maps** (`$9800–$9FFF`): two 32×32 grids of tile *indices*. The visible screen is a 20×18 window into one 256×256-pixel map, scrolled by `SCX`/`SCY`.
+
+Games rewrite a handful of map bytes or change `SCY` by 1. The PPU does the rest every mode 3.
+
+**2bpp, two bytes per row:** the Game Boy is four shades, so two bitplanes. Byte 0 of a row is the low bit of each pixel; byte 1 is the high bit. Bit 7 is the **left** pixel (shift registers shifted left as the beam moved). Swap lo/hi and you get a plausible but wrong image — often ghost outlines.
+
+**Two tile-addressing modes** (LCDC bit 4) are a compatibility leftover:
+
+- Bit 4 = 1: unsigned index from `$8000` (OBJ always uses this too).
+- Bit 4 = 0: signed index from `$9000` (tile `$00` at `$9000`, `$80` at `$8800`). The boot logo and many games use this “8800 addressing.”
+
+**Two maps** (LCDC bit 3) let a game keep a playfield and a menu in VRAM at once and flip a bit.
+
+LCDC bit 0 on DMG disables the background (white / colour 0). Chapter 10: it also disables the window.
+
+You render **a whole scanline when mode 3 ends**, with `LY` still that line. That is a scanline renderer, not a pixel FIFO: cheaper, good enough, and why mode 3’s length being fixed did not matter until you care about mid-line effects.
+
 ## Tile format
 
 8×8 pixels, 16 bytes, 2 bits per pixel. For row `y` (0–7):

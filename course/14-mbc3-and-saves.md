@@ -10,6 +10,16 @@ Pokémon Red (USA) is header type **`$13`**: MBC3 + 32 KiB SRAM + battery, **no 
 
 MBC3 is simpler than MBC1 in one way (no mode bit, banks `$20/$40/$60` exist) and more annoying in another (RAM bank can mean RTC).
 
+## Bigger ROM, battery RAM, optional clock
+
+Pokémon is 1 MiB (64 × 16 KiB). MBC1’s 5-bit bank register cannot name 64 banks, and its “holes” at `$20/$40/$60` would be fatal. MBC3 uses a **7-bit** ROM bank and **always** maps bank 0 at `$0000–$3FFF`. Writing 0 still becomes 1 in `$4000–$7FFF`.
+
+32 KiB of SRAM is four 8 KiB pages at `$A000–$BFFF`, selected by `ramBank` 0–3. A coin-cell on the cart keeps that RAM alive when the console is off — that is the “battery” in `MBC3+RAM+BATTERY`. Your `localStorage` is that coin-cell. Pokémon checksums the save; zeros look like “new game,” intact SRAM looks like “continue.”
+
+`ramBank` values `$08–$0C` are RTC registers (seconds, minutes, …) on carts that have a clock. Red/Blue never select those. Return 0 / ignore writes so a Gold dump does not explode; do not invent a clock.
+
+RAM enable (`$0A` in `$0000–$1FFF`) is the same lock as MBC1: the game unlocks, copies save data, locks. Persist SRAM on `pagehide` or a debounce after `writeRam`, not every byte.
+
 ## MBC3
 
 [docs/reference/mbc.md](../docs/reference/mbc.md).

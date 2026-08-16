@@ -8,6 +8,33 @@
 
 Games do not poll the LCD in a tight loop forever. They `EI` and `HALT` until VBlank (bit 0 of `IF`). Without interrupts, Tetris never advances a frame once it starts waiting. The timer (next chapter) and PPU (chapter 8) only matter because they **set bits in `IF`**.
 
+## Three latches and a vector table
+
+Interrupts are not a JS event emitter. They are three pieces of hardware plus five well-known addresses in bank 0:
+
+| Piece | Where | Role |
+| --- | --- | --- |
+| **IME** | inside the CPU | master switch. Off → never jump, even if something is pending |
+| **IE** | `$FFFF` | which sources the *game* cares about |
+| **IF** | `$FF0F` | which sources are *currently requesting* |
+
+A peripheral (PPU, timer, joypad) can only **set a bit in `IF`**. It cannot jump. The CPU, after each instruction, looks at `IME && (IE & IF)`. If that is non-zero it:
+
+1. Clears IME (so the handler is not re-entered immediately).
+2. Clears the **lowest** set bit in `IF` (bit 0 = highest priority).
+3. Pushes PC (the instruction that *would* have run next).
+4. Jumps to `$0040 + 8 * bit`.
+
+Those vectors sit in ROM bank 0 because that bank is always mapped. Games put a `JP handler` at `$0040`, `$0048`, … — five `JP`s is 15 bytes, which is why the vectors are 8 bytes apart.
+
+Unused bits of `IF` read as 1 (open-bus leftover). Store 5 bits; on read return `ifReg | 0xe0`.
+
+**`EI` delay:** `IME` turns on *after the following instruction*. Real silicon. The usual pair is `EI` then `HALT`: the `HALT` must execute with IME still 0, then IME rises, then the pending VBlank can wake and service. If you set IME inside `EI` itself, that pair desyncs (you fire, return, then HALT with IF already cleared — deadlock until the next frame’s bit, or worse). `DI` is immediate. `RETI` is “pop PC and IME = 1 *now*” — return-from-handler.
+
+**`HALT`:** stop fetching to save power. Wake when `IE & IF !== 0`, *even if IME is 0*. If IME is 1, `serviceIfNeeded` then jumps to the vector. If IME is 0, execution continues at the next opcode so the game can `DI` around a critical section and still sleep. While halted you **must still tick PPU and timer** or IF never sets and you deadlock.
+
+The HALT bug (`IME === 0` and something already pending when HALT runs: PC fails to increment) is optional. Tetris/Pokémon are fine without it.
+
 ## Hardware model
 
 Five sources, low bit = high priority:

@@ -6,9 +6,17 @@ A Vite app that loads a `.gb` file and prints the **cartridge header**: title, m
 
 ## Why the header exists
 
-Bank 0 of every cartridge has a fixed structure at `$0100–$014F`. The boot ROM uses the Nintendo logo and a checksum to decide whether to hand off execution. Games (and you) use the rest to know how big the ROM is and which mapper to instantiate.
+There is no OS and no “file format” the console understands beyond **raw bytes on a 16-bit bus**. The cartridge *is* the program. Bank 0 of every cartridge has a contract Nintendo burned into the boot ROM: a fixed structure at `$0100–$014F`.
 
-You will parse this before you can execute, because skip-boot (chapter 5) and MBCs (chapters 13–14) need `$0147–$0149`.
+On a real Game Boy, a 256-byte boot ROM overlays `$0000–$00FF` at power-on. It copies the Nintendo logo from `$0104`, scrolls it, checksums `$0134–$014C`, then writes `$FF50` to unmap itself and fall into the game at `$0100`. You are not executing any of that yet — you are only **reading the contract** so later chapters know:
+
+- which mapper chip sits on the cartridge (`$0147`)
+- how many 16 KiB ROM banks exist (`$0148`)
+- whether battery SRAM exists (`$0149`)
+
+Skip-boot (chapter 5) and MBCs (chapters 13–14) need those three bytes. The title and checksum are how you know you actually loaded a ROM, not a zip file.
+
+The header lives in the same address space the CPU will later execute. `$0100` is both “start of header” and “first instruction after boot.” That is why Tetris begins with `NOP; JP $0150`: jump over the logo and metadata into real code.
 
 ## Design
 

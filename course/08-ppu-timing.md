@@ -10,6 +10,30 @@ No tiles yet. You are building the clock the renderer will hang off.
 
 The LCD is a raster. Software syncs to it via `LY`, `LYC`, STAT, and the VBlank interrupt. If LY is stuck at 0, games spin forever in “wait for vblank.” If you never set IF bit 0, they `HALT` forever.
 
+## A CRT-shaped LCD
+
+The Game Boy LCD is not a framebuffer chip. It is a **scanline beam**: left to right, top to bottom, 160 visible dots per line, 144 visible lines, then 10 lines with the beam off (VBlank) so the CPU can touch VRAM in peace.
+
+One dot = one T-cycle. That is why the PPU and CPU share a clock and why `step()`’s return value is the right unit.
+
+```
+one line = 456 T-cycles:
+  mode 2   80 T    OAM scan     — PPU walks the 40 sprites; CPU should stay out of OAM
+  mode 3  172 T    draw         — PPU reads VRAM; CPU should stay out of VRAM (we ignore the lock)
+  mode 0  204 T    HBlank       — line done; CPU may write VRAM/OAM until the next mode 2
+one frame = 154 lines × 456 = 70 224 T  (~59.7 Hz)
+  LY 0–143   visible (modes 2→3→0)
+  LY 144–153 VBlank (mode 1, 456 T each). Entering LY=144 sets IF bit 0.
+```
+
+Mode 3 is **fixed 172 T** in this course. On hardware it stretches with sprites and the window (pixel FIFO). Fixed lengths play Tetris/Pokémon; they fail Mooneye PPU tests. That is the accuracy bar from chapter 0.
+
+`LY` (`$FF44`) is “which line is the beam on.” Games poll it (`wait until LY === $90`) or enable the VBlank interrupt. Writes to `LY` are ignored — you cannot rewind the beam. `LYC` + STAT bit 2 are “tell me when we hit this line” (HUD splits, effects).
+
+**LCD off** (LCDC bit 7 = 0) stops the beam. LY stays 0, no VBlank requests. Games blank the screen to copy tiles without fighting mode 3. If you keep ticking LY while the LCD is off, a game that turns it back on immediately sees LY=90 and desyncs.
+
+You are not drawing tiles yet. This chapter is the **clock** the renderer will hang off: when mode 3 ends, chapter 9 will paint that `LY` into a 160×144 buffer. Until then a white framebuffer plus a moving `LY` is success.
+
 ## Frame geometry
 
 ```

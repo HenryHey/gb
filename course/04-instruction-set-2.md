@@ -8,15 +8,46 @@ The `CB` prefix page, `HALT`/`STOP`/`DI`/`EI` (delay stub), and a complete unpre
 
 Games use `BIT`, `SWAP`, and rotates on `(HL)` constantly. A missing `CB` op is an instant crash at skip-boot.
 
+## Why a whole second page
+
+The 8080 had no bit-test, no nibble swap, and only a few rotates on `A`. The SM83 adds a **prefix**: `$CB` means “the next byte is from a different map.” That is cheaper in silicon than stretching every opcode to 9 bits, and it is why `step()` already special-cases `$CB` before the main table.
+
+The second byte is again a bitfield, not 256 unrelated ops:
+
+```
+bits 7–6  group: rotate/shift/swap | BIT | RES | SET
+bits 5–3  which rotate, or which bit 0–7
+bits 2–0  same r as chapter 3 (6 = (HL))
+```
+
+So `makeCbOps` is one loop. `(HL)` is still “register 6,” and it still costs extra cycles: BIT must read memory; RES/SET must read-modify-write.
+
+Rotates vs shifts vs `SWAP` are the same barrel with different wiring:
+
+- **RLC/RRC** — the bit that falls off re-enters the other end *and* goes into C (nine-bit rotate that ignores old C).
+- **RL/RR** — rotate **through** C: C is a ninth bit. This is how you shift a 16-bit value in `HL` one bit at a time.
+- **SLA/SRL** — shift, incoming bit is 0. Logical.
+- **SRA** — arithmetic shift: bit 7 (the sign) is copied down. `$80` becomes `$C0`, not `$40`.
+- **SWAP** — exchange nibbles. Cheap packed-BCD / palette-index trick. Clears C.
+
+Unprefixed `RLCA`/`RLA`/… are **older 8080 ops on `A` only**. They clear Z instead of setting it from the result. The CB versions on `A` *do* set Z. Do not reuse one function for both.
+
+`$CB` itself costs 4 T-cycles. The 8/12/16 numbers in the opcode table are **totals**, prefix included.
+
+### Illegal opcodes and CPU control
+
+Eleven unprefixed bytes (`$D3 $DB $DD …`) were never bonded out. On a real SM83 they lock the CPU. If you hit one, your emulator has a bug (wrong jump, bad stack, executing data). `throw` with PC — do not `NOP` them or you will debug the wrong thing for hours.
+
+`DI` / `EI` / `HALT` / `STOP` are not ALU. They are how the CPU talks to the interrupt pin and the clock:
+
+- **`DI`**: mask interrupts *now* (`IME = 0`).
+- **`EI`**: unmask *after the next instruction*. That delay is real silicon. Games write `EI` then `RET` or `HALT` and depend on the extra instruction running first. Implement the countdown now; chapter 6 is when it matters.
+- **`HALT`**: stop fetching until `IE & IF` is non-zero. Saves battery on hardware. Until peripherals set `IF`, your stub just freezes PC — that is OK to observe.
+- **`STOP`**: a DMG curiosity (very-low-power wait for a button). Commercial games you care about do not rely on it. Treat as a short `NOP`.
+
 ## CB encoding
 
-Byte after `$CB`:
-
-```
-bits 7–6  00 = rotate/shift/swap    01 = BIT    10 = RES    11 = SET
-bits 5–3  operation or bit index 0–7
-bits 2–0  register, same 8-bit r as chapter 3  (6 = (HL))
-```
+Same bitfield as above. The loop:
 
 ```js
 export function makeCbOps() {

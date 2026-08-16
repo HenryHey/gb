@@ -4,6 +4,10 @@
 
 Decode `BGP` so greys/greens match the game. Draw the **window** layer. LCD-off is white. Tetris’s background should look correct; Pokémon’s menus use the window.
 
+## Why
+
+Chapter 9 drew *indices*. This chapter is the rest of the picture hardware: a 2-bit palette remap, a second map that does not scroll (HUD), and “beam off.”
+
 ## Palettes
 
 `BGP` (`$FF47`) packs four 2-bit shades:
@@ -15,13 +19,13 @@ bits 5–4  index 2
 bits 7–6  index 3
 ```
 
+VRAM only stores **indices** 0–3. `BGP` is the remap to actual shades (lightest → darkest). That is why fade-ins, flashes, and “pause greys” are a single register write — the tiles do not change. Hardware 0 is white (lightest) and 3 is black. Skip-boot `BGP = $FC` = `11 11 11 00` → index 0 white, 1–3 black, which is what the boot logo used. Games rewrite it.
+
 ```js
 function paletteShades(reg, colors = GREEN) {
   return [0, 1, 2, 3].map((i) => colors[(reg >> (i * 2)) & 3]);
 }
 ```
-
-Hardware 0 is white (lightest) and 3 is black. Skip-boot `BGP = $FC` = `11 11 11 00` → index 0 white, 1–3 black, which is what the boot logo used. Games rewrite it.
 
 Use BGP in `putPixel` instead of raw color index.
 
@@ -30,6 +34,12 @@ Optional palettes: classic green, grey (`#fff, #aaa, #555, #000`), or a switch i
 ## Window
 
 A second 32×32 map, same tiles, not affected by SCX/SCY. It is a rectangle from `(WX-7, WY)` to the bottom-right of the screen.
+
+The window exists because the background is a *scrolling camera*. Status bars, battle HUDs, and Tetris’s score column should stay put while the camera moves. The cheapest hardware for that is a second map that the PPU starts sampling once the beam reaches `(WX-7, WY)`, ignoring `SCX`/`SCY`.
+
+`WX` is stored with a +7 offset (window at screen X=0 → `WX = 7`). That matches an internal pipeline delay. `WX = 0` glitches on hardware; clipping at −7 is fine here.
+
+The window has its own **line counter**, not `LY - WY`. If the game enables the window mid-frame, or `WY` is large, the first *drawn* window line is row 0 of that map. Increment `windowLine` only when you actually plotted a window pixel. Pokémon menus smear if you count every LY.
 
 LCDC:
 
@@ -72,10 +82,6 @@ if (usedWindow) ppu.windowLine++;
 ```
 
 `sampleMap` is the same tile decode as BG with a chosen map bit and pixel coords that do not add SCX/SCY.
-
-**Why `windowLine`:** if the window is enabled mid-frame or `WY` is large, the window’s first **drawn** line uses row 0 of the window map, not `LY`. Increment only when you actually drew at least one window pixel on that line.
-
-`WX = 7` means column 0 of the window sits at screen X = 0. `WX = 0` is a hardware edge case (left column glitches); drawing at X = −7 (clip) is fine for this course.
 
 ## LCD off
 

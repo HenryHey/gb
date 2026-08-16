@@ -8,6 +8,10 @@ A browser app you can leave running: `requestAnimationFrame` pacing, a tiny debu
 
 70 224 T-cycles ≈ 59.7 Hz. `requestAnimationFrame` is ~60 Hz on most displays.
 
+The Game Boy does not know about monitors. Your `runFrame` already simulates one GB frame of T-cycles. The host’s job is to call that **about 60 times a second** and blit, without blocking the UI thread. `requestAnimationFrame` is a vsync hook, not a Game Boy feature — it just happens to match the LCD’s ~59.7 Hz well enough.
+
+Do not spin `while (true)`: the tab would freeze and input would never land. One GB frame per rAF is the right default. 120 Hz displays would then run the Game Boy at 2× unless you accumulate timestamps (second snippet below).
+
 ```js
 let running = false;
 
@@ -56,6 +60,14 @@ This is how you finish Pokémon when a trainer battle hangs — not with more PP
 ## APU stub (required)
 
 Games write `$FF10–$FF26` and wave RAM `$FF30–$FF3F`. If those reads return `$FF` forever, some titles think the APU is off or locked.
+
+The APU is four analogue channels (two pulse, wave, noise) clocked from the same crystal, with a frame sequencer for length/envelope/sweep. That is a project of its own. What games *require* is the **MMIO contract**:
+
+- Registers exist and hold the last write (not open `$FF` for everything).
+- `NR52` bit 7 is master power. Power-off clears most regs; power-on does not start sound by itself.
+- Skip-boot leaves `NR52 = $F1` (APU on, leftover channel-1 flag) because the boot ROM played a beep.
+
+A stub that implements that contract lets Tetris and Pokémon run silently. The optional square wave below is host audio driven from channel 2’s frequency bits — a morale feature, not an APU.
 
 Minimum:
 

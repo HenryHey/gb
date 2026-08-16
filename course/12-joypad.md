@@ -8,6 +8,23 @@ Map the keyboard to `$FF00`. **Play Tetris and Dr. Mario.**
 
 The Game Boy does not have eight independent button wires. It has a **matrix**: the CPU writes which row to sense, then reads four bits. Your keyboard is not a matrix, so you keep eight booleans and **mux** them on read.
 
+## Why a 2×4 matrix
+
+The console has few GPIO pins. Eight buttons share four data lines plus two select lines (bits 4 and 5 of `$FF00`). The CPU writes 0 to **select a row**, then reads bits 3–0. 0 means pressed (**active-low** — unpressed lines sit at 1, like TTL pulled high).
+
+```
+bit 5 = 0  →  read Start Select B A
+bit 4 = 0  →  read Down Up Left Right
+```
+
+Games write, then read, often in a tight loop or once per VBlank. They never get eight independent bits in one load. If you return “1 = pressed” the game sees inverted or dead controls.
+
+Both rows selected at once ANDs the two nibbles (a press in either row pulls that bit). Neither selected: nibble stays `$F`. Bits 7–6 always read 1.
+
+The joypad interrupt (IF bit 4) fires on a **press edge** while a row is selected. Tetris polls and does not need it. `HALT` waiting for a button does.
+
+Host keyboards are edge-driven (`keydown`/`keyup`). That is the opposite of the matrix. Store eight booleans from the DOM; only `read8($FF00)` does the mux. Do not sample keys inside `step()`.
+
 ## Hardware
 
 `$FF00` (P1 / JOYP):

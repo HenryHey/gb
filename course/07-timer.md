@@ -10,6 +10,26 @@
 
 Nazar’s timer is a reasonable sketch and **wrong about DIV writes**. Read this chapter and Pan Docs, not his reset behaviour.
 
+## One crystal, two software views
+
+The same 4.194304 MHz clock that drives the CPU also drives a 16-bit counter on the motherboard. There is no separate “timer chip clock.” That is why this chapter ticks from the T-cycle budget `step()` already returns.
+
+```
+every T-cycle:  divCounter = (divCounter + 1) & 0xffff
+DIV  ($FF04)  = divCounter >> 8     “how many times have 256 T-cycles passed?”
+TIMA ($FF05)  increments when a *chosen bit* of divCounter falls 1→0
+TMA  ($FF06)  value TIMA reloads on overflow
+TAC  ($FF07)  bit 2 = on/off; bits 1–0 = which bit of divCounter
+```
+
+**Why falling edges, not “add N and divide”?** Because writes to `DIV` *reset* `divCounter` to 0, and changing TAC can coincide with a bit already high. The edge model gets those interactions right. The period table (1024 / 16 / 64 / 256 T-cycles) is the same frequencies with less accuracy on those edges — enough for Tetris/Pokémon if **any write to `$FF04` zeros `divCounter`**.
+
+`DIV` looks read-only to games: they `LDH A,($FF04)` to seed RNG. A write is a reset, not a store. That surprise is the number-one timer bug.
+
+`TIMA` overflowing (`$FF → $00`) raises IF bit 2 and reloads from `TMA`. If `TMA` is 0, TIMA sits at 0 afterward — valid — but IF still fires **once per wrap**. Hardware delays the reload by 4 T-cycles; ignore that delay.
+
+Skip-boot leaves DIV looking like `$AB` because the boot ROM ran for that long. Starting `divCounter` at `$AB00` is faking that elapsed time.
+
 ## Hardware model
 
 Internally:

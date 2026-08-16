@@ -10,6 +10,46 @@ The canvas stays black. That is success.
 
 The CPU only ever talks to `read8`/`write8`. Cartridges, VRAM, joypad, and timers are all just addresses. Once the bus exists, every later chapter is “decode this range instead of returning `$FF`.”
 
+## A 16-bit bus, not an MMU
+
+The SM83 has 16 address pins. That is 64 KiB, period. There is no virtual memory. The **cartridge and the motherboard decode the address**: `$0000–$7FFF` is ROM on the cart, `$8000–$9FFF` is VRAM next to the PPU, `$FF00–$FF7F` is a row of I/O chips, `$FFFF` is a single interrupt-enable latch.
+
+Your `read8` / `write8` *is* that decode. The nested `if (addr < …)` chain is not a software invention — it is the chip-select map.
+
+```
+0000-3FFF  ROM bank 0     cartridge, always visible (header + RST/IRQ vectors live here)
+4000-7FFF  ROM bank N     still just “the rest of the 32 KiB file” until MBC1
+8000-9FFF  VRAM           8 KiB the PPU will paint from; CPU can write it for now
+A000-BFFF  cart RAM       empty until chapters 13–14; read $FF
+C000-DFFF  WRAM           8 KiB on the motherboard — game variables, stack sometimes
+E000-FDFF  echo RAM       the same WRAM wired to a second address range (cheap decode leftover)
+FE00-FE9F  OAM            40 sprites × 4 bytes (chapter 11)
+FEA0-FEFF  unusable       Nintendo said do not use; return $FF
+FF00-FF7F  I/O            joypad, timer, PPU, APU, DMA — stub $FF until each chapter
+FF80-FFFE  HRAM           127 bytes, always reachable (even during DMA)
+FFFF       IE             interrupt enable (one byte, not part of HRAM)
+```
+
+**Echo RAM** is the same physical WRAM at two addresses. Mirror it (`addr - 0x2000`). Do not allocate a second array.
+
+**HRAM is 127 bytes, not 128.** `$FFFF` is `IE`. Off-by-one here means `PUSH` at `SP = $FFFE` corrupts the interrupt mask.
+
+**Writes to `$0000–$7FFF` never change ROM.** On a real cart those writes are mapper commands (chapter 13). Ignore them for ROM-only games; never mutate the `Uint8Array`.
+
+**Open bus / unused I/O reads `$FF`.** Returning `0` makes games think devices exist in impossible states.
+
+### Skip-boot is faking a chip overlay
+
+On hardware, a 256-byte boot ROM covers `$0000–$00FF` at reset. It draws the Nintendo logo from the header, checksums it, then writes `$FF50` which **unmaps** that overlay. Execution falls through into cart ROM at `$0100` with a known register file.
+
+This course does not run that program (you would need a boot ROM dump). Instead you:
+
+1. Map cart ROM from `$0000` immediately (no overlay).
+2. Stuff the CPU and I/O with the values the boot ROM *would have left* (`A = $01` so games can detect DMG, `PC = $0100`, `SP = $FFFE`, `IME = 0`, `LCDC = $91`, …).
+3. Start stepping.
+
+If you start at `PC = 0` you execute the header (logo tiles as “code”) and die. If you start with `IME = 1` you take interrupts before the game has installed handlers. The skip-boot table is not flavour — it is the post-conditions of a program you chose not to run. Full values: [docs/reference/skip-boot.md](../docs/reference/skip-boot.md).
+
 ## Design
 
 ```

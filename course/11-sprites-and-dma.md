@@ -10,6 +10,30 @@ Background is a scrolling tilemap. Anything that moves freely is an **OBJ**: 40 
 
 Without DMA, OAM stays empty and you only see BG. Without OBJ render, DMA is invisible.
 
+## Objects are a separate layer with a tiny table
+
+The background is a camera over a grid. A falling Tetris piece, Mario, a vitamin — those change X/Y every frame and are not aligned to the 8×8 map. The PPU keeps **40 sprites** in a dedicated 160-byte RAM (OAM), each:
+
+```
+Y+16, X+8, tile index, flags
+```
+
+The +16 / +8 offsets mean “0 hides the sprite off the top / left.” That is cheaper than signed coordinates in 8 bits.
+
+Constraints that look like bugs are the scanline hardware:
+
+- **10 sprites per line.** Mode 2 walks OAM in index order and keeps the first 10 whose Y hits this `LY`. The rest are dropped (the famous flicker when too much overlaps).
+- **Priority:** smallest X wins; ties go to earlier OAM index. Colour 0 is transparent (you see BG through it). “BG priority” flag means “only draw over BG colour 0” — sprites behind trees, etc.
+- **OBJ tiles always live at `$8000`**, ignoring LCDC bit 4. 8×16 mode (LCDC bit 2) pairs two tiles; bit 0 of the index is ignored.
+
+OBP0 / OBP1 are BGP for sprites. Two palettes so enemies and the player can differ without extra tile art.
+
+### Why DMA exists
+
+During mode 2/3 the PPU owns the OAM/VRAM buses. Copying 160 bytes with `LD` in a VBlank is tight and fights the PPU. Write a page number to `$FF46` and a **DMA unit** copies `$XX00–$XX9F` into OAM in 160 T-cycles. While that runs, the CPU may only use HRAM (the bus is busy). Games build a shadow OAM in WRAM, then `LDH ($46), A` once per frame.
+
+Instruction-level: an instant 160-byte copy plays Tetris and Pokémon. A 160 T-cycle lock (other addresses read `$FF`) is the next accuracy step if sprites flicker.
+
 ## OAM entry
 
 ```
