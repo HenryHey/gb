@@ -1,0 +1,35 @@
+body {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: #0d1117;
+  color: #c9d1d9;
+  margin: 16px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+canvas {
+  display: block;
+  width: 480px;
+  height: 432px;
+  image-rendering: pixelated;
+  background: #081820;
+}
+
+#debug {
+  width: 480px;
+  height: 432px;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  box-sizing: border-box;
+  background: #081820;
+  color: #e0f8d0;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

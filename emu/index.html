@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>emu</title>
+</head>
+
+<body>
+  <label for="rom">Load a ROM</label>
+  <input type="file" id="rom" accept=".gb,.gbc,.bin" />
+  <pre id="info"></pre>
+  <div class="row">
+    <canvas id="screen" width="160" height="144"></canvas>
+    <pre id="debug"></pre>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
