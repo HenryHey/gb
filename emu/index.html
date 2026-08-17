@@ -11,10 +11,20 @@
 <body>
   <label for="rom">Load a ROM</label>
   <input type="file" id="rom" accept=".gb,.gbc,.bin" />
+  <label for="bytes">Or paste bytes</label>
+  <textarea id="bytes" rows="3" placeholder="[0x3e, 0x01, 0x06, 0x02, 0x04, 0x18, 0xfe]"></textarea>
+  <button type="button" id="load-bytes">Load bytes</button>
   <pre id="info"></pre>
   <div class="row">
-    <canvas id="screen" width="160" height="144"></canvas>
-    <pre id="debug"></pre>
+    <div class="screen-col">
+      <canvas id="screen" width="160" height="144"></canvas>
+      <pre id="debug"></pre>
+    </div>
+    <div class="debug-col">
+      <button type="button" id="step">Step</button>
+      <pre id="regs"></pre>
+      <pre id="code"></pre>
+    </div>
   </div>
   <script type="module" src="/src/main.js"></script>
 </body>

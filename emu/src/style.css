@@ -8,7 +8,14 @@ body {
 .row {
   display: flex;
   gap: 8px;
-  align-items: flex-start;
+  align-items: stretch;
+}
+
+.screen-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 480px;
 }
 
 canvas {
@@ -19,17 +26,75 @@ canvas {
   background: #081820;
 }
 
-#debug {
+label {
+  display: block;
+  margin-top: 12px;
+}
+
+#bytes {
+  display: block;
   width: 480px;
-  height: 432px;
+  margin: 8px 0;
+  padding: 8px;
+  box-sizing: border-box;
+  font: inherit;
+  background: #081820;
+  color: #e0f8d0;
+  border: 1px solid #30363d;
+  resize: vertical;
+}
+
+button {
+  font: inherit;
+  background: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #30363d;
+}
+
+.debug-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 480px;
+}
+
+.debug-col button {
+  align-self: flex-start;
+}
+
+#regs,
+#debug,
+#code {
   margin: 0;
   padding: 8px;
-  overflow: auto;
   box-sizing: border-box;
   background: #081820;
   color: #e0f8d0;
   font-size: 12px;
   line-height: 1.4;
+}
+
+#regs {
+  flex: none;
+  white-space: pre;
+}
+
+#debug {
+  height: 200px;
+  overflow: auto;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+#code {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  white-space: pre;
 }
