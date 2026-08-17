@@ -176,7 +176,7 @@ Implement these and nothing else yet. You only implement a handful because the r
 | `$18 e` | `JR e` | 12 | `PC +=` signed offset; cheap local branch |
 | `$76` | `HALT` | 4 | Stop fetching until an interrupt (stub: `cpu.halted = true`) |
 
-`JR e` uses a **signed** 8-bit offset from the address *after* the offset byte (i.e. after you have already consumed it). `JR 0` is an infinite loop on itself: offset 0 means “the next instruction,” which is this `JR` again.
+`JR e` uses a **signed** 8-bit offset from the address *after* the offset byte (i.e. after you have already consumed it). `JR 0` (`$18 $00`) is a no-op jump: offset 0 means “the next instruction,” which is the byte after this `JR`. To loop on the `JR` itself you need offset `-2` (`$18 $FE`), because fetch has already advanced `PC` by 2.
 
 ```js
 function jr(cpu) {
@@ -230,10 +230,10 @@ Program (assembled by hand):
 3E 01     LD A, $01
 06 02     LD B, $02
 04        INC B        ; B = 3
-18 00     JR 0         ; infinite loop at this JR
+18 FE     JR -2        ; infinite loop at this JR
 ```
 
-Bytes: `[0x3e, 0x01, 0x06, 0x02, 0x04, 0x18, 0x00]`
+Bytes: `[0x3e, 0x01, 0x06, 0x02, 0x04, 0x18, 0xfe]`
 
 Run until `PC` is stable on the `JR` (two steps after you enter it, `PC` is back at the `JR` opcode). Expect `A === 1`, `B === 3`. Log registers each step.
 
