@@ -191,3 +191,7 @@ Debugger should show hex dumps of `PC` and last opcode. You will live here.
 - [docs/reference/io-registers.md](../docs/reference/io-registers.md)
 - [Pan Docs — Memory map](https://gbdev.io/pandocs/Memory_Map.html)
 - Nazar part 2 *Memory* (ranges; his BIOS overlay you are skipping)
+
+## Next
+
+[06 — Interrupts](06-interrupts.md)

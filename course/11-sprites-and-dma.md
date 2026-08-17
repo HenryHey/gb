@@ -147,3 +147,7 @@ You still cannot **play** — no keypad. That is the next chapter. Watching the 
 - [Pan Docs — OAM DMA](https://gbdev.io/pandocs/OAM_DMA_Transfer.html)
 - [docs/reference/ppu.md](../docs/reference/ppu.md)
 - Nazar part 7 *Sprites* (compositing idea; verify priority against Pan Docs)
+
+## Next
+
+[12 — Joypad](12-joypad.md)

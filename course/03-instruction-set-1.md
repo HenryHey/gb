@@ -231,3 +231,7 @@ If these three pass, move on. Do not implement every opcode before the tests —
 - [Pan Docs — CPU instruction set](https://gbdev.io/pandocs/CPU_Instruction_Set.html)
 - [docs/reference/cpu-quirks.md](../docs/reference/cpu-quirks.md) (half-carry, DAA)
 - DMG-01 3.2–3.4
+
+## Next
+
+[04 — Instruction set, part 2](04-instruction-set-2.md)

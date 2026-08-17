@@ -245,3 +245,7 @@ Wire a button “step” and a `<pre>` of `AF BC DE HL SP PC`. This debugger sta
 - [Opcode table](https://gbdev.io/gb-opcodes/optables/classic)
 - Nazar part 1 (dispatch idea; ignore Z80 claims)
 - DMG-01 chapters 3.1–3.3 (registers, ADD, PC) — Rust, same ideas
+
+## Next
+
+[03 — Instruction set, part 1](03-instruction-set-1.md)

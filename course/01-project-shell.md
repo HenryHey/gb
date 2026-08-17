@@ -154,3 +154,7 @@ Also: clicking the file input should not crash if the file is 0 bytes — throw 
 - [docs/reference/memory-map.md](../docs/reference/memory-map.md) (header sits in bank 0)
 - [docs/reference/mbc.md](../docs/reference/mbc.md) (type bytes)
 - Nazar part 9 sketches the header before MBC1
+
+## Next
+
+[02 — CPU core](02-cpu-core.md)

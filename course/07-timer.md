@@ -154,3 +154,7 @@ Simpler assertion without interrupts: enable TAC at 262144 Hz (`TAC = 0x05`), st
 - [Pan Docs — Timer and Divider](https://gbdev.io/pandocs/Timer_and_Divider_Registers.html)
 - [docs/reference/io-registers.md](../docs/reference/io-registers.md)
 - Nazar part 10 (read, then ignore his DIV write)
+
+## Next
+
+[08 — PPU timing](08-ppu-timing.md)

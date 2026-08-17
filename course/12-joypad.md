@@ -121,3 +121,7 @@ You now have a Game Boy for launch titles. Next chapters unlock 64 KiB+ cartridg
 - [Pan Docs — Joypad](https://gbdev.io/pandocs/Joypad_Input.html)
 - [docs/reference/io-registers.md](../docs/reference/io-registers.md)
 - Nazar part 6 *Input*
+
+## Next
+
+[13 — MBC1](13-mbc1.md)

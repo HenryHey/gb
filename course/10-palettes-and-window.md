@@ -110,3 +110,7 @@ LCDC bit 7 = 0: white canvas, LY stuck at 0.
 - [Pan Docs — Window](https://gbdev.io/pandocs/Window_Display.html)
 - [Pan Docs — Palettes](https://gbdev.io/pandocs/Palettes.html)
 - [docs/reference/ppu.md](../docs/reference/ppu.md)
+
+## Next
+
+[11 — Sprites and OAM DMA](11-sprites-and-dma.md)

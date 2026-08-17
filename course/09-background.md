@@ -149,3 +149,7 @@ Screenshot your canvas. This is the first chapter that looks like a Game Boy.
 - [Pan Docs — Tile data](https://gbdev.io/pandocs/Tile_Data.html)
 - Nazar part 4 *Graphics*
 - DMG-01 tile RAM chapter (2bpp diagrams)
+
+## Next
+
+[10 — Palettes, window, LCD off](10-palettes-and-window.md)

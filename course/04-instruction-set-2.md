@@ -177,3 +177,7 @@ You now have a CPU. It still cannot see a cartridge header or VRAM. That is the 
 - Opcode table CB page
 - [Pan Docs — instruction set, CB block](https://gbdev.io/pandocs/CPU_Instruction_Set.html)
 - [docs/reference/cpu-quirks.md](../docs/reference/cpu-quirks.md)
+
+## Next
+
+[05 — Memory map and skip-boot](05-memory-and-skip-boot.md)

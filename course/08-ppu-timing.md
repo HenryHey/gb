@@ -161,3 +161,7 @@ Show `LY`, `mode`, `STAT`, `LCDC`. After one frame: `LY` should have wrapped (yo
 - [docs/reference/ppu.md](../docs/reference/ppu.md)
 - [Pan Docs — STAT](https://gbdev.io/pandocs/STAT.html)
 - Nazar part 3 *GPU Timings* (same mode idea; his 172 is our fixed length too)
+
+## Next
+
+[09 — Background tiles](09-background.md)

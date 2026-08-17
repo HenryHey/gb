@@ -180,3 +180,7 @@ Tetris may still freeze: nothing sets IF bit 0 yet. One more chapter (timer) plu
 - [Pan Docs — Interrupts](https://gbdev.io/pandocs/Interrupts.html)
 - [docs/reference/cpu-quirks.md](../docs/reference/cpu-quirks.md) (`EI`, `HALT`)
 - Nazar part 8 (concept; his IME is too simple)
+
+## Next
+
+[07 — Timer](07-timer.md)
