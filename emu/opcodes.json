@@ -5,6 +5,16 @@
     "length": 1
   },
   {
+    "opcode": "$01",
+    "name": "LD BC, n16",
+    "length": 2
+  },
+  {
+    "opcode": "$02",
+    "name": "LD (nn), r8",
+    "length": 2
+  },
+  {
     "opcode": "$04",
     "name": "INC B",
     "length": 1
@@ -16,8 +26,13 @@
   },
   {
     "opcode": "$06",
-    "name": "LD B, n",
+    "name": "LD B, n8",
     "length": 2
+  },
+  {
+    "opcode": "$0A",
+    "name": "LD A, [BC]",
+    "length": 1
   },
   {
     "opcode": "$0C",
@@ -31,7 +46,17 @@
   },
   {
     "opcode": "$0E",
-    "name": "LD C, n",
+    "name": "LD C, n8",
+    "length": 2
+  },
+  {
+    "opcode": "$11",
+    "name": "LD DE, n16",
+    "length": 2
+  },
+  {
+    "opcode": "$12",
+    "name": "LD (nn), r8",
     "length": 2
   },
   {
@@ -46,13 +71,18 @@
   },
   {
     "opcode": "$16",
-    "name": "LD D, n",
+    "name": "LD D, n8",
     "length": 2
   },
   {
     "opcode": "$18",
     "name": "JR e",
     "length": 2
+  },
+  {
+    "opcode": "$1A",
+    "name": "LD A, [DE]",
+    "length": 1
   },
   {
     "opcode": "$1C",
@@ -66,8 +96,18 @@
   },
   {
     "opcode": "$1E",
-    "name": "LD E, n",
+    "name": "LD E, n8",
     "length": 2
+  },
+  {
+    "opcode": "$21",
+    "name": "LD HL, n16",
+    "length": 2
+  },
+  {
+    "opcode": "$22",
+    "name": "LD (HL+), A",
+    "length": 1
   },
   {
     "opcode": "$24",
@@ -81,8 +121,13 @@
   },
   {
     "opcode": "$26",
-    "name": "LD H, n",
+    "name": "LD H, n8",
     "length": 2
+  },
+  {
+    "opcode": "$2A",
+    "name": "LD A, [HL+]",
+    "length": 1
   },
   {
     "opcode": "$2C",
@@ -96,8 +141,38 @@
   },
   {
     "opcode": "$2E",
-    "name": "LD L, n",
+    "name": "LD L, n8",
     "length": 2
+  },
+  {
+    "opcode": "$31",
+    "name": "LD SP, n16",
+    "length": 2
+  },
+  {
+    "opcode": "$32",
+    "name": "LD (HL-), A",
+    "length": 1
+  },
+  {
+    "opcode": "$34",
+    "name": "INC (HL)",
+    "length": 1
+  },
+  {
+    "opcode": "$35",
+    "name": "DEC (HL)",
+    "length": 1
+  },
+  {
+    "opcode": "$36",
+    "name": "LD (HL), n8",
+    "length": 2
+  },
+  {
+    "opcode": "$3A",
+    "name": "LD A, [HL-]",
+    "length": 1
   },
   {
     "opcode": "$3C",
@@ -111,7 +186,7 @@
   },
   {
     "opcode": "$3E",
-    "name": "LD A, n",
+    "name": "LD A, n8",
     "length": 2
   },
   {
@@ -433,5 +508,35 @@
     "opcode": "$7F",
     "name": "LD A, A",
     "length": 1
+  },
+  {
+    "opcode": "$E0",
+    "name": "LDH (n), A",
+    "length": 2
+  },
+  {
+    "opcode": "$E2",
+    "name": "LDH (C), A",
+    "length": 2
+  },
+  {
+    "opcode": "$EA",
+    "name": "LD (nn), A",
+    "length": 3
+  },
+  {
+    "opcode": "$F0",
+    "name": "LDH A, [a8]",
+    "length": 2
+  },
+  {
+    "opcode": "$F2",
+    "name": "LD A, [C]",
+    "length": 2
+  },
+  {
+    "opcode": "$FA",
+    "name": "LD A, (nn)",
+    "length": 3
   }
 ]
