@@ -215,10 +215,13 @@ registerLdOps(def, {
   w8,
   r16Map,
   w16,
+  r16,
   wMem8,
   rMem8,
   inc16,
   dec16,
+  toSigned,
+  setZNHC,
 });
 
 // INC AND DEC instructions
@@ -273,6 +276,11 @@ export function romBus(bytes) {
     read8: (a) => mem[a & 0xffff],
     write8: (a, v) => {
       mem[a & 0xffff] = v;
+    },
+    read16: (a) => mem[a & 0xffff] | (mem[(a + 1) & 0xffff] << 8),
+    write16: (a, v) => {
+      mem[a & 0xffff] = v & 0xff;
+      mem[(a + 1) & 0xffff] = (v >> 8) & 0xff;
     },
   };
 }

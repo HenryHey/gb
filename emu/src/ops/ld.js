@@ -1,6 +1,22 @@
 export function registerLdOps(
   def,
-  { readImm8, readImm16, r8n, r8nMap, r8, w8, r16Map, w16, wMem8, rMem8, inc16, dec16 },
+  {
+    readImm8,
+    readImm16,
+    r8n,
+    r8nMap,
+    r8,
+    w8,
+    r16Map,
+    w16,
+    r16,
+    wMem8,
+    rMem8,
+    inc16,
+    dec16,
+    toSigned,
+    setZNHC,
+  },
 ) {
   // LD n8 instructions
   function ld8(cpu, r, v) {
@@ -50,7 +66,7 @@ export function registerLdOps(
   }
   def(0x32, 'LD (HL-), A', ldd);
 
-  // Generate LD instructions for all combinations of r8 and w8 (0x40 - 0x7f)
+  // LD instructions for all combinations of r8 and w8 (0x40 - 0x7f)
   for (let dst = 0; dst < 8; dst++) {
     for (let src = 0; src < 8; src++) {
       const op = 0x40 | (dst << 3) | src;
@@ -62,7 +78,7 @@ export function registerLdOps(
     }
   }
 
-  // Generate LD A, [nn] instructions
+  // LD A, [nn] instructions
   function ld8Mem(cpu, src) {
     w8[r8nMap.A](cpu, rMem8[src](cpu));
     return 8;
@@ -70,7 +86,7 @@ export function registerLdOps(
   def(0x0a, 'LD A, [BC]', (cpu) => ld8Mem(cpu, r16Map.BC));
   def(0x1a, 'LD A, [DE]', (cpu) => ld8Mem(cpu, r16Map.DE));
 
-  // Generate LD A, [HL+] instruction
+  // LD A, [HL+] instruction
   function ld8MemInc(cpu) {
     w8[r8nMap.A](cpu, rMem8[r16Map.HL](cpu));
     inc16(cpu, r16Map.HL);
@@ -78,7 +94,7 @@ export function registerLdOps(
   }
   def(0x2a, 'LD A, [HL+]', ld8MemInc);
 
-  // Generate LD A, [HL-] instruction
+  // LD A, [HL-] instruction
   function ld8MemDec(cpu) {
     w8[r8nMap.A](cpu, rMem8[r16Map.HL](cpu));
     dec16(cpu, r16Map.HL);
@@ -86,42 +102,70 @@ export function registerLdOps(
   }
   def(0x3a, 'LD A, [HL-]', ld8MemDec);
 
-  // Generate LDH (n), A instruction
+  // LDH (n), A instruction
   function ldh8(cpu) {
     cpu.bus.write8(0xff00 | readImm8(cpu), r8[r8nMap.A](cpu));
     return 12;
   }
   def(0xe0, 'LDH (n), A', ldh8, 2);
 
-  // Generate LDH A, [n] instruction
+  // LDH A, [n] instruction
   function ldh8Mem(cpu) {
     w8[r8nMap.A](cpu, cpu.bus.read8(0xff00 | readImm8(cpu)));
     return 12;
   }
   def(0xf0, 'LDH A, [n]', ldh8Mem, 2);
 
-  // Generate LDH (C), A instruction
+  // LDH (C), A instruction
   function ldh8C(cpu) {
     cpu.bus.write8(0xff00 | r8[r8nMap.C](cpu), r8[r8nMap.A](cpu));
     return 8;
   }
   def(0xe2, 'LDH (C), A', ldh8C, 2);
 
-  // Generate LD A, [C] instruction
+  // LD A, [C] instruction
   function ldh8MemC(cpu) {
     w8[r8nMap.A](cpu, cpu.bus.read8(0xff00 | r8[r8nMap.C](cpu)));
     return 8;
   }
   def(0xf2, 'LD A, [C]', ldh8MemC, 2);
 
-  // Generate LD [nn], A instruction
+  // LD [nn], A instruction
   function ld16A(cpu) {
     cpu.bus.write8(readImm16(cpu), r8[r8nMap.A](cpu));
     return 16;
   }
   def(0xea, 'LD (nn), A', ld16A, 3);
 
-  // Generate LD A, (nn) instruction
+  // LD [nn], SP instruction
+  function ld16SP(cpu) {
+    cpu.bus.write16(readImm16(cpu), cpu.sp);
+    return 20;
+  }
+  def(0x08, 'LD (nn), SP', ld16SP, 3);
+
+  // LD HL, SP+e8 instruction
+  function ld16SPInc(cpu) {
+    const e = toSigned(readImm8(cpu));
+    w16[r16Map.HL](cpu, (cpu.sp + e) & 0xffff);
+    setZNHC(cpu, {
+      z: 0,
+      n: 0,
+      h: (cpu.sp & 0xf) + (e & 0xf) > 0xf,
+      c: (cpu.sp & 0xff) + e > 0xff,
+    });
+    return 12;
+  }
+  def(0xf8, 'LD HL, SP+e8', ld16SPInc);
+
+  // LD SP, HL instruction
+  function ld16SPHL(cpu) {
+    cpu.sp = r16[r16Map.HL](cpu); 
+    return 8;
+  }
+  def(0xf9, 'LD SP, HL', ld16SPHL);
+
+  // LD A, (nn) instruction
   function ld16Mem(cpu) {
     w8[r8nMap.A](cpu, cpu.bus.read8(readImm16(cpu)));
     return 16;

@@ -30,6 +30,11 @@
     "length": 2
   },
   {
+    "opcode": "$08",
+    "name": "LD (nn), SP",
+    "length": 3
+  },
+  {
     "opcode": "$0A",
     "name": "LD A, [BC]",
     "length": 1
@@ -533,6 +538,16 @@
     "opcode": "$F2",
     "name": "LD A, [C]",
     "length": 2
+  },
+  {
+    "opcode": "$F8",
+    "name": "LD HL, SP+e8",
+    "length": 1
+  },
+  {
+    "opcode": "$F9",
+    "name": "LD SP, HL",
+    "length": 1
   },
   {
     "opcode": "$FA",
