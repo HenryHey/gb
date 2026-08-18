@@ -87,30 +87,14 @@ const r8 = [
 ]
 
 const w8 = [
-  (c, v) => {
-    c.b = v
-  },
-  (c, v) => {
-    c.c = v
-  },
-  (c, v) => {
-    c.d = v
-  },
-  (c, v) => {
-    c.e = v
-  },
-  (c, v) => {
-    c.h = v
-  },
-  (c, v) => {
-    c.l = v
-  },
-  (c, v) => {
-    c.bus.write8(hl(c), v)
-  },
-  (c, v) => {
-    c.a = v
-  },
+  (c, v) => (c.b = v),
+  (c, v) => (c.c = v),
+  (c, v) => (c.d = v),
+  (c, v) => (c.e = v),
+  (c, v) => (c.h = v),
+  (c, v) => (c.l = v),
+  (c, v) => c.bus.write8(hl(c), v),
+  (c, v) => (c.a = v),
 ]
 
 function nop(_cpu) {
