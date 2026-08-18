@@ -16,7 +16,7 @@ import {
   romBus,
   step,
   Z,
-} from '../src/ops.js';
+} from '../src/ops/index.js';
 
 export { C, H, N, Z, isa };
 

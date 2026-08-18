@@ -526,7 +526,7 @@
   },
   {
     "opcode": "$F0",
-    "name": "LDH A, [a8]",
+    "name": "LDH A, [n]",
     "length": 2
   },
   {

@@ -1,4 +1,4 @@
-import { Z, N, H, C, opNames, cbOpNames, opLen } from './ops.js';
+import { Z, N, H, C, opNames, cbOpNames, opLen } from './ops/index.js';
 
 const el = document.querySelector('#debug');
 const regsEl = document.querySelector('#regs');

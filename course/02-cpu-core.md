@@ -41,7 +41,7 @@ If a line of tutorial code feels arbitrary, it is almost always one of these:
 
 ```
 src/cpu.js     registers, flags, step()
-src/ops.js     opcode table: Uint8 opcode → function(cpu) => tCycles
+src/ops/index.js     opcode table: Uint8 opcode → function(cpu) => tCycles
 ```
 
 One object owns CPU state. Memory is injected as `{ read8, write8 }` so chapter 5 can swap in a real bus without rewriting opcodes. The SM83 never “sees” ROM vs RAM vs I/O — it only ever names a 16-bit address.

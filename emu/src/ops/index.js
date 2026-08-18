@@ -1,3 +1,5 @@
+import { registerLdOps } from './ld.js';
+
 export function createCpu(bus) {
   return {
     bus,
@@ -64,7 +66,6 @@ function de(c) {
   return ((c.d << 8) | c.e) & 0xffff;
 }
 
-
 function readImm16(cpu) {
   const lo = readImm8(cpu);
   const hi = readImm8(cpu);
@@ -118,7 +119,6 @@ const w8 = [
   (cpu, v) => (cpu.a = v),
 ];
 
-const r16n = ['BC', 'DE', 'HL', 'SP'];
 const r16Map = {
   BC: 0,
   DE: 1,
@@ -127,32 +127,27 @@ const r16Map = {
 };
 
 const w16 = [
-  (cpu, v) => (cpu.c = v & 0xff, cpu.b = (v >> 8) & 0xff),
-  (cpu, v) => (cpu.e = v & 0xff, cpu.d = (v >> 8) & 0xff),
-  (cpu, v) => (cpu.l = v & 0xff, cpu.h = (v >> 8) & 0xff),
+  (cpu, v) => ((cpu.c = v & 0xff), (cpu.b = (v >> 8) & 0xff)),
+  (cpu, v) => ((cpu.e = v & 0xff), (cpu.d = (v >> 8) & 0xff)),
+  (cpu, v) => ((cpu.l = v & 0xff), (cpu.h = (v >> 8) & 0xff)),
   (cpu, v) => (cpu.sp = v),
-]
+];
 
-const r16 = [
-  (cpu) => bc(cpu),
-  (cpu) => de(cpu),
-  (cpu) => hl(cpu),
-  (cpu) => cpu.sp,
-]
+const r16 = [(cpu) => bc(cpu), (cpu) => de(cpu), (cpu) => hl(cpu), (cpu) => cpu.sp];
 
 const wMem8 = [
   (cpu, v) => cpu.bus.write8(bc(cpu), v),
   (cpu, v) => cpu.bus.write8(de(cpu), v),
   (cpu, v) => cpu.bus.write8(hl(cpu), v),
   (cpu, v) => cpu.bus.write8(cpu.sp, v),
-]
+];
 
 const rMem8 = [
   (cpu) => cpu.bus.read8(bc(cpu)),
   (cpu) => cpu.bus.read8(de(cpu)),
   (cpu) => cpu.bus.read8(hl(cpu)),
   (cpu) => cpu.bus.read8(cpu.sp),
-]
+];
 
 function nop() {
   return 4;
@@ -166,43 +161,6 @@ function halt(cpu) {
 function jr(cpu) {
   const e = toSigned(readImm8(cpu));
   cpu.pc = (cpu.pc + e) & 0xffff;
-  return 12;
-}
-
-function ld8(cpu, r, v) {
-  w8[r](cpu, v);
-  return r === 6 ? 12 : 8;
-}
-
-function ld16(cpu, r, v) {
-  w16[r](cpu, v);
-  return 12;
-}
-
-function lda8(cpu, dst, src) {
-  wMem8[dst](cpu, r8[src](cpu));
-  return 8;
-}
-
-function ld8Mem(cpu, src, inc = false, dec = false) {
-  w8[r8nMap.A](cpu, rMem8[src](cpu));
-  return 8;
-}
-
-function ld8MemInc(cpu) {
-  w8[r8nMap.A](cpu, rMem8[r16Map.HL](cpu));
-  inc16(cpu, r16Map.HL);
-  return 8;
-}
-
-function ld8MemDec(cpu) {
-  w8[r8nMap.A](cpu, rMem8[r16Map.HL](cpu));
-  dec16(cpu, r16Map.HL);
-  return 8;
-}
-
-function ldh8(cpu, n) {
-  cpu.bus.write8(0xff00 | n, r8[r8nMap.A](cpu));
   return 12;
 }
 
@@ -236,18 +194,6 @@ function dec16(cpu, r) {
   return 8;
 }
 
-function ldi(cpu) {
-  w8[r8nMap['(HL)']](cpu, r8[r8nMap.A](cpu));
-  inc16(cpu, r16Map.HL);
-  return 8;
-}
-
-function ldd(cpu) {
-  w8[r8nMap['(HL)']](cpu, r8[r8nMap.A](cpu));
-  dec16(cpu, r16Map.HL);
-  return 8;
-}
-
 export const ops = [];
 export const opNames = [];
 export const opLen = [];
@@ -260,31 +206,20 @@ def(0x00, 'NOP', nop);
 def(0x18, 'JR e', jr, 2);
 def(0x76, 'HALT', halt);
 
-// LD n8 instructions
-def(0x06, 'LD B, n8', (cpu) => ld8(cpu, r8nMap.B, readImm8(cpu)), 2);
-def(0x16, 'LD D, n8', (cpu) => ld8(cpu, r8nMap.D, readImm8(cpu)), 2);
-def(0x26, 'LD H, n8', (cpu) => ld8(cpu, r8nMap.H, readImm8(cpu)), 2);
-def(0x36, 'LD (HL), n8', (cpu) => ld8(cpu, r8nMap['(HL)'], readImm8(cpu)), 2);
-def(0x0e, 'LD C, n8', (cpu) => ld8(cpu, r8nMap.C, readImm8(cpu)), 2);
-def(0x1e, 'LD E, n8', (cpu) => ld8(cpu, r8nMap.E, readImm8(cpu)), 2);
-def(0x2e, 'LD L, n8', (cpu) => ld8(cpu, r8nMap.L, readImm8(cpu)), 2);
-def(0x3e, 'LD A, n8', (cpu) => ld8(cpu, r8nMap.A, readImm8(cpu)), 2);
-
-// LD n16 instructions
-def(0x01, 'LD BC, n16', (cpu) => ld16(cpu, r16Map.BC, readImm16(cpu)), 2);
-def(0x11, 'LD DE, n16', (cpu) => ld16(cpu, r16Map.DE, readImm16(cpu)), 2);
-def(0x21, 'LD HL, n16', (cpu) => ld16(cpu, r16Map.HL, readImm16(cpu)), 2);
-def(0x31, 'LD SP, n16', (cpu) => ld16(cpu, r16Map.SP, readImm16(cpu)), 2);
-
-// LD [nn], r8 instructions
-def(0x02, 'LD (nn), r8', (cpu) => lda8(cpu, r16Map.BC, r8nMap.A), 2);
-def(0x12, 'LD (nn), r8', (cpu) => lda8(cpu, r16Map.DE, r8nMap.A), 2);
-
-// LDI (LD [HL+], A)
-def(0x22, 'LD (HL+), A', ldi);
-
-// LDD (LD [HL-], A)
-def(0x32, 'LD (HL-), A', ldd);
+registerLdOps(def, {
+  readImm8,
+  readImm16,
+  r8n,
+  r8nMap,
+  r8,
+  w8,
+  r16Map,
+  w16,
+  wMem8,
+  rMem8,
+  inc16,
+  dec16,
+});
 
 // INC AND DEC instructions
 def(0x04, 'INC B', (cpu) => inc8(cpu, r8nMap.B));
@@ -304,54 +239,6 @@ def(0x0d, 'DEC C', (cpu) => dec8(cpu, r8nMap.C));
 def(0x1d, 'DEC E', (cpu) => dec8(cpu, r8nMap.E));
 def(0x2d, 'DEC L', (cpu) => dec8(cpu, r8nMap.L));
 def(0x3d, 'DEC A', (cpu) => dec8(cpu, r8nMap.A));
-
-// Generate LD instructions for all combinations of r8 and w8 (0x40 - 0x7f)
-for (let dst = 0; dst < 8; dst++) {
-  for (let src = 0; src < 8; src++) {
-    const op = 0x40 | (dst << 3) | src;
-    if (op === 0x76) continue; // Skip HALT
-    def(op, `LD ${r8n[dst]}, ${r8n[src]}`, (cpu) => {
-      w8[dst](cpu, r8[src](cpu));
-      return dst === 6 || src === 6 ? 8 : 4;
-    });
-  }
-}
-
-// Generate LD A, [nn] instructions
-def(0x0A, 'LD A, [BC]', (cpu) => ld8Mem(cpu, r16Map.BC));
-def(0x1A, 'LD A, [DE]', (cpu) => ld8Mem(cpu, r16Map.DE));
-def(0x2A, 'LD A, [HL+]', ld8MemInc);
-def(0x3A, 'LD A, [HL-]', ld8MemDec);
-
-// Generate LDH instructions
-def((0xE0), 'LDH (n), A', (cpu) => {
-  cpu.bus.write8(0xff00 | readImm8(cpu), r8[r8nMap.A](cpu));
-  return 12;
-}, 2);
-def((0xF0), 'LDH A, [a8]', (cpu) => {
-  w8[r8nMap.A](cpu, cpu.bus.read8(0xff00 | readImm8(cpu)));
-  return 12;
-}, 2);
-def((0xE2), 'LDH (C), A', (cpu) => {
-  cpu.bus.write8(0xff00 | r8[r8nMap.C](cpu), r8[r8nMap.A](cpu));
-  return 8;
-}, 2);
-def(0xF2, 'LD A, [C]', (cpu) => {
-  w8[r8nMap.A](cpu, cpu.bus.read8(0xff00 | r8[r8nMap.C](cpu)));
-  return 8;
-}, 2);
-
-// Generate LD [nn], A instruction
-def(0xEA, 'LD (nn), A', (cpu) => {
-  cpu.bus.write8(readImm16(cpu), r8[r8nMap.A](cpu));
-  return 16;
-}, 3);
-
-// Generate LD A, (nn) instruction
-def(0xFA, 'LD A, (nn)', (cpu) => {
-  w8[r8nMap.A](cpu, cpu.bus.read8(readImm16(cpu)));
-  return 16;
-}, 3);
 
 export const cbOps = [];
 export const cbOpNames = [];

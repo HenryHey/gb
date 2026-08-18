@@ -1,7 +1,7 @@
 import './style.css';
 import { parseHeader } from './cart.js';
 import { log, renderCpu, formatOpcode } from './debug.js';
-import { createCpu, romBus, step, ops, cbOps } from './ops.js';
+import { createCpu, romBus, step, ops, cbOps } from './ops/index.js';
 
 let cpu = createCpu(romBus(new Uint8Array()));
 renderCpu(cpu);
