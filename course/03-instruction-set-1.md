@@ -25,10 +25,10 @@ That is why `LD r, r'` is the block `$40–$7F` and why `HALT` is `$76`: `LD (HL
 
 Other shapes that look like special cases are hardware shortcuts:
 
-- **`LDH`** (`$FF00+n` and `$FF00+C`) exists because I/O lives in the high page. Games talk to the PPU, timer, and joypad constantly; a 2-byte “load from `$FFnn`” beats a 3-byte absolute address.
-- **`LDI` / `LDD`** (`HL+` / `HL-`) are copy-loop helpers: transfer a byte, then bump the pointer. Tile copies and `memcpy`-shaped game code use them.
+- `LDH` (`$FF00+n` and `$FF00+C`) exists because I/O lives in the high page. Games talk to the PPU, timer, and joypad constantly; a 2-byte “load from `$FFnn`” beats a 3-byte absolute address.
+- `LDI` **/** `LDD` (`HL+` / `HL-`) are copy-loop helpers: transfer a byte, then bump the pointer. Tile copies and `memcpy`-shaped game code use them.
 - **The stack grows down** because that is how 8080-family chips did it. `CALL`/`RST` push the *already incremented* PC (address of the next instruction), then jump. `RET` pops it. `SP` after skip-boot is `$FFFE`, so the first `PUSH` writes `$FFFD`/`$FFFC` in HRAM — the only RAM the CPU can always reach, even during OAM DMA (chapter 11).
-- **`DAA`** is leftover BCD. Tetris stores scores as packed decimal in `A`, then `ADD` + `DAA` instead of converting binary to decimal. `N` and `H` exist largely so `DAA` knows what just happened. Wrong `DAA` = garbage numbers on the well, sometimes a crash.
+- `DAA` is leftover BCD. Tetris stores scores as packed decimal in `A`, then `ADD` + `DAA` instead of converting binary to decimal. `N` and `H` exist largely so `DAA` knows what just happened. Wrong `DAA` = garbage numbers on the well, sometimes a crash.
 - **Conditional jumps** only test `Z` and `C` (four conditions: NZ, Z, NC, C). There is no “if half-carry” branch. Games that care about `H` inspect `F` or use `DAA`.
 
 Implement one family with a loop over those 3-bit indices. Copying 50 near-identical functions by hand is how this chapter turns into a month.
@@ -48,7 +48,7 @@ const r8 = [
   (c) => c.h, (c) => c.l, (c) => c.bus.read8(hl(c)), (c) => c.a,
 ];
 const w8 = [
-  (c, v) => { c.b = v; }, /* … */
+  (c, v) => { c.b = v; },
   (c, v) => { c.bus.write8(hl(c), v); },
   (c, v) => { c.a = v; },
 ];
@@ -62,7 +62,7 @@ for (let dst = 0; dst < 8; dst++) {
     const op = 0x40 | (dst << 3) | src;
     if (op === 0x76) continue;
     ops[op] = (cpu) => {
-      w8[dst](cpu, r8[src](cpu));
+      (w8[dst])(cpu, r8[src](cpu));
       return (dst === 6 || src === 6) ? 8 : 4;
     };
   }
@@ -75,11 +75,13 @@ That pattern is the difference between a weekend and a month.
 
 ## Families to implement
 
+
+
 ### 8-bit loads
 
 - `LD r, r'` / `LD r, n` / `LD (HL), n`
 - `LD A, (BC|DE|HL+|HL-|nn)` and the stores the other way
-- `LDH (n), A` / `LDH A, (n)` / `LD (C), A` / `LD A, (C)` — **I/O page `$FF00+n`**. Even with a fake bus, implement the addressing now.
+- `LDH (n), A` / `LDH A, (n)` / `LD (C), A` / `LD A, (C)` — **I/O page** `$FF00+n`. Even with a fake bus, implement the addressing now.
 
 `HL+` / `HL-` (`LDI` / `LDD`): transfer then increment or decrement HL.
 
@@ -109,12 +111,14 @@ PUSH AF: 16 T-cycles. POP AF: 12.
 
 ### ALU (A ← A ⊙ src)
 
-| Op | Z | N | H | C |
-| --- | --- | --- | --- | --- |
-| ADD/ADC | result==0 | 0 | nibble carry | byte carry |
-| SUB/SBC/CP | result==0 | 1 | nibble borrow | byte borrow |
-| AND | result==0 | 0 | **1** | 0 |
-| XOR/OR | result==0 | 0 | 0 | 0 |
+
+| Op         | Z         | N   | H             | C           |
+| ---------- | --------- | --- | ------------- | ----------- |
+| ADD/ADC    | result==0 | 0   | nibble carry  | byte carry  |
+| SUB/SBC/CP | result==0 | 1   | nibble borrow | byte borrow |
+| AND        | result==0 | 0   | **1**         | 0           |
+| XOR/OR     | result==0 | 0   | 0             | 0           |
+
 
 `CP` is `SUB` without storing. `ADC`/`SBC` include the old C as cin/bin.
 
@@ -149,20 +153,24 @@ function add8(a, b, cin) {
 - `DAA`: see [cpu-quirks.md](../docs/reference/cpu-quirks.md). Implement it now; test it. Tetris scores depend on it.
 - `NOP`, already done
 
+
+
 ### Jumps and calls
 
-| Op | Notes |
-| --- | --- |
-| `JP nn` | 16 T |
-| `JP HL` | 4 T, `PC = HL` (not a memory read) |
-| `JP cc, nn` | 16 taken / 12 not |
-| `JR e` | 12 |
-| `JR cc, e` | 12 taken / 8 not |
-| `CALL nn` | push PC, then JP; 24 T |
-| `CALL cc, nn` | 24 / 12 |
-| `RET` | pop PC; 16 T |
-| `RET cc` | 20 taken / 8 not |
-| `RST n` | `CALL` to `$00/$08/…/$38`; 16 T |
+
+| Op            | Notes                              |
+| ------------- | ---------------------------------- |
+| `JP nn`       | 16 T                               |
+| `JP HL`       | 4 T, `PC = HL` (not a memory read) |
+| `JP cc, nn`   | 16 taken / 12 not                  |
+| `JR e`        | 12                                 |
+| `JR cc, e`    | 12 taken / 8 not                   |
+| `CALL nn`     | push PC, then JP; 24 T             |
+| `CALL cc, nn` | 24 / 12                            |
+| `RET`         | pop PC; 16 T                       |
+| `RET cc`      | 20 taken / 8 not                   |
+| `RST n`       | `CALL` to `$00/$08/…/$38`; 16 T    |
+
 
 Conditions: `NZ Z NC C` encoded as bits. `cc` is `(opcode >> 3) & 3` in the usual slots.
 
@@ -186,6 +194,8 @@ Not-taken `JP cc, nn` must still **consume** the two immediate bytes.
 - `CALL` pushing the address of the immediate instead of the next instruction. Fetch nn first, *then* push the already-advanced PC.
 - `LDH` using `n` as an absolute address instead of `$FF00|n`.
 - `DAA` implemented from a Z80 manual.
+
+
 
 ## Checkpoint
 
@@ -231,6 +241,8 @@ If these three pass, move on. Do not implement every opcode before the tests —
 - [Pan Docs — CPU instruction set](https://gbdev.io/pandocs/CPU_Instruction_Set.html)
 - [docs/reference/cpu-quirks.md](../docs/reference/cpu-quirks.md) (half-carry, DAA)
 - DMG-01 3.2–3.4
+
+
 
 ## Next
 
