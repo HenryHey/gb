@@ -1,0 +1,352 @@
+[
+  {
+    "opcode": "$00",
+    "name": "NOP",
+    "length": 1
+  },
+  {
+    "opcode": "$04",
+    "name": "INC B",
+    "length": 1
+  },
+  {
+    "opcode": "$05",
+    "name": "DEC B",
+    "length": 1
+  },
+  {
+    "opcode": "$06",
+    "name": "LD B, n",
+    "length": 2
+  },
+  {
+    "opcode": "$18",
+    "name": "JR e",
+    "length": 2
+  },
+  {
+    "opcode": "$3E",
+    "name": "LD A, n",
+    "length": 2
+  },
+  {
+    "opcode": "$40",
+    "name": "LD B, B",
+    "length": 1
+  },
+  {
+    "opcode": "$41",
+    "name": "LD B, C",
+    "length": 1
+  },
+  {
+    "opcode": "$42",
+    "name": "LD B, D",
+    "length": 1
+  },
+  {
+    "opcode": "$43",
+    "name": "LD B, E",
+    "length": 1
+  },
+  {
+    "opcode": "$44",
+    "name": "LD B, H",
+    "length": 1
+  },
+  {
+    "opcode": "$45",
+    "name": "LD B, L",
+    "length": 1
+  },
+  {
+    "opcode": "$46",
+    "name": "LD B, (HL)",
+    "length": 1
+  },
+  {
+    "opcode": "$47",
+    "name": "LD B, A",
+    "length": 1
+  },
+  {
+    "opcode": "$48",
+    "name": "LD C, B",
+    "length": 1
+  },
+  {
+    "opcode": "$49",
+    "name": "LD C, C",
+    "length": 1
+  },
+  {
+    "opcode": "$4A",
+    "name": "LD C, D",
+    "length": 1
+  },
+  {
+    "opcode": "$4B",
+    "name": "LD C, E",
+    "length": 1
+  },
+  {
+    "opcode": "$4C",
+    "name": "LD C, H",
+    "length": 1
+  },
+  {
+    "opcode": "$4D",
+    "name": "LD C, L",
+    "length": 1
+  },
+  {
+    "opcode": "$4E",
+    "name": "LD C, (HL)",
+    "length": 1
+  },
+  {
+    "opcode": "$4F",
+    "name": "LD C, A",
+    "length": 1
+  },
+  {
+    "opcode": "$50",
+    "name": "LD D, B",
+    "length": 1
+  },
+  {
+    "opcode": "$51",
+    "name": "LD D, C",
+    "length": 1
+  },
+  {
+    "opcode": "$52",
+    "name": "LD D, D",
+    "length": 1
+  },
+  {
+    "opcode": "$53",
+    "name": "LD D, E",
+    "length": 1
+  },
+  {
+    "opcode": "$54",
+    "name": "LD D, H",
+    "length": 1
+  },
+  {
+    "opcode": "$55",
+    "name": "LD D, L",
+    "length": 1
+  },
+  {
+    "opcode": "$56",
+    "name": "LD D, (HL)",
+    "length": 1
+  },
+  {
+    "opcode": "$57",
+    "name": "LD D, A",
+    "length": 1
+  },
+  {
+    "opcode": "$58",
+    "name": "LD E, B",
+    "length": 1
+  },
+  {
+    "opcode": "$59",
+    "name": "LD E, C",
+    "length": 1
+  },
+  {
+    "opcode": "$5A",
+    "name": "LD E, D",
+    "length": 1
+  },
+  {
+    "opcode": "$5B",
+    "name": "LD E, E",
+    "length": 1
+  },
+  {
+    "opcode": "$5C",
+    "name": "LD E, H",
+    "length": 1
+  },
+  {
+    "opcode": "$5D",
+    "name": "LD E, L",
+    "length": 1
+  },
+  {
+    "opcode": "$5E",
+    "name": "LD E, (HL)",
+    "length": 1
+  },
+  {
+    "opcode": "$5F",
+    "name": "LD E, A",
+    "length": 1
+  },
+  {
+    "opcode": "$60",
+    "name": "LD H, B",
+    "length": 1
+  },
+  {
+    "opcode": "$61",
+    "name": "LD H, C",
+    "length": 1
+  },
+  {
+    "opcode": "$62",
+    "name": "LD H, D",
+    "length": 1
+  },
+  {
+    "opcode": "$63",
+    "name": "LD H, E",
+    "length": 1
+  },
+  {
+    "opcode": "$64",
+    "name": "LD H, H",
+    "length": 1
+  },
+  {
+    "opcode": "$65",
+    "name": "LD H, L",
+    "length": 1
+  },
+  {
+    "opcode": "$66",
+    "name": "LD H, (HL)",
+    "length": 1
+  },
+  {
+    "opcode": "$67",
+    "name": "LD H, A",
+    "length": 1
+  },
+  {
+    "opcode": "$68",
+    "name": "LD L, B",
+    "length": 1
+  },
+  {
+    "opcode": "$69",
+    "name": "LD L, C",
+    "length": 1
+  },
+  {
+    "opcode": "$6A",
+    "name": "LD L, D",
+    "length": 1
+  },
+  {
+    "opcode": "$6B",
+    "name": "LD L, E",
+    "length": 1
+  },
+  {
+    "opcode": "$6C",
+    "name": "LD L, H",
+    "length": 1
+  },
+  {
+    "opcode": "$6D",
+    "name": "LD L, L",
+    "length": 1
+  },
+  {
+    "opcode": "$6E",
+    "name": "LD L, (HL)",
+    "length": 1
+  },
+  {
+    "opcode": "$6F",
+    "name": "LD L, A",
+    "length": 1
+  },
+  {
+    "opcode": "$70",
+    "name": "LD (HL), B",
+    "length": 1
+  },
+  {
+    "opcode": "$71",
+    "name": "LD (HL), C",
+    "length": 1
+  },
+  {
+    "opcode": "$72",
+    "name": "LD (HL), D",
+    "length": 1
+  },
+  {
+    "opcode": "$73",
+    "name": "LD (HL), E",
+    "length": 1
+  },
+  {
+    "opcode": "$74",
+    "name": "LD (HL), H",
+    "length": 1
+  },
+  {
+    "opcode": "$75",
+    "name": "LD (HL), L",
+    "length": 1
+  },
+  {
+    "opcode": "$76",
+    "name": "HALT",
+    "length": 1
+  },
+  {
+    "opcode": "$77",
+    "name": "LD (HL), A",
+    "length": 1
+  },
+  {
+    "opcode": "$78",
+    "name": "LD A, B",
+    "length": 1
+  },
+  {
+    "opcode": "$79",
+    "name": "LD A, C",
+    "length": 1
+  },
+  {
+    "opcode": "$7A",
+    "name": "LD A, D",
+    "length": 1
+  },
+  {
+    "opcode": "$7B",
+    "name": "LD A, E",
+    "length": 1
+  },
+  {
+    "opcode": "$7C",
+    "name": "LD A, H",
+    "length": 1
+  },
+  {
+    "opcode": "$7D",
+    "name": "LD A, L",
+    "length": 1
+  },
+  {
+    "opcode": "$7E",
+    "name": "LD A, (HL)",
+    "length": 1
+  },
+  {
+    "opcode": "$7F",
+    "name": "LD A, A",
+    "length": 1
+  }
+]

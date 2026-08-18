@@ -5,6 +5,10 @@ body {
   margin: 16px;
 }
 
+a {
+  color: #58a6ff;
+}
+
 .row {
   display: flex;
   gap: 8px;

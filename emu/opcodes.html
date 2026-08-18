@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Opcode table</title>
+  </head>
+
+  <body>
+    <header class="page-header">
+      <a href="/">← emu</a>
+      <h1>Game Boy CPU (SM83) instruction set</h1>
+      <p id="status"></p>
+      <p class="source">
+        Charts from
+        <a href="https://gbdev.io/gb-opcodes/optables/classic">gbdev.io/gb-opcodes</a>. Implemented
+        ops are read from <code>opcodes.json</code>.
+      </p>
+    </header>
+
+    <div id="unprefixed"></div>
+    <h2>Prefixed ($CB $xx)</h2>
+    <div id="cbprefixed"></div>
+
+    <ul class="legend">
+      <li><span class="swatch implemented"></span> Implemented</li>
+      <li><span class="swatch control"></span> Misc / control</li>
+      <li><span class="swatch jump"></span> Jumps / calls</li>
+      <li><span class="swatch load"></span> 8-bit load</li>
+      <li><span class="swatch load16"></span> 16-bit load</li>
+      <li><span class="swatch arithmetic"></span> 8-bit arithmetic / logical</li>
+      <li><span class="swatch arithmetic16"></span> 16-bit arithmetic / logical</li>
+      <li><span class="swatch bit"></span> 8-bit shift, rotate and bit</li>
+      <li><span class="swatch illegal"></span> Unused</li>
+    </ul>
+
+    <script type="module" src="/src/opcodes-page.js"></script>
+  </body>
+</html>
