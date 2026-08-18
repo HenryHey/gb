@@ -1,16 +1,10 @@
 import './style.css'
 import { parseHeader } from './cart.js'
 import { log, renderCpu, formatOpcode } from './debug.js'
-import { createCpu, romBus, step, ops, cbOps, listImplementedOpcodes } from './ops.js'
+import { createCpu, romBus, step, ops, cbOps } from './ops.js'
 
 let cpu = createCpu(romBus(new Uint8Array()))
 renderCpu(cpu)
-
-fetch('/__write-opcodes', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(listImplementedOpcodes(), null, 2) + '\n',
-}).catch(() => {})
 
 const input = document.querySelector('#rom')
 const bytesInput = document.querySelector('#bytes')

@@ -138,4 +138,4 @@ document
   .querySelector('#cbprefixed')
   .appendChild(renderTable(tables.cbprefixed, done.cbprefixed, true))
 document.querySelector('#status').textContent =
-  `${done.unprefixed.size} / 256 unprefixed · ${done.cbprefixed.size} / 256 CB implemented`
+  `${done.unprefixed.size} / 256 unprefixed · ${done.cbprefixed.size} / 256 CB passing tests`

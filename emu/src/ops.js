@@ -91,6 +91,21 @@ const w8 = [
         c.b = v
     },
     (c, v) => {
+        c.c = v
+    },
+    (c, v) => {
+        c.d = v
+    },
+    (c, v) => {
+        c.e = v
+    },
+    (c, v) => {
+        c.h = v
+    },
+    (c, v) => {
+        c.l = v
+    },
+    (c, v) => {
         c.bus.write8(hl(c), v)
     },
     (c, v) => {
@@ -154,15 +169,19 @@ def(0x04, 'INC B', (cpu) =>
     inc8(
         cpu,
         () => cpu.b,
-        (v) => { cpu.b = v }
-    )
+        (v) => {
+            cpu.b = v
+        },
+    ),
 )
 def(0x05, 'DEC B', (cpu) =>
     dec8(
         cpu,
         () => cpu.b,
-        (v) => { cpu.b = v }
-    )
+        (v) => {
+            cpu.b = v
+        },
+    ),
 )
 def(0x06, 'LD B, n', ldb, 2)
 def(0x18, 'JR e', jr, 2)
