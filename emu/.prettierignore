@@ -1,0 +1,5 @@
+node_modules
+dist
+opcodes.json
+public/opcodes.json
+src/gb-opcodes.json
