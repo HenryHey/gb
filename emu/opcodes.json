@@ -20,9 +20,94 @@
     "length": 2
   },
   {
+    "opcode": "$0C",
+    "name": "INC C",
+    "length": 1
+  },
+  {
+    "opcode": "$0D",
+    "name": "DEC C",
+    "length": 1
+  },
+  {
+    "opcode": "$0E",
+    "name": "LD C, n",
+    "length": 2
+  },
+  {
+    "opcode": "$14",
+    "name": "INC D",
+    "length": 1
+  },
+  {
+    "opcode": "$15",
+    "name": "DEC D",
+    "length": 1
+  },
+  {
+    "opcode": "$16",
+    "name": "LD D, n",
+    "length": 2
+  },
+  {
     "opcode": "$18",
     "name": "JR e",
     "length": 2
+  },
+  {
+    "opcode": "$1C",
+    "name": "INC E",
+    "length": 1
+  },
+  {
+    "opcode": "$1D",
+    "name": "DEC E",
+    "length": 1
+  },
+  {
+    "opcode": "$1E",
+    "name": "LD E, n",
+    "length": 2
+  },
+  {
+    "opcode": "$24",
+    "name": "INC H",
+    "length": 1
+  },
+  {
+    "opcode": "$25",
+    "name": "DEC H",
+    "length": 1
+  },
+  {
+    "opcode": "$26",
+    "name": "LD H, n",
+    "length": 2
+  },
+  {
+    "opcode": "$2C",
+    "name": "INC L",
+    "length": 1
+  },
+  {
+    "opcode": "$2D",
+    "name": "DEC L",
+    "length": 1
+  },
+  {
+    "opcode": "$2E",
+    "name": "LD L, n",
+    "length": 2
+  },
+  {
+    "opcode": "$3C",
+    "name": "INC A",
+    "length": 1
+  },
+  {
+    "opcode": "$3D",
+    "name": "DEC A",
+    "length": 1
   },
   {
     "opcode": "$3E",

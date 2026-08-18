@@ -14,14 +14,14 @@ export function createCpu(bus) {
     ime: false,
     halted: false,
     imeEnableCountdown: 0, // chapter 6
-  }
+  };
 }
 
 // flags
 export const Z = 0x80,
   N = 0x40,
   H = 0x20,
-  C = 0x10
+  C = 0x10;
 
 export function setZNHC(cpu, { z, n, h, c }) {
   cpu.f =
@@ -29,37 +29,37 @@ export function setZNHC(cpu, { z, n, h, c }) {
     (z ? Z : 0) |
     (n ? N : 0) |
     (h ? H : 0) |
-    (c ? C : 0)
-  cpu.f &= 0xf0
+    (c ? C : 0);
+  cpu.f &= 0xf0;
 }
 
 export function step(cpu, ops, cbOps) {
-  const opcode = cpu.bus.read8(cpu.pc)
-  cpu.pc = (cpu.pc + 1) & 0xffff
+  const opcode = cpu.bus.read8(cpu.pc);
+  cpu.pc = (cpu.pc + 1) & 0xffff;
   if (opcode === 0xcb) {
-    const cb = cpu.bus.read8(cpu.pc)
-    cpu.pc = (cpu.pc + 1) & 0xffff
-    return cbOps[cb](cpu) // chapter 4
+    const cb = cpu.bus.read8(cpu.pc);
+    cpu.pc = (cpu.pc + 1) & 0xffff;
+    return cbOps[cb](cpu); // chapter 4
   }
-  const fn = ops[opcode]
-  if (!fn) throw new Error(`unimplemented ${opcode.toString(16)} at ${(cpu.pc - 1).toString(16)}`)
-  return fn(cpu)
+  const fn = ops[opcode];
+  if (!fn) throw new Error(`unimplemented ${opcode.toString(16)} at ${(cpu.pc - 1).toString(16)}`);
+  return fn(cpu);
 }
 
 function readImm8(cpu) {
-  const v = cpu.bus.read8(cpu.pc)
-  cpu.pc = (cpu.pc + 1) & 0xffff
-  return v
+  const v = cpu.bus.read8(cpu.pc);
+  cpu.pc = (cpu.pc + 1) & 0xffff;
+  return v;
 }
 
 function hl(c) {
-  return ((c.h << 8) | c.l) & 0xffff
+  return ((c.h << 8) | c.l) & 0xffff;
 }
 
 function _readImm16(cpu) {
-  const lo = readImm8(cpu)
-  const hi = readImm8(cpu)
-  return lo | (hi << 8)
+  const lo = readImm8(cpu);
+  const hi = readImm8(cpu);
+  return lo | (hi << 8);
 }
 
 /**
@@ -72,8 +72,20 @@ function _readImm16(cpu) {
  *  \>> 24 is an arithmetic right shift, so the sign bit is copied into the vacated bits.
  */
 function toSigned(v) {
-  return (v << 24) >> 24
+  return (v << 24) >> 24;
 }
+
+const r8n = ['B', 'C', 'D', 'E', 'H', 'L', '(HL)', 'A'];
+const r8nMap = {
+  B: 0,
+  C: 1,
+  D: 2,
+  E: 3,
+  H: 4,
+  L: 5,
+  '(HL)': 6,
+  A: 7,
+};
 
 const r8 = [
   (c) => c.b,
@@ -84,7 +96,7 @@ const r8 = [
   (c) => c.l,
   (c) => c.bus.read8(hl(c)),
   (c) => c.a,
-]
+];
 
 const w8 = [
   (c, v) => (c.b = v),
@@ -95,108 +107,111 @@ const w8 = [
   (c, v) => (c.l = v),
   (c, v) => c.bus.write8(hl(c), v),
   (c, v) => (c.a = v),
-]
+];
 
 function nop(_cpu) {
-  return 4
+  return 4;
 }
 
 function halt(cpu) {
-  cpu.halted = true
-  return 4
+  cpu.halted = true;
+  return 4;
 }
 
 function jr(cpu) {
-  const e = toSigned(readImm8(cpu))
-  cpu.pc = (cpu.pc + e) & 0xffff
-  return 12
+  const e = toSigned(readImm8(cpu));
+  cpu.pc = (cpu.pc + e) & 0xffff;
+  return 12;
 }
 
-function lda(cpu) {
-  const e = readImm8(cpu)
-  cpu.a = e
-  return 8
+function ld(cpu, r, v) {
+  if (r === r8nMap['(HL)']) {
+    cpu.bus.write8(hl(cpu), v);
+    return 8;
+  }
+  w8[r](cpu, v);
+  return 8;
 }
 
-function ldb(cpu) {
-  const e = readImm8(cpu)
-  cpu.b = e
-  return 8
+function inc8(cpu, r) {
+  const v = r8[r](cpu);
+  const result = (v + 1) & 0xff;
+  w8[r](cpu, result);
+  cpu.f = (cpu.f & C) | (result === 0 ? Z : 0) | ((v & 0xf) + 1 > 0xf ? H : 0);
+  return r === 6 ? 12 : 4;
 }
 
-function inc8(cpu, getter, setter) {
-  const v = getter()
-  const r = (v + 1) & 0xff
-  setter(r)
-  cpu.f = (cpu.f & C) | (r === 0 ? Z : 0) | ((v & 0xf) + 1 > 0xf ? H : 0)
-  return 4
+function dec8(cpu, r) {
+  const v = r8[r](cpu);
+  const result = (v - 1) & 0xff;
+  w8[r](cpu, result);
+  cpu.f = (cpu.f & C) | N | (result === 0 ? Z : 0) | ((v & 0xf) === 0 ? H : 0);
+  return r === 6 ? 12 : 4;
 }
 
-function dec8(cpu, getter, setter) {
-  const v = getter()
-  const r = (v - 1) & 0xff
-  setter(r)
-  cpu.f = (cpu.f & C) | N | (r === 0 ? Z : 0) | ((v & 0xf) === 0 ? H : 0)
-  return 4
-}
-
-export const ops = []
-export const opNames = []
-export const opLen = []
+export const ops = [];
+export const opNames = [];
+export const opLen = [];
 function def(op, name, fn, len = 1) {
-  ops[op] = fn
-  opNames[op] = name
-  opLen[op] = len
+  ops[op] = fn;
+  opNames[op] = name;
+  opLen[op] = len;
 }
-def(0x00, 'NOP', nop)
-def(0x04, 'INC B', (cpu) =>
-  inc8(
-    cpu,
-    () => cpu.b,
-    (v) => {
-      cpu.b = v
-    },
-  ),
-)
-def(0x05, 'DEC B', (cpu) =>
-  dec8(
-    cpu,
-    () => cpu.b,
-    (v) => {
-      cpu.b = v
-    },
-  ),
-)
-def(0x06, 'LD B, n', ldb, 2)
-def(0x18, 'JR e', jr, 2)
-def(0x3e, 'LD A, n', lda, 2)
-def(0x76, 'HALT', halt)
+def(0x00, 'NOP', nop);
+def(0x18, 'JR e', jr, 2);
+def(0x76, 'HALT', halt);
 
-const r8n = ['B', 'C', 'D', 'E', 'H', 'L', '(HL)', 'A']
+// LD n8 instructions for all registers
+def(0x06, 'LD B, n', (cpu) => ld(cpu, r8nMap.B, readImm8(cpu)), 2);
+def(0x16, 'LD D, n', (cpu) => ld(cpu, r8nMap.D, readImm8(cpu)), 2);
+def(0x26, 'LD H, n', (cpu) => ld(cpu, r8nMap.H, readImm8(cpu)), 2);
+def(0x36, 'LD (HL), n', (cpu) => ld(cpu, r8nMap['(HL)'], readImm8(cpu)), 2);
+def(0x0e, 'LD C, n', (cpu) => ld(cpu, r8nMap.C, readImm8(cpu)), 2);
+def(0x1e, 'LD E, n', (cpu) => ld(cpu, r8nMap.E, readImm8(cpu)), 2);
+def(0x2e, 'LD L, n', (cpu) => ld(cpu, r8nMap.L, readImm8(cpu)), 2);
+def(0x3e, 'LD A, n', (cpu) => ld(cpu, r8nMap.A, readImm8(cpu)), 2);
+
+// INC AND DEC instructions for all registers
+def(0x04, 'INC B', (cpu) => inc8(cpu, r8nMap.B));
+def(0x14, 'INC D', (cpu) => inc8(cpu, r8nMap.D));
+def(0x24, 'INC H', (cpu) => inc8(cpu, r8nMap.H));
+def(0x0c, 'INC C', (cpu) => inc8(cpu, r8nMap.C));
+def(0x1c, 'INC E', (cpu) => inc8(cpu, r8nMap.E));
+def(0x2c, 'INC L', (cpu) => inc8(cpu, r8nMap.L));
+def(0x3c, 'INC A', (cpu) => inc8(cpu, r8nMap.A));
+
+def(0x05, 'DEC B', (cpu) => dec8(cpu, r8nMap.B));
+def(0x15, 'DEC D', (cpu) => dec8(cpu, r8nMap.D));
+def(0x25, 'DEC H', (cpu) => dec8(cpu, r8nMap.H));
+def(0x0d, 'DEC C', (cpu) => dec8(cpu, r8nMap.C));
+def(0x1d, 'DEC E', (cpu) => dec8(cpu, r8nMap.E));
+def(0x2d, 'DEC L', (cpu) => dec8(cpu, r8nMap.L));
+def(0x3d, 'DEC A', (cpu) => dec8(cpu, r8nMap.A));
+
 // Generate LD instructions for all combinations of r8 and w8
 for (let dst = 0; dst < 8; dst++) {
   for (let src = 0; src < 8; src++) {
-    const op = 0x40 | (dst << 3) | src
-    if (op === 0x76) continue // Skip HALT
+    const op = 0x40 | (dst << 3) | src;
+    if (op === 0x76) continue; // Skip HALT
     def(op, `LD ${r8n[dst]}, ${r8n[src]}`, (cpu) => {
-      w8[dst](cpu, r8[src](cpu))
-      return dst === 6 || src === 6 ? 8 : 4
-    })
+      w8[dst](cpu, r8[src](cpu));
+      return dst === 6 || src === 6 ? 8 : 4;
+    });
   }
 }
 
-export const cbOps = []
-export const cbOpNames = []
+export const cbOps = [];
+export const cbOpNames = [];
 
 export function listImplementedOpcodes() {
-  const list = []
+  const list = [];
   for (let op = 0; op < 256; op++) {
     if (ops[op]) {
       list.push({
         opcode: '$' + op.toString(16).padStart(2, '0').toUpperCase(),
         name: opNames[op],
         length: opLen[op] ?? 1,
-      })
+      });
     }
   }
   for (let op = 0; op < 256; op++) {
@@ -205,19 +220,19 @@ export function listImplementedOpcodes() {
         opcode: '$CB $' + op.toString(16).padStart(2, '0').toUpperCase(),
         name: cbOpNames[op],
         length: 2,
-      })
+      });
     }
   }
-  return list
+  return list;
 }
 
 export function romBus(bytes) {
-  const mem = new Uint8Array(0x10000)
-  mem.set(bytes, 0)
+  const mem = new Uint8Array(0x10000);
+  mem.set(bytes, 0);
   return {
     read8: (a) => mem[a & 0xffff],
     write8: (a, v) => {
-      mem[a & 0xffff] = v
+      mem[a & 0xffff] = v;
     },
-  }
+  };
 }
