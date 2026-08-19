@@ -75,23 +75,35 @@ That pattern is the difference between a weekend and a month.
 
 ## Families to implement
 
+Each family is one loop over operand indices. Below: what the command does, which encodings belong together, and the quirks that bite emulators.
 
+### LD — copy source → destination
 
-### 8-bit loads
+**No flags.** `(HL)` is register index 6 — a memory operand costs extra T-cycles.
 
-- `LD r, r'` / `LD r, n` / `LD (HL), n`
-- `LD A, (BC|DE|HL+|HL-|nn)` and the stores the other way
-- `LDH (n), A` / `LDH A, (n)` / `LD (C), A` / `LD A, (C)` — **I/O page** `$FF00+n`. Even with a fake bus, implement the addressing now.
+| Variant | What it does | Quirks |
+| --- | --- | --- |
+| `LD r, r'` | `$40–$7F`: copy between 8-bit registers or `(HL)` | `$76` is `HALT`, not `LD (HL),(HL)`. 4 T (8 if either side is `(HL)`). |
+| `LD r, n` / `LD (HL), n` | Immediate byte into register or `(HL)` | 8 T; 12 if destination is `(HL)`. |
+| `LD A, (BC\|DE)` / `LD (BC\|DE), A` | Byte at address in pair ↔ `A` | 8 T. |
+| `LD A, (HL+)` / `LD (HL+), A` | Transfer, then `HL++` | 8 T. Read/store happens **before** the bump. |
+| `LD A, (HL-)` / `LD (HL-), A` | Transfer, then `HL--` | Same as above. Tile copies love these. |
+| `LD A, (nn)` / `LD (nn), A` | Absolute 16-bit address ↔ `A` | 16 T, 3-byte instruction. |
+| `LDH (n), A` / `LDH A, (n)` | `A` ↔ `$FF00 + n` | **Not** absolute `n` — always the I/O page. 12 T. |
+| `LD (C), A` / `LD A, (C)` | `A` ↔ `$FF00 + C` | Same I/O page, offset from `C`. 8 T. |
+| `LD rr, nn` | 16-bit immediate into `BC`, `DE`, `HL`, or `SP` | 12 T. |
+| `LD SP, HL` | `SP ← HL` | 8 T. |
+| `LD (nn), SP` | Store `SP` little-endian at absolute address | 20 T. |
+| `LD HL, SP+e` | `HL ← SP + signed e` | Sets H/C from the **low-byte** add (bit 3 / bit 7). Z=0, N=0. 12 T. |
 
-`HL+` / `HL-` (`LDI` / `LDD`): transfer then increment or decrement HL.
+### PUSH / POP — 16-bit stack transfer
 
-### 16-bit loads
+Stack grows **down**. High byte lands at the higher address.
 
-- `LD rr, nn`
-- `LD SP, HL`
-- `LD (nn), SP` — write SP little-endian to absolute address
-- `LD HL, SP+e` — signed `e`; flags from the **low byte** add (H from bit 3, C from bit 7); Z=0, N=0
-- `PUSH rr` / `POP rr` — `POP AF` masks F
+| Variant | What it does | Quirks |
+| --- | --- | --- |
+| `PUSH rr` | Decrement `SP` twice, write pair | `rr` is `BC`, `DE`, `HL`, or `AF`. 16 T. |
+| `POP rr` | Read pair, increment `SP` twice | **`POP AF` must mask `F &= 0xF0`** — low nibble of `F` is always 0. 12 T. |
 
 ```js
 function push16(cpu, v) {
@@ -107,20 +119,15 @@ function pop16(cpu) {
 }
 ```
 
-PUSH AF: 16 T-cycles. POP AF: 12.
+### ADD — add into A or a 16-bit pair
 
-### ALU (A ← A ⊙ src)
+8-bit: `A ← A + src`. 16-bit: `HL ← HL + rr` or `SP ← SP + e`.
 
-
-| Op         | Z         | N   | H             | C           |
-| ---------- | --------- | --- | ------------- | ----------- |
-| ADD/ADC    | result==0 | 0   | nibble carry  | byte carry  |
-| SUB/SBC/CP | result==0 | 1   | nibble borrow | byte borrow |
-| AND        | result==0 | 0   | **1**         | 0           |
-| XOR/OR     | result==0 | 0   | 0             | 0           |
-
-
-`CP` is `SUB` without storing. `ADC`/`SBC` include the old C as cin/bin.
+| Variant | Flags | Quirks |
+| --- | --- | --- |
+| `ADD A, r` / `ADD A, n` | Z, N=0, H (nibble), C (byte) | Block `$80–$87` + `$C6`. `(HL)` source: 8 T, else 4 / 8 for immediate. |
+| `ADD HL, rr` | **Z unchanged**, N=0, H (bit 11), C (bit 15) | 8 T. Games and tests care about Z being left alone. |
+| `ADD SP, e` | Z=0, N=0, H/C from **low-byte** add | 16 T. Same H/C math as `LD HL, SP+e`. |
 
 ```js
 function add8(a, b, cin) {
@@ -135,44 +142,80 @@ function add8(a, b, cin) {
 }
 ```
 
-`INC r` / `DEC r`: C unchanged. `INC rr` / `DEC rr`: **no flags**, 8 T-cycles.
+### ADC — add with carry
 
-`ADD HL, rr`: 8 T-cycles; Z unchanged; N=0; H from bit 11; C from bit 15.
+Same as `ADD`, but includes old **C** as carry-in. Block `$88–$8F` + `$CE`.
 
-`ADD SP, e`: 16 T-cycles; Z=0, N=0; H/C from the low-byte add like `LD HL, SP+e`.
+### SUB — subtract from A
 
-### Rotates on A (unprefixed)
+`A ← A − src`. Sets Z, N=1, H (nibble borrow), C (byte borrow). Block `$90–$97` + `$D6`.
 
-`RLCA RLA RRCA RRA`: 4 T-cycles. Z=0, N=0, H=0, C=old bit out. `RLCA` wraps bit 7 into bit 0 **and** into C. `RLA` injects old C into bit 0.
+### SBC — subtract with borrow
 
-### Misc
+Same as `SUB`, but includes old **C** as borrow-in. Block `$98–$9F` + `$DE`.
 
-- `CPL`: `A ^= 0xff`; N=1, H=1
-- `SCF`: C=1, N=0, H=0
-- `CCF`: C=!C, N=0, H=0 (Z unchanged)
-- `DAA`: see [cpu-quirks.md](../docs/reference/cpu-quirks.md). Implement it now; test it. Tetris scores depend on it.
-- `NOP`, already done
+### AND / XOR / OR — bitwise on A
 
+`A ← A ⊙ src`. All set Z from the result, N=0.
 
+| Op | H | C |
+| --- | --- | --- |
+| `AND` | **forced 1** | 0 |
+| `XOR` / `OR` | 0 | 0 |
 
-### Jumps and calls
+Blocks `$A0–$A7`, `$A8–$AF`, `$B0–$B7` + `$E6` / `$EE` / `$F6`.
 
+### CP — compare (subtract without store)
 
-| Op            | Notes                              |
-| ------------- | ---------------------------------- |
-| `JP nn`       | 16 T                               |
-| `JP HL`       | 4 T, `PC = HL` (not a memory read) |
-| `JP cc, nn`   | 16 taken / 12 not                  |
-| `JR e`        | 12                                 |
-| `JR cc, e`    | 12 taken / 8 not                   |
-| `CALL nn`     | push PC, then JP; 24 T             |
-| `CALL cc, nn` | 24 / 12                            |
-| `RET`         | pop PC; 16 T                       |
-| `RET cc`      | 20 taken / 8 not                   |
-| `RST n`       | `CALL` to `$00/$08/…/$38`; 16 T    |
+Identical flag math to `SUB`, but **`A` is not written**. Block `$B8–$BF` + `$FE`. Useful for `A == value` tests.
 
+### INC / DEC — increment or decrement
 
-Conditions: `NZ Z NC C` encoded as bits. `cc` is `(opcode >> 3) & 3` in the usual slots.
+| Variant | What it does | Quirks |
+| --- | --- | --- |
+| `INC r` / `DEC r` | ±1 on 8-bit register or `(HL)` | Updates Z, N, H. **C is unchanged.** `(HL)`: 12 T, else 4. |
+| `INC rr` / `DEC rr` | ±1 on 16-bit pair | **No flags.** 8 T. |
+
+### RLCA / RLA / RRCA / RRA — rotate A through C
+
+All 4 T. Z=0, N=0, H=0. **C = bit shifted out.**
+
+| Op | What it does |
+| --- | --- |
+| `RLCA` | Bit 7 → bit 0 **and** into C (wrap, no old C) |
+| `RLA` | Bit 7 → C; old C → bit 0 |
+| `RRCA` | Bit 0 → bit 7 **and** into C |
+| `RRA` | Bit 0 → C; old C → bit 7 |
+
+Prefixed `$CB` rotates (chapter 4) are a separate family — different encodings, extra cycles for `(HL)`.
+
+### CPL / SCF / CCF / DAA — flag and BCD helpers
+
+| Op | Effect |
+| --- | --- |
+| `CPL` | `A ^= 0xFF`; N=1, H=1; Z and C unchanged |
+| `SCF` | C=1; N=0, H=0; Z unchanged |
+| `CCF` | C = !C; N=0, H=0; **Z unchanged** |
+| `DAA` | Adjust `A` for BCD using N, H, C | See [cpu-quirks.md](../docs/reference/cpu-quirks.md). Tetris scores depend on it. |
+
+### NOP / HALT
+
+| Op | Quirk |
+| --- | --- |
+| `NOP` (`$00`) | Already done. 4 T. |
+| `HALT` (`$76`) | Stops fetching until an interrupt. Tick PPU/timer while halted or you never wake up. |
+
+### JP / JR — jump
+
+| Variant | What it does | Quirks |
+| --- | --- | --- |
+| `JP nn` | `PC ← nn` | 16 T. |
+| `JP HL` | `PC ← HL` | 4 T. **Register copy**, not a memory read at `HL`. |
+| `JP cc, nn` | Jump if condition | 16 T taken / 12 not. **Always consume** the 2 immediate bytes even when not taken. |
+| `JR e` | `PC ← PC + signed e` | 12 T. |
+| `JR cc, e` | Relative jump if condition | 12 T taken / 8 not. |
+
+Conditions: `NZ`, `Z`, `NC`, `C` — encoded as `(opcode >> 3) & 3` in the conditional slots.
 
 ```js
 function cond(cpu, cc) {
@@ -185,7 +228,15 @@ function cond(cpu, cc) {
 }
 ```
 
-Not-taken `JP cc, nn` must still **consume** the two immediate bytes.
+### CALL / RET / RST — subroutine calls
+
+| Variant | What it does | Quirks |
+| --- | --- | --- |
+| `CALL nn` | Push PC, then jump | Push the **already incremented** PC (address of next instruction). 24 T. |
+| `CALL cc, nn` | Conditional call | 24 T taken / 12 not. Consume immediates when not taken. |
+| `RET` | Pop into PC | 16 T. |
+| `RET cc` | Conditional return | 20 T taken / 8 not. |
+| `RST n` | Push PC, jump to `$00`, `$08`, … `$38` | Compact `CALL`. 16 T. |
 
 ## Pitfalls
 
