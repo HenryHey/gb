@@ -260,7 +260,7 @@ C6 01     ADD A, $01     ; A=$10, Z=0, N=0, H=1, C=0
 76        HALT
 ```
 
-Expect `A === 0x10`, `F === 0x20`.
+Bytes: `3e 0f c6 01 76` with `PC` starting at 0. Expect `A === 0x10`, `F === 0x20`.
 
 **Test 2 — CALL/RET**
 
@@ -283,7 +283,7 @@ C6 27     ADD A, $27     ; binary $3C, BCD should become $42 after DAA
 76        HALT
 ```
 
-Expect `A === 0x42`.
+Bytes: `3e 15 c6 27 27 76` with `PC` starting at 0. Expect `A === 0x42`.
 
 If these three pass, move on. Do not implement every opcode before the tests — implement the families the tests need, then fill the rest of the families.
 
