@@ -1,5 +1,6 @@
 import { registerLdOps } from './ld.js';
-import { dec8, inc8, r8nMap, readImm8, toSigned } from './helpers.js';
+import { registerAluOps } from './alu.js';
+import { readImm8, toSigned } from './helpers.js';
 
 export { Z, N, H, C, setZNHC } from './helpers.js';
 
@@ -63,25 +64,7 @@ def(0x18, 'JR e', jr, 2);
 def(0x76, 'HALT', halt);
 
 registerLdOps(def);
-
-// INC AND DEC instructions
-def(0x04, 'INC B', (cpu) => inc8(cpu, r8nMap.B));
-def(0x14, 'INC D', (cpu) => inc8(cpu, r8nMap.D));
-def(0x24, 'INC H', (cpu) => inc8(cpu, r8nMap.H));
-def(0x34, 'INC (HL)', (cpu) => inc8(cpu, r8nMap['(HL)']));
-def(0x0c, 'INC C', (cpu) => inc8(cpu, r8nMap.C));
-def(0x1c, 'INC E', (cpu) => inc8(cpu, r8nMap.E));
-def(0x2c, 'INC L', (cpu) => inc8(cpu, r8nMap.L));
-def(0x3c, 'INC A', (cpu) => inc8(cpu, r8nMap.A));
-
-def(0x05, 'DEC B', (cpu) => dec8(cpu, r8nMap.B));
-def(0x15, 'DEC D', (cpu) => dec8(cpu, r8nMap.D));
-def(0x25, 'DEC H', (cpu) => dec8(cpu, r8nMap.H));
-def(0x35, 'DEC (HL)', (cpu) => dec8(cpu, r8nMap['(HL)']));
-def(0x0d, 'DEC C', (cpu) => dec8(cpu, r8nMap.C));
-def(0x1d, 'DEC E', (cpu) => dec8(cpu, r8nMap.E));
-def(0x2d, 'DEC L', (cpu) => dec8(cpu, r8nMap.L));
-def(0x3d, 'DEC A', (cpu) => dec8(cpu, r8nMap.A));
+registerAluOps(def);
 
 export const cbOps = [];
 export const cbOpNames = [];
