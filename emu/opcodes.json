@@ -185,6 +185,11 @@
     "length": 2
   },
   {
+    "opcode": "$27",
+    "name": "DAA",
+    "length": 1
+  },
+  {
     "opcode": "$29",
     "name": "ADD HL, HL",
     "length": 1
@@ -213,6 +218,11 @@
     "opcode": "$2E",
     "name": "LD L, n8",
     "length": 2
+  },
+  {
+    "opcode": "$2F",
+    "name": "CPL",
+    "length": 1
   },
   {
     "opcode": "$31",
@@ -245,6 +255,11 @@
     "length": 2
   },
   {
+    "opcode": "$37",
+    "name": "SCF",
+    "length": 1
+  },
+  {
     "opcode": "$39",
     "name": "ADD HL, SP",
     "length": 1
@@ -273,6 +288,11 @@
     "opcode": "$3E",
     "name": "LD A, n8",
     "length": 2
+  },
+  {
+    "opcode": "$3F",
+    "name": "CCF",
+    "length": 1
   },
   {
     "opcode": "$40",

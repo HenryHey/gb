@@ -13,6 +13,8 @@ import {
   w16,
   Z,
   C,
+  N,
+  H,
 } from './helpers.js';
 
 export function registerAluOps(def) {
@@ -246,7 +248,6 @@ export function registerAluOps(def) {
 
   def(0x17, 'RLA', (cpu) => rla(cpu));
 
-
   // RRCA instruction
   function rrca(cpu) {
     setZNHC(cpu, { z: 0, n: 0, h: 0, c: cpu.a & 0b00000001 ? 1 : 0 });
@@ -255,7 +256,7 @@ export function registerAluOps(def) {
   }
 
   def(0x0f, 'RRCA', (cpu) => rrca(cpu));
-  
+
   // RRA instruction
   function rra(cpu) {
     const c = cpu.f & C ? 1 : 0;
@@ -265,4 +266,65 @@ export function registerAluOps(def) {
   }
 
   def(0x1f, 'RRA', (cpu) => rra(cpu));
+
+  // CPL instruction
+  function cpl(cpu) {
+    setZNHC(cpu, { z: cpu.f & Z ? 1 : 0, n: 1, h: 1, c: cpu.f & C ? 1 : 0 });
+    cpu.a = ~cpu.a & 0xff;
+    return 4;
+  }
+
+  def(0x2f, 'CPL', (cpu) => cpl(cpu));
+
+  // SCF instruction
+  function scf(cpu) {
+    setZNHC(cpu, { z: cpu.f & Z ? 1 : 0, n: 0, h: 0, c: 1 });
+    return 4;
+  }
+
+  def(0x37, 'SCF', (cpu) => scf(cpu));
+
+  // CCF instruction
+  function ccf(cpu) {
+    setZNHC(cpu, { z: cpu.f & Z ? 1 : 0, n: 0, h: 0, c: cpu.f & C ? 0 : 1 });
+    return 4;
+  }
+
+  def(0x3f, 'CCF', (cpu) => ccf(cpu));
+
+  // DAA instruction
+  function daa(cpu) {
+    let adjustment = 0;
+    let _c = cpu.f & C ? 1 : 0;
+    if (cpu.f & N) {
+      if (cpu.f & H) {
+        adjustment += 0x06;
+      }
+
+      if (cpu.f & C) {
+        adjustment += 0x60;
+      }
+
+      cpu.a = (cpu.a - adjustment) & 0xff;
+    } else {
+      if (cpu.f & H || (cpu.a & 0x0f) > 9) {
+        adjustment += 0x06;
+      }
+
+      if (cpu.f & C || cpu.a > 0x99) {
+        adjustment += 0x60;
+        _c = 1;
+      }
+      cpu.a = (cpu.a + adjustment) & 0xff;
+    }
+    setZNHC(cpu, {
+      z: cpu.a === 0 ? 1 : 0,
+      n: cpu.f & N ? 1 : 0,
+      h: 0,
+      c: _c,
+    });
+    return 4;
+  }
+
+  def(0x27, 'DAA', (cpu) => daa(cpu));
 }
