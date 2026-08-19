@@ -217,10 +217,27 @@ Prefixed `$CB` rotates (chapter 4) are a separate family — different encodings
 | `CPL` | `A ^= 0xFF`; N=1, H=1; Z and C unchanged |
 | `SCF` | C=1; N=0, H=0; Z unchanged               |
 | `CCF` | C = !C; N=0, H=0; **Z unchanged**        |
-| `DAA` | Adjust `A` for BCD using N, H, C         |
+| `DAA` | Decimal adjust `A` after BCD add/sub — see below |
 
+**DAA** (Decimal Adjust Accumulator). Use after an 8-bit `ADD`, `ADC`, `SUB`, or `SBC` whose operands were Binary-Coded Decimal (BCD): two decimal digits packed in one byte (high nibble = tens, low nibble = ones). `DAA` fixes `A` so the result is valid BCD again. 4 T. ([gbz80(7) — DAA](https://rgbds.gbdev.io/docs/v1.0.3/gbz80.7#DAA))
 
+Behavior depends on **N** (set by the preceding arithmetic op):
 
+If **N** is set (subtraction):
+
+1. Initialize the adjustment to 0.
+2. If **H** is set, add `$06` to the adjustment.
+3. If **C** is set, add `$60` to the adjustment.
+4. Subtract the adjustment from `A`.
+
+If **N** is not set (addition):
+
+1. Initialize the adjustment to 0.
+2. If **H** is set or `(A & $0F) > $9`, add `$06` to the adjustment.
+3. If **C** is set or `A > $99`, add `$60` to the adjustment and set **C**.
+4. Add the adjustment to `A`.
+
+Flags after: **Z** set if result is 0; **H** = 0; **N** unchanged; **C** set or unaffected depending on the operation. See [cpu-quirks](../docs/reference/cpu-quirks.md) for the subtract-path carry rule and a reference implementation.
 
 ### NOP / HALT
 

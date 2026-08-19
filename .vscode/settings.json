@@ -6,9 +6,13 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "eslint.workingDirectories": ["emu"],
+  "eslint.workingDirectories": [
+    "emu"
+  ],
   "eslint.format.enable": true,
-  "eslint.validate": ["javascript"],
+  "eslint.validate": [
+    "javascript"
+  ],
   "prettier.requireConfig": true,
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
