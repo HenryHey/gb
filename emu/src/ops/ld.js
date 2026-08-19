@@ -14,6 +14,10 @@ import {
   w8,
   w16,
   wMem8,
+  Z,
+  N,
+  H,
+  C,
 } from './helpers.js';
 
 export function registerLdOps(def) {
@@ -170,4 +174,38 @@ export function registerLdOps(def) {
     return 16;
   }
   def(0xfa, 'LD A, (nn)', ld16Mem, 3);
+
+  // PUSH nn instruction
+  function push16(cpu, v) {
+    cpu.sp = (cpu.sp - 1) & 0xffff;
+    cpu.bus.write8(cpu.sp, v >> 8);
+    cpu.sp = (cpu.sp - 1) & 0xffff;
+    cpu.bus.write8(cpu.sp, v & 0xff);
+    return 16;
+  }
+  def(0xc5, 'PUSH BC', (cpu) => push16(cpu, r16[r16Map.BC](cpu)));
+  def(0xd5, 'PUSH DE', (cpu) => push16(cpu, r16[r16Map.DE](cpu)));
+  def(0xe5, 'PUSH HL', (cpu) => push16(cpu, r16[r16Map.HL](cpu)));
+  def(0xf5, 'PUSH AF', (cpu) => push16(cpu, r16[r16Map.AF](cpu)));
+
+  function pop16(cpu, r) {
+    const lo = cpu.bus.read8(cpu.sp);
+    cpu.sp = (cpu.sp + 1) & 0xffff;
+    const hi = cpu.bus.read8(cpu.sp);
+    cpu.sp = (cpu.sp + 1) & 0xffff;
+    w16[r](cpu, (hi << 8) | lo);
+    if (r === r16Map.AF) {
+      setZNHC(cpu, {
+        z: cpu.f & Z ? 1 : 0,
+        n: cpu.f & N ? 1 : 0,
+        h: cpu.f & H ? 1 : 0,
+        c: cpu.f & C ? 1 : 0,
+      });
+    }
+    return 12;
+  }
+  def(0xc1, 'POP BC', (cpu) => pop16(cpu, r16Map.BC));
+  def(0xd1, 'POP DE', (cpu) => pop16(cpu, r16Map.DE));
+  def(0xe1, 'POP HL', (cpu) => pop16(cpu, r16Map.HL));
+  def(0xf1, 'POP AF', (cpu) => pop16(cpu, r16Map.AF));
 }

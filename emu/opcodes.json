@@ -515,14 +515,44 @@
     "length": 1
   },
   {
+    "opcode": "$C1",
+    "name": "POP BC",
+    "length": 1
+  },
+  {
+    "opcode": "$C5",
+    "name": "PUSH BC",
+    "length": 1
+  },
+  {
+    "opcode": "$D1",
+    "name": "POP DE",
+    "length": 1
+  },
+  {
+    "opcode": "$D5",
+    "name": "PUSH DE",
+    "length": 1
+  },
+  {
     "opcode": "$E0",
     "name": "LDH (n), A",
     "length": 2
   },
   {
+    "opcode": "$E1",
+    "name": "POP HL",
+    "length": 1
+  },
+  {
     "opcode": "$E2",
     "name": "LDH (C), A",
     "length": 2
+  },
+  {
+    "opcode": "$E5",
+    "name": "PUSH HL",
+    "length": 1
   },
   {
     "opcode": "$EA",
@@ -535,9 +565,19 @@
     "length": 2
   },
   {
+    "opcode": "$F1",
+    "name": "POP AF",
+    "length": 1
+  },
+  {
     "opcode": "$F2",
     "name": "LD A, [C]",
     "length": 2
+  },
+  {
+    "opcode": "$F5",
+    "name": "PUSH AF",
+    "length": 1
   },
   {
     "opcode": "$F8",

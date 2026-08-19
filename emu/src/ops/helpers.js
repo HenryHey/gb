@@ -20,6 +20,10 @@ export function readImm8(cpu) {
   return v;
 }
 
+export function af(c) {
+  return ((c.a << 8) | c.f) & 0xffff;
+}
+
 export function hl(c) {
   return ((c.h << 8) | c.l) & 0xffff;
 }
@@ -90,6 +94,7 @@ export const r16Map = {
   DE: 1,
   HL: 2,
   SP: 3,
+  AF: 4,
 };
 
 export const w16 = [
@@ -97,9 +102,16 @@ export const w16 = [
   (cpu, v) => ((cpu.e = v & 0xff), (cpu.d = (v >> 8) & 0xff)),
   (cpu, v) => ((cpu.l = v & 0xff), (cpu.h = (v >> 8) & 0xff)),
   (cpu, v) => (cpu.sp = v),
+  (cpu, v) => ((cpu.f = v & 0xff), (cpu.a = (v >> 8) & 0xff)),
 ];
 
-export const r16 = [(cpu) => bc(cpu), (cpu) => de(cpu), (cpu) => hl(cpu), (cpu) => cpu.sp];
+export const r16 = [
+  (cpu) => bc(cpu),
+  (cpu) => de(cpu),
+  (cpu) => hl(cpu),
+  (cpu) => cpu.sp,
+  (cpu) => af(cpu),
+];
 
 export const wMem8 = [
   (cpu, v) => cpu.bus.write8(bc(cpu), v),
