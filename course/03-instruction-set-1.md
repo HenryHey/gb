@@ -81,29 +81,35 @@ Each family is one loop over operand indices. Below: what the command does, whic
 
 **No flags.** `(HL)` is register index 6 — a memory operand costs extra T-cycles.
 
-| Variant | What it does | Quirks |
-| --- | --- | --- |
-| `LD r, r'` | `$40–$7F`: copy between 8-bit registers or `(HL)` | `$76` is `HALT`, not `LD (HL),(HL)`. 4 T (8 if either side is `(HL)`). |
-| `LD r, n` / `LD (HL), n` | Immediate byte into register or `(HL)` | 8 T; 12 if destination is `(HL)`. |
-| `LD A, (BC\|DE)` / `LD (BC\|DE), A` | Byte at address in pair ↔ `A` | 8 T. |
-| `LD A, (HL+)` / `LD (HL+), A` | Transfer, then `HL++` | 8 T. Read/store happens **before** the bump. |
-| `LD A, (HL-)` / `LD (HL-), A` | Transfer, then `HL--` | Same as above. Tile copies love these. |
-| `LD A, (nn)` / `LD (nn), A` | Absolute 16-bit address ↔ `A` | 16 T, 3-byte instruction. |
-| `LDH (n), A` / `LDH A, (n)` | `A` ↔ `$FF00 + n` | **Not** absolute `n` — always the I/O page. 12 T. |
-| `LD (C), A` / `LD A, (C)` | `A` ↔ `$FF00 + C` | Same I/O page, offset from `C`. 8 T. |
-| `LD rr, nn` | 16-bit immediate into `BC`, `DE`, `HL`, or `SP` | 12 T. |
-| `LD SP, HL` | `SP ← HL` | 8 T. |
-| `LD (nn), SP` | Store `SP` little-endian at absolute address | 20 T. |
-| `LD HL, SP+e` | `HL ← SP + signed e` | Sets H/C from the **low-byte** add (bit 3 / bit 7). Z=0, N=0. 12 T. |
+
+| Variant                       | What it does                                      | Quirks                                                                 |
+| ----------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------- |
+| `LD r, r'`                    | `$40–$7F`: copy between 8-bit registers or `(HL)` | `$76` is `HALT`, not `LD (HL),(HL)`. 4 T (8 if either side is `(HL)`). |
+| `LD r, n` / `LD (HL), n`      | Immediate byte into register or `(HL)`            | 8 T; 12 if destination is `(HL)`.                                      |
+| `LD A, (BC                    | DE)`/`LD (BC                                      | DE), A`                                                                |
+| `LD A, (HL+)` / `LD (HL+), A` | Transfer, then `HL++`                             | 8 T. Read/store happens **before** the bump.                           |
+| `LD A, (HL-)` / `LD (HL-), A` | Transfer, then `HL--`                             | Same as above. Tile copies love these.                                 |
+| `LD A, (nn)` / `LD (nn), A`   | Absolute 16-bit address ↔ `A`                     | 16 T, 3-byte instruction.                                              |
+| `LDH (n), A` / `LDH A, (n)`   | `A` ↔ `$FF00 + n`                                 | **Not** absolute `n` — always the I/O page. 12 T.                      |
+| `LD (C), A` / `LD A, (C)`     | `A` ↔ `$FF00 + C`                                 | Same I/O page, offset from `C`. 8 T.                                   |
+| `LD rr, nn`                   | 16-bit immediate into `BC`, `DE`, `HL`, or `SP`   | 12 T.                                                                  |
+| `LD SP, HL`                   | `SP ← HL`                                         | 8 T.                                                                   |
+| `LD (nn), SP`                 | Store `SP` little-endian at absolute address      | 20 T.                                                                  |
+| `LD HL, SP+e`                 | `HL ← SP + signed e`                              | Sets H/C from the **low-byte** add (bit 3 / bit 7). Z=0, N=0. 12 T.    |
+
+
+
 
 ### PUSH / POP — 16-bit stack transfer
 
 Stack grows **down**. High byte lands at the higher address.
 
-| Variant | What it does | Quirks |
-| --- | --- | --- |
-| `PUSH rr` | Decrement `SP` twice, write pair | `rr` is `BC`, `DE`, `HL`, or `AF`. 16 T. |
-| `POP rr` | Read pair, increment `SP` twice | **`POP AF` must mask `F &= 0xF0`** — low nibble of `F` is always 0. 12 T. |
+
+| Variant   | What it does                     | Quirks                                                                    |
+| --------- | -------------------------------- | ------------------------------------------------------------------------- |
+| `PUSH rr` | Decrement `SP` twice, write pair | `rr` is `BC`, `DE`, `HL`, or `AF`. 16 T.                                  |
+| `POP rr`  | Read pair, increment `SP` twice  | `POP AF` **must mask** `F &= 0xF0` — low nibble of `F` is always 0. 12 T. |
+
 
 ```js
 function push16(cpu, v) {
@@ -119,15 +125,19 @@ function pop16(cpu) {
 }
 ```
 
+
+
 ### ADD — add into A or a 16-bit pair
 
 8-bit: `A ← A + src`. 16-bit: `HL ← HL + rr` or `SP ← SP + e`.
 
-| Variant | Flags | Quirks |
-| --- | --- | --- |
-| `ADD A, r` / `ADD A, n` | Z, N=0, H (nibble), C (byte) | Block `$80–$87` + `$C6`. `(HL)` source: 8 T, else 4 / 8 for immediate. |
-| `ADD HL, rr` | **Z unchanged**, N=0, H (bit 11), C (bit 15) | 8 T. Games and tests care about Z being left alone. |
-| `ADD SP, e` | Z=0, N=0, H/C from **low-byte** add | 16 T. Same H/C math as `LD HL, SP+e`. |
+
+| Variant                 | Flags                                        | Quirks                                                                 |
+| ----------------------- | -------------------------------------------- | ---------------------------------------------------------------------- |
+| `ADD A, r` / `ADD A, n` | Z, N=0, H (nibble), C (byte)                 | Block `$80–$87` + `$C6`. `(HL)` source: 8 T, else 4 / 8 for immediate. |
+| `ADD HL, rr`            | **Z unchanged**, N=0, H (bit 11), C (bit 15) | 8 T. Games and tests care about Z being left alone.                    |
+| `ADD SP, e`             | Z=0, N=0, H/C from **low-byte** add          | 16 T. Same H/C math as `LD HL, SP+e`.                                  |
+
 
 ```js
 function add8(a, b, cin) {
@@ -141,6 +151,8 @@ function add8(a, b, cin) {
   };
 }
 ```
+
+
 
 ### ADC — add with carry
 
@@ -158,62 +170,80 @@ Same as `SUB`, but includes old **C** as borrow-in. Block `$98–$9F` + `$DE`.
 
 `A ← A ⊙ src`. All set Z from the result, N=0.
 
-| Op | H | C |
-| --- | --- | --- |
-| `AND` | **forced 1** | 0 |
-| `XOR` / `OR` | 0 | 0 |
+
+| Op           | H            | C   |
+| ------------ | ------------ | --- |
+| `AND`        | **forced 1** | 0   |
+| `XOR` / `OR` | 0            | 0   |
+
 
 Blocks `$A0–$A7`, `$A8–$AF`, `$B0–$B7` + `$E6` / `$EE` / `$F6`.
 
 ### CP — compare (subtract without store)
 
-Identical flag math to `SUB`, but **`A` is not written**. Block `$B8–$BF` + `$FE`. Useful for `A == value` tests.
+Identical flag math to `SUB`, but `A` **is not written**. Block `$B8–$BF` + `$FE`. Useful for `A == value` tests.
 
 ### INC / DEC — increment or decrement
 
-| Variant | What it does | Quirks |
-| --- | --- | --- |
-| `INC r` / `DEC r` | ±1 on 8-bit register or `(HL)` | Updates Z, N, H. **C is unchanged.** `(HL)`: 12 T, else 4. |
-| `INC rr` / `DEC rr` | ±1 on 16-bit pair | **No flags.** 8 T. |
+
+| Variant             | What it does                   | Quirks                                                     |
+| ------------------- | ------------------------------ | ---------------------------------------------------------- |
+| `INC r` / `DEC r`   | ±1 on 8-bit register or `(HL)` | Updates Z, N, H. **C is unchanged.** `(HL)`: 12 T, else 4. |
+| `INC rr` / `DEC rr` | ±1 on 16-bit pair              | **No flags.** 8 T.                                         |
+
+
+
 
 ### RLCA / RLA / RRCA / RRA — rotate A through C
 
 All 4 T. Z=0, N=0, H=0. **C = bit shifted out.**
 
-| Op | What it does |
-| --- | --- |
+
+| Op     | What it does                                  |
+| ------ | --------------------------------------------- |
 | `RLCA` | Bit 7 → bit 0 **and** into C (wrap, no old C) |
-| `RLA` | Bit 7 → C; old C → bit 0 |
-| `RRCA` | Bit 0 → bit 7 **and** into C |
-| `RRA` | Bit 0 → C; old C → bit 7 |
+| `RLA`  | Bit 7 → C; old C → bit 0                      |
+| `RRCA` | Bit 0 → bit 7 **and** into C                  |
+| `RRA`  | Bit 0 → C; old C → bit 7                      |
+
 
 Prefixed `$CB` rotates (chapter 4) are a separate family — different encodings, extra cycles for `(HL)`.
 
 ### CPL / SCF / CCF / DAA — flag and BCD helpers
 
-| Op | Effect |
-| --- | --- |
+
+| Op    | Effect                                   |
+| ----- | ---------------------------------------- |
 | `CPL` | `A ^= 0xFF`; N=1, H=1; Z and C unchanged |
-| `SCF` | C=1; N=0, H=0; Z unchanged |
-| `CCF` | C = !C; N=0, H=0; **Z unchanged** |
-| `DAA` | Adjust `A` for BCD using N, H, C | See [cpu-quirks.md](../docs/reference/cpu-quirks.md). Tetris scores depend on it. |
+| `SCF` | C=1; N=0, H=0; Z unchanged               |
+| `CCF` | C = !C; N=0, H=0; **Z unchanged**        |
+| `DAA` | Adjust `A` for BCD using N, H, C         |
+
+
+
 
 ### NOP / HALT
 
-| Op | Quirk |
-| --- | --- |
-| `NOP` (`$00`) | Already done. 4 T. |
+
+| Op             | Quirk                                                                                |
+| -------------- | ------------------------------------------------------------------------------------ |
+| `NOP` (`$00`)  | Already done. 4 T.                                                                   |
 | `HALT` (`$76`) | Stops fetching until an interrupt. Tick PPU/timer while halted or you never wake up. |
+
+
+
 
 ### JP / JR — jump
 
-| Variant | What it does | Quirks |
-| --- | --- | --- |
-| `JP nn` | `PC ← nn` | 16 T. |
-| `JP HL` | `PC ← HL` | 4 T. **Register copy**, not a memory read at `HL`. |
-| `JP cc, nn` | Jump if condition | 16 T taken / 12 not. **Always consume** the 2 immediate bytes even when not taken. |
-| `JR e` | `PC ← PC + signed e` | 12 T. |
-| `JR cc, e` | Relative jump if condition | 12 T taken / 8 not. |
+
+| Variant     | What it does               | Quirks                                                                             |
+| ----------- | -------------------------- | ---------------------------------------------------------------------------------- |
+| `JP nn`     | `PC ← nn`                  | 16 T.                                                                              |
+| `JP HL`     | `PC ← HL`                  | 4 T. **Register copy**, not a memory read at `HL`.                                 |
+| `JP cc, nn` | Jump if condition          | 16 T taken / 12 not. **Always consume** the 2 immediate bytes even when not taken. |
+| `JR e`      | `PC ← PC + signed e`       | 12 T.                                                                              |
+| `JR cc, e`  | Relative jump if condition | 12 T taken / 8 not.                                                                |
+
 
 Conditions: `NZ`, `Z`, `NC`, `C` — encoded as `(opcode >> 3) & 3` in the conditional slots.
 
@@ -228,15 +258,21 @@ function cond(cpu, cc) {
 }
 ```
 
+
+
 ### CALL / RET / RST — subroutine calls
 
-| Variant | What it does | Quirks |
-| --- | --- | --- |
-| `CALL nn` | Push PC, then jump | Push the **already incremented** PC (address of next instruction). 24 T. |
-| `CALL cc, nn` | Conditional call | 24 T taken / 12 not. Consume immediates when not taken. |
-| `RET` | Pop into PC | 16 T. |
-| `RET cc` | Conditional return | 20 T taken / 8 not. |
-| `RST n` | Push PC, jump to `$00`, `$08`, … `$38` | Compact `CALL`. 16 T. |
+
+| Variant       | What it does                           | Quirks                                                                   |
+| ------------- | -------------------------------------- | ------------------------------------------------------------------------ |
+| `CALL nn`     | Push PC, then jump                     | Push the **already incremented** PC (address of next instruction). 24 T. |
+| `CALL cc, nn` | Conditional call                       | 24 T taken / 12 not. Consume immediates when not taken.                  |
+| `RET`         | Pop into PC                            | 16 T.                                                                    |
+| `RET cc`      | Conditional return                     | 20 T taken / 8 not.                                                      |
+| `RST n`       | Push PC, jump to `$00`, `$08`, … `$38` | Compact `CALL`. 16 T.                                                    |
+
+
+
 
 ## Pitfalls
 
