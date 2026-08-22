@@ -15,13 +15,16 @@ export function registerControlFlowOps(def) {
   }
   def(0xe9, 'JP HL', (cpu) => jpHL(cpu));
 
-
   function cond(cpu, cc) {
     switch (cc) {
-      case 0: return !(cpu.f & Z);
-      case 1: return !!(cpu.f & Z);
-      case 2: return !(cpu.f & C);
-      case 3: return !!(cpu.f & C);
+      case 0:
+        return !(cpu.f & Z);
+      case 1:
+        return !!(cpu.f & Z);
+      case 2:
+        return !(cpu.f & C);
+      case 3:
+        return !!(cpu.f & C);
     }
   }
 
@@ -35,7 +38,7 @@ export function registerControlFlowOps(def) {
     return 12;
   }
 
-  const jpCondOpcodes = [0xC2, 0xD2, 0xCA, 0xDA]
+  const jpCondOpcodes = [0xc2, 0xd2, 0xca, 0xda];
   for (const opcode of jpCondOpcodes) {
     def(opcode, `JP ${opcode}, nn`, (cpu) => jpCond(cpu, opcode), 3);
   }
@@ -48,7 +51,6 @@ export function registerControlFlowOps(def) {
   }
   def(0x18, 'JR e', (cpu) => jrE(cpu), 2);
 
-
   // JR cc, e instruction
   function jrCondE(cpu, opcode) {
     const e = toSigned(readImm8(cpu));
@@ -59,7 +61,7 @@ export function registerControlFlowOps(def) {
     return 8;
   }
 
-  const jrCondEOpcodes = [0x20, 0x30, 0x28, 0x38]
+  const jrCondEOpcodes = [0x20, 0x30, 0x28, 0x38];
   for (const opcode of jrCondEOpcodes) {
     def(opcode, `JR ${opcode}, e`, (cpu) => jrCondE(cpu, opcode), 2);
   }

@@ -20,6 +20,14 @@ import {
   C,
 } from './helpers.js';
 
+export function push16(cpu, v) {
+  cpu.sp = (cpu.sp - 1) & 0xffff;
+  cpu.bus.write8(cpu.sp, v >> 8);
+  cpu.sp = (cpu.sp - 1) & 0xffff;
+  cpu.bus.write8(cpu.sp, v & 0xff);
+  return 16;
+}
+
 export function registerLdOps(def) {
   // LD n8 instructions
   function ld8(cpu, r, v) {
@@ -175,14 +183,6 @@ export function registerLdOps(def) {
   }
   def(0xfa, 'LD A, (nn)', ld16Mem, 3);
 
-  // PUSH nn instruction
-  function push16(cpu, v) {
-    cpu.sp = (cpu.sp - 1) & 0xffff;
-    cpu.bus.write8(cpu.sp, v >> 8);
-    cpu.sp = (cpu.sp - 1) & 0xffff;
-    cpu.bus.write8(cpu.sp, v & 0xff);
-    return 16;
-  }
   def(0xc5, 'PUSH BC', (cpu) => push16(cpu, r16[r16Map.BC](cpu)));
   def(0xd5, 'PUSH DE', (cpu) => push16(cpu, r16[r16Map.DE](cpu)));
   def(0xe5, 'PUSH HL', (cpu) => push16(cpu, r16[r16Map.HL](cpu)));

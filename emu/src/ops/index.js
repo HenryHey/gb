@@ -1,6 +1,7 @@
 import { registerLdOps } from './ld.js';
 import { registerAluOps } from './alu.js';
 import { registerControlFlowOps } from './jp_jr.js';
+import { registerCallOps } from './call.js';
 
 export { Z, N, H, C, setZNHC } from './helpers.js';
 
@@ -59,6 +60,7 @@ def(0x76, 'HALT', halt);
 registerLdOps(def);
 registerAluOps(def);
 registerControlFlowOps(def);
+registerCallOps(def);
 
 export const cbOps = [];
 export const cbOpNames = [];

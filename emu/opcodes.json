@@ -955,6 +955,11 @@
     "length": 1
   },
   {
+    "opcode": "$C0",
+    "name": "RET 192",
+    "length": 1
+  },
+  {
     "opcode": "$C1",
     "name": "POP BC",
     "length": 1
@@ -970,6 +975,11 @@
     "length": 3
   },
   {
+    "opcode": "$C4",
+    "name": "CALL 196, a16",
+    "length": 3
+  },
+  {
     "opcode": "$C5",
     "name": "PUSH BC",
     "length": 1
@@ -980,13 +990,48 @@
     "length": 1
   },
   {
+    "opcode": "$C7",
+    "name": "RST 199",
+    "length": 1
+  },
+  {
+    "opcode": "$C8",
+    "name": "RET 200",
+    "length": 1
+  },
+  {
+    "opcode": "$C9",
+    "name": "RET",
+    "length": 1
+  },
+  {
     "opcode": "$CA",
     "name": "JP 202, nn",
     "length": 3
   },
   {
+    "opcode": "$CC",
+    "name": "CALL 204, a16",
+    "length": 3
+  },
+  {
+    "opcode": "$CD",
+    "name": "CALL a16",
+    "length": 3
+  },
+  {
     "opcode": "$CE",
     "name": "ADC A, n8",
+    "length": 1
+  },
+  {
+    "opcode": "$CF",
+    "name": "RST 207",
+    "length": 1
+  },
+  {
+    "opcode": "$D0",
+    "name": "RET 208",
     "length": 1
   },
   {
@@ -1000,6 +1045,11 @@
     "length": 3
   },
   {
+    "opcode": "$D4",
+    "name": "CALL 212, a16",
+    "length": 3
+  },
+  {
     "opcode": "$D5",
     "name": "PUSH DE",
     "length": 1
@@ -1010,13 +1060,33 @@
     "length": 1
   },
   {
+    "opcode": "$D7",
+    "name": "RST 215",
+    "length": 1
+  },
+  {
+    "opcode": "$D8",
+    "name": "RET 216",
+    "length": 1
+  },
+  {
     "opcode": "$DA",
     "name": "JP 218, nn",
     "length": 3
   },
   {
+    "opcode": "$DC",
+    "name": "CALL 220, a16",
+    "length": 3
+  },
+  {
     "opcode": "$DE",
     "name": "SBC A, n8",
+    "length": 1
+  },
+  {
+    "opcode": "$DF",
+    "name": "RST 223",
     "length": 1
   },
   {
@@ -1045,6 +1115,11 @@
     "length": 1
   },
   {
+    "opcode": "$E7",
+    "name": "RST 231",
+    "length": 1
+  },
+  {
     "opcode": "$E8",
     "name": "ADD SP, e8",
     "length": 1
@@ -1062,6 +1137,11 @@
   {
     "opcode": "$EE",
     "name": "XOR A, n8",
+    "length": 1
+  },
+  {
+    "opcode": "$EF",
+    "name": "RST 239",
     "length": 1
   },
   {
@@ -1090,6 +1170,11 @@
     "length": 1
   },
   {
+    "opcode": "$F7",
+    "name": "RST 247",
+    "length": 1
+  },
+  {
     "opcode": "$F8",
     "name": "LD HL, SP+e8",
     "length": 1
@@ -1107,6 +1192,11 @@
   {
     "opcode": "$FE",
     "name": "CP A, n8",
+    "length": 1
+  },
+  {
+    "opcode": "$FF",
+    "name": "RST 255",
     "length": 1
   }
 ]

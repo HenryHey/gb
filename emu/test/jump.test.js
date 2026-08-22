@@ -83,7 +83,7 @@ describe('jumps and calls', () => {
     });
   }
 
-  itOp(0xcd, 'CALL nn pushes next PC', () => {
+  itOp(0xcd, 'CALL a16 pushes next PC', () => {
     const cpu = makeCpu({ bytes: [0xcd, 0x34, 0x12], sp: 0xfffe, f: Z });
     expect(tick(cpu)).toBe(24);
     expect(cpu.pc).toBe(0x1234);
