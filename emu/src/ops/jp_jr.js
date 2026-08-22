@@ -1,4 +1,4 @@
-import { readImm8, readImm16, r16, r16Map, Z, C, toSigned } from './helpers.js';
+import { cond, readImm8, readImm16, r16, r16Map, toSigned } from './helpers.js';
 
 export function registerControlFlowOps(def) {
   // JP nn instruction
@@ -14,19 +14,6 @@ export function registerControlFlowOps(def) {
     return 4;
   }
   def(0xe9, 'JP HL', (cpu) => jpHL(cpu));
-
-  function cond(cpu, cc) {
-    switch (cc) {
-      case 0:
-        return !(cpu.f & Z);
-      case 1:
-        return !!(cpu.f & Z);
-      case 2:
-        return !(cpu.f & C);
-      case 3:
-        return !!(cpu.f & C);
-    }
-  }
 
   // JP cc, nn
   function jpCond(cpu, opcode) {

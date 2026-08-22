@@ -1,5 +1,5 @@
 import { push16 } from './ld.js';
-import { readImm16, Z, C } from './helpers.js';
+import { cond, readImm16 } from './helpers.js';
 
 export function registerCallOps(def) {
   // CALL a16 instruction
@@ -11,19 +11,6 @@ export function registerCallOps(def) {
   }
 
   def(0xcd, 'CALL a16', (cpu) => callA16(cpu), 3);
-
-  function cond(cpu, cc) {
-    switch (cc) {
-      case 0:
-        return !(cpu.f & Z);
-      case 1:
-        return !!(cpu.f & Z);
-      case 2:
-        return !(cpu.f & C);
-      case 3:
-        return !!(cpu.f & C);
-    }
-  }
 
   // CALL cc, a16 instructions
   function callCond(cpu, opcode) {

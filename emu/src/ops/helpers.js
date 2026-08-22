@@ -14,6 +14,19 @@ export function setZNHC(cpu, { z, n, h, c }) {
   cpu.f &= 0xf0;
 }
 
+export function cond(cpu, cc) {
+  switch (cc) {
+    case 0:
+      return !(cpu.f & Z);
+    case 1:
+      return !!(cpu.f & Z);
+    case 2:
+      return !(cpu.f & C);
+    case 3:
+      return !!(cpu.f & C);
+  }
+}
+
 export function readImm8(cpu) {
   const v = cpu.bus.read8(cpu.pc);
   cpu.pc = (cpu.pc + 1) & 0xffff;
