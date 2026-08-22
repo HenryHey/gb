@@ -67,7 +67,6 @@ export function registerCallOps(def) {
     def(opcode, `RET ${opcode}`, (cpu) => retCond(cpu, opcode));
   }
 
-
   // RST n instruction
   function rst(cpu, n) {
     push16(cpu, cpu.pc);
@@ -80,6 +79,5 @@ export function registerCallOps(def) {
   for (let i = 0; i < rstOpcodes.length; i++) {
     const opcode = rstOpcodes[i];
     def(opcode, `RST ${opcode}`, (cpu) => rst(cpu, rstAddresses[i]));
-  
   }
 }
