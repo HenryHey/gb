@@ -160,7 +160,8 @@ describe('8-bit ALU', () => {
     itOp(0xce, 'ADC A, n', () => {
       const cpu = makeCpu({ bytes: [0xce, 0x00], a: 0x0f, f: C });
       const { r, f } = add8(0x0f, 0x00, 1);
-      tick(cpu);
+      expect(tick(cpu)).toBe(8);
+      expect(cpu.pc).toBe(2);
       expect(cpu.a).toBe(r);
       expect(cpu.f).toBe(f);
     });

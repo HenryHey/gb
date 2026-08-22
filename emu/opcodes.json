@@ -7,7 +7,7 @@
   {
     "opcode": "$01",
     "name": "LD BC, n16",
-    "length": 2
+    "length": 3
   },
   {
     "opcode": "$02",
@@ -82,7 +82,7 @@
   {
     "opcode": "$11",
     "name": "LD DE, n16",
-    "length": 2
+    "length": 3
   },
   {
     "opcode": "$12",
@@ -162,7 +162,7 @@
   {
     "opcode": "$21",
     "name": "LD HL, n16",
-    "length": 2
+    "length": 3
   },
   {
     "opcode": "$22",
@@ -242,7 +242,7 @@
   {
     "opcode": "$31",
     "name": "LD SP, n16",
-    "length": 2
+    "length": 3
   },
   {
     "opcode": "$32",
@@ -1102,7 +1102,7 @@
   {
     "opcode": "$E2",
     "name": "LDH (C), A",
-    "length": 2
+    "length": 1
   },
   {
     "opcode": "$E5",
@@ -1122,7 +1122,7 @@
   {
     "opcode": "$E8",
     "name": "ADD SP, e8",
-    "length": 1
+    "length": 2
   },
   {
     "opcode": "$E9",
@@ -1157,7 +1157,7 @@
   {
     "opcode": "$F2",
     "name": "LD A, [C]",
-    "length": 2
+    "length": 1
   },
   {
     "opcode": "$F5",
@@ -1177,7 +1177,7 @@
   {
     "opcode": "$F8",
     "name": "LD HL, SP+e8",
-    "length": 1
+    "length": 2
   },
   {
     "opcode": "$F9",

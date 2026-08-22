@@ -1,5 +1,6 @@
-import { describe, expect } from 'bun:test';
-import { F, itOp, makeCpu, pair, tick, Z } from './harness.js';
+import { describe, expect, test } from 'bun:test';
+import { opLen } from '../src/ops/index.js';
+import { F, hexOp, itOp, makeCpu, pair, spec, tick, Z } from './harness.js';
 
 describe('16-bit loads', () => {
   describe('LD rr, nn', () => {
@@ -28,6 +29,12 @@ describe('16-bit loads', () => {
       expect(tick(cpu)).toBe(12);
       expect(cpu.sp).toBe(0x1234);
     });
+
+    for (const opcode of [0x01, 0x11, 0x21, 0x31]) {
+      test(`${hexOp(opcode)} opLen matches instruction set`, () => {
+        expect(opLen[opcode]).toBe(spec(opcode).bytes);
+      });
+    }
   });
 
   itOp(0x08, 'LD (nn), SP', () => {
@@ -58,6 +65,18 @@ describe('16-bit loads', () => {
     const cpu = makeCpu({ bytes: [0xf8, 0xfe], sp: 0x1002 });
     tick(cpu);
     expect(pair(cpu.h, cpu.l)).toBe(0x1000);
+  });
+
+  itOp(0xf8, 'LD HL, SP+e sets H/C from unsigned low-byte add', () => {
+    const cpu = makeCpu({ bytes: [0xf8, 0xff], sp: 0x1001, f: 0 });
+    expect(tick(cpu)).toBe(12);
+    expect(cpu.pc).toBe(2);
+    expect(pair(cpu.h, cpu.l)).toBe(0x1000);
+    expect(cpu.f).toBe(F({ h: true, c: true }));
+  });
+
+  test(`${hexOp(0xf8)} opLen matches instruction set`, () => {
+    expect(opLen[0xf8]).toBe(spec(0xf8).bytes);
   });
 
   describe('PUSH / POP', () => {

@@ -1,5 +1,6 @@
-import { describe, expect } from 'bun:test';
-import { C, getR8, hlOf, itOp, makeCpu, R8N, tick, Z } from './harness.js';
+import { describe, expect, test } from 'bun:test';
+import { opLen } from '../src/ops/index.js';
+import { C, getR8, hexOp, hlOf, itOp, makeCpu, R8N, spec, tick, Z } from './harness.js';
 
 const INIT = { a: 0x77, b: 0x11, c: 0x22, d: 0x33, e: 0x44, h: 0xc0, l: 0x10 };
 const HL_MEM = 0x66;
@@ -156,7 +157,14 @@ describe('8-bit loads', () => {
     itOp(0xf2, 'LDH A, (C)', () => {
       const cpu = cpuWithRegs([0xf2], { c: 0x80, mem: { 0xff80: 0x5a } });
       expect(tick(cpu)).toBe(8);
+      expect(cpu.pc).toBe(1);
       expect(cpu.a).toBe(0x5a);
     });
+
+    for (const opcode of [0xe2, 0xf2]) {
+      test(`${hexOp(opcode)} opLen matches instruction set`, () => {
+        expect(opLen[opcode]).toBe(spec(opcode).bytes);
+      });
+    }
   });
 });

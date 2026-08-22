@@ -10,6 +10,7 @@ import {
   r8nMap,
   readImm8,
   setZNHC,
+  toSigned,
   w16,
   Z,
   C,
@@ -59,22 +60,23 @@ export function registerAluOps(def) {
 
   // ADD SP, e8 instructions
   function addSp(cpu) {
-    const e = readImm8(cpu);
+    const unsigned_e = readImm8(cpu);
+    const e = toSigned(unsigned_e);
     const sp = r16[r16Map.SP](cpu);
     setZNHC(cpu, {
       z: 0,
       n: 0,
-      h: (cpu.sp & 0xf) + (e & 0xf) > 0xf,
-      c: (cpu.sp & 0xff) + e > 0xff,
+      h: (cpu.sp & 0xf) + (unsigned_e & 0xf) > 0xf,
+      c: (cpu.sp & 0xff) + unsigned_e > 0xff,
     });
     w16[r16Map.SP](cpu, sp + e);
     return 16;
   }
-  def(0xe8, `ADD SP, e8`, (cpu) => addSp(cpu));
+  def(0xe8, `ADD SP, e8`, (cpu) => addSp(cpu), 2);
 
   // ADC A, r8 and ADC A, n8 instructions
   function adc(cpu, r) {
-    const cycles = r === r8nMap['(HL)'] ? 8 : 4;
+    const cycles = r === r8nMap['(HL)'] || r === null ? 8 : 4;
     const src = r === null ? readImm8(cpu) : r8[r](cpu);
     const c = cpu.f & C ? 1 : 0;
     const result = (cpu.a + src + c) & 0xff;
