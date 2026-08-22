@@ -71,6 +71,15 @@ export function tick(cpu) {
   return step(cpu, ops, cbOps);
 }
 
+/** Step until HALT or `max` instructions. Returns total cycles consumed. */
+export function run(cpu, max = 1000) {
+  let cycles = 0;
+  for (let i = 0; i < max && !cpu.halted; i++) {
+    cycles += tick(cpu);
+  }
+  return cycles;
+}
+
 const results = new Map();
 
 function record(opcode, prefixed, ok) {
