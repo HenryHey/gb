@@ -1,6 +1,6 @@
 import { registerLdOps } from './ld.js';
 import { registerAluOps } from './alu.js';
-import { registerControlFlowOps } from './control_flow.js';
+import { registerControlFlowOps } from './jp_jr.js';
 
 export { Z, N, H, C, setZNHC } from './helpers.js';
 
