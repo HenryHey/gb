@@ -1,6 +1,6 @@
 import { registerLdOps } from './ld.js';
 import { registerAluOps } from './alu.js';
-import { readImm8, toSigned } from './helpers.js';
+import { registerControlFlowOps } from './control_flow.js';
 
 export { Z, N, H, C, setZNHC } from './helpers.js';
 
@@ -45,12 +45,6 @@ function halt(cpu) {
   return 4;
 }
 
-function jr(cpu) {
-  const e = toSigned(readImm8(cpu));
-  cpu.pc = (cpu.pc + e) & 0xffff;
-  return 12;
-}
-
 export const ops = [];
 export const opNames = [];
 export const opLen = [];
@@ -60,11 +54,11 @@ function def(op, name, fn, len = 1) {
   opLen[op] = len;
 }
 def(0x00, 'NOP', nop);
-def(0x18, 'JR e', jr, 2);
 def(0x76, 'HALT', halt);
 
 registerLdOps(def);
 registerAluOps(def);
+registerControlFlowOps(def);
 
 export const cbOps = [];
 export const cbOpNames = [];

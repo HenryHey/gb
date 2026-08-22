@@ -155,6 +155,11 @@
     "length": 1
   },
   {
+    "opcode": "$20",
+    "name": "JR 32, e",
+    "length": 2
+  },
+  {
     "opcode": "$21",
     "name": "LD HL, n16",
     "length": 2
@@ -188,6 +193,11 @@
     "opcode": "$27",
     "name": "DAA",
     "length": 1
+  },
+  {
+    "opcode": "$28",
+    "name": "JR 40, e",
+    "length": 2
   },
   {
     "opcode": "$29",
@@ -225,6 +235,11 @@
     "length": 1
   },
   {
+    "opcode": "$30",
+    "name": "JR 48, e",
+    "length": 2
+  },
+  {
     "opcode": "$31",
     "name": "LD SP, n16",
     "length": 2
@@ -258,6 +273,11 @@
     "opcode": "$37",
     "name": "SCF",
     "length": 1
+  },
+  {
+    "opcode": "$38",
+    "name": "JR 56, e",
+    "length": 2
   },
   {
     "opcode": "$39",
@@ -940,6 +960,16 @@
     "length": 1
   },
   {
+    "opcode": "$C2",
+    "name": "JP 194, nn",
+    "length": 3
+  },
+  {
+    "opcode": "$C3",
+    "name": "JP nn",
+    "length": 3
+  },
+  {
     "opcode": "$C5",
     "name": "PUSH BC",
     "length": 1
@@ -948,6 +978,11 @@
     "opcode": "$C6",
     "name": "ADD A, n8",
     "length": 1
+  },
+  {
+    "opcode": "$CA",
+    "name": "JP 202, nn",
+    "length": 3
   },
   {
     "opcode": "$CE",
@@ -960,6 +995,11 @@
     "length": 1
   },
   {
+    "opcode": "$D2",
+    "name": "JP 210, nn",
+    "length": 3
+  },
+  {
     "opcode": "$D5",
     "name": "PUSH DE",
     "length": 1
@@ -968,6 +1008,11 @@
     "opcode": "$D6",
     "name": "SUB A, n8",
     "length": 1
+  },
+  {
+    "opcode": "$DA",
+    "name": "JP 218, nn",
+    "length": 3
   },
   {
     "opcode": "$DE",
@@ -1002,6 +1047,11 @@
   {
     "opcode": "$E8",
     "name": "ADD SP, e8",
+    "length": 1
+  },
+  {
+    "opcode": "$E9",
+    "name": "JP HL",
     "length": 1
   },
   {
