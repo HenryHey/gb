@@ -5,9 +5,9 @@ describe('illegal opcodes', () => {
   for (const [key, op] of Object.entries(isa.unprefixed)) {
     if (!op.mnemonic.startsWith('ILLEGAL')) continue;
     const opcode = parseInt(key, 16);
-    test(`${hexOp(opcode)} throws`, () => {
+    test(`${hexOp(opcode)} throws with PC and opcode`, () => {
       const cpu = makeCpu({ bytes: [opcode] });
-      expect(() => tick(cpu)).toThrow();
+      expect(() => tick(cpu)).toThrow(`illegal ${opcode.toString(16)} at 0`);
     });
   }
 });

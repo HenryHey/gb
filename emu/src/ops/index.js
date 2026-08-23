@@ -2,6 +2,7 @@ import { registerLdOps } from './ld.js';
 import { registerAluOps } from './alu.js';
 import { registerControlFlowOps } from './jp_jr.js';
 import { registerCallOps } from './call.js';
+import { registerControlOps } from './control.js';
 import { registerCbOps } from './cbs.js';
 
 export { Z, N, H, C, setZNHC } from './helpers.js';
@@ -26,6 +27,8 @@ export function createCpu(bus) {
   };
 }
 
+export const ILLEGAL = new Set([0xd3, 0xdb, 0xdd, 0xe3, 0xe4, 0xeb, 0xec, 0xed, 0xf4, 0xfc, 0xfd]);
+
 export function step(cpu, ops, cbOps) {
   const opcode = cpu.bus.read8(cpu.pc);
   cpu.pc = (cpu.pc + 1) & 0xffff;
@@ -35,33 +38,13 @@ export function step(cpu, ops, cbOps) {
     return cbOps[cb](cpu); // chapter 4
   }
   const fn = ops[opcode];
-  if (!fn) throw new Error(`unimplemented ${opcode.toString(16)} at ${(cpu.pc - 1).toString(16)}`);
+  if (!fn) {
+    const at = (cpu.pc - 1).toString(16);
+    const hex = opcode.toString(16);
+    if (ILLEGAL.has(opcode)) throw new Error(`illegal ${hex} at ${at}`);
+    throw new Error(`unimplemented ${hex} at ${at}`);
+  }
   return fn(cpu);
-}
-
-function nop() {
-  return 4;
-}
-
-function halt(cpu) {
-  cpu.halted = true;
-  return 4;
-}
-
-function di(cpu) {
-  cpu.ime = false;
-  cpu.imeEnableCountdown = 0;
-  return 4;
-}
-
-function stop(cpu) {
-  cpu.pc = (cpu.pc + 1) & 0xffff;
-  return 4;
-}
-
-function ei(cpu) {
-  cpu.imeEnableCountdown = 2;
-  return 4;
 }
 
 export const ops = [];
@@ -82,12 +65,7 @@ function defCB(op, name, fn, len = 1) {
   cbOpLen[op] = len;
 }
 
-def(0x00, 'NOP', nop);
-def(0x10, 'STOP', stop);
-def(0x76, 'HALT', halt);
-def(0xF3, 'DI', di);
-def(0xFB, 'EI', ei);
-
+registerControlOps(def);
 registerLdOps(def);
 registerAluOps(def);
 registerControlFlowOps(def);

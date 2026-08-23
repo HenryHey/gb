@@ -1,8 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { cbOps, ops } from '../src/ops/index.js';
+import { ILLEGAL, cbOps, ops } from '../src/ops/index.js';
 import { F, makeCpu, run } from './harness.js';
-
-const ILLEGAL = new Set([0xd3, 0xdb, 0xdd, 0xe3, 0xe4, 0xeb, 0xec, 0xed, 0xf4, 0xfc, 0xfd]);
 
 describe('chapter 4 checkpoint', () => {
   test('CB SWAP', () => {
