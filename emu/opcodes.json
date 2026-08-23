@@ -80,6 +80,11 @@
     "length": 1
   },
   {
+    "opcode": "$10",
+    "name": "STOP",
+    "length": 1
+  },
+  {
     "opcode": "$11",
     "name": "LD DE, n16",
     "length": 3
@@ -1010,6 +1015,1286 @@
     "length": 3
   },
   {
+    "opcode": "$CB $00",
+    "name": "CB 00",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $01",
+    "name": "CB 01",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $02",
+    "name": "CB 02",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $03",
+    "name": "CB 03",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $04",
+    "name": "CB 04",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $05",
+    "name": "CB 05",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $06",
+    "name": "CB 06",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $07",
+    "name": "CB 07",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $08",
+    "name": "CB 08",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $09",
+    "name": "CB 09",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $0A",
+    "name": "CB 0A",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $0B",
+    "name": "CB 0B",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $0C",
+    "name": "CB 0C",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $0D",
+    "name": "CB 0D",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $0E",
+    "name": "CB 0E",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $0F",
+    "name": "CB 0F",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $10",
+    "name": "CB 10",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $11",
+    "name": "CB 11",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $12",
+    "name": "CB 12",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $13",
+    "name": "CB 13",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $14",
+    "name": "CB 14",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $15",
+    "name": "CB 15",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $16",
+    "name": "CB 16",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $17",
+    "name": "CB 17",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $18",
+    "name": "CB 18",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $19",
+    "name": "CB 19",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $1A",
+    "name": "CB 1A",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $1B",
+    "name": "CB 1B",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $1C",
+    "name": "CB 1C",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $1D",
+    "name": "CB 1D",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $1E",
+    "name": "CB 1E",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $1F",
+    "name": "CB 1F",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $20",
+    "name": "CB 20",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $21",
+    "name": "CB 21",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $22",
+    "name": "CB 22",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $23",
+    "name": "CB 23",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $24",
+    "name": "CB 24",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $25",
+    "name": "CB 25",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $26",
+    "name": "CB 26",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $27",
+    "name": "CB 27",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $28",
+    "name": "CB 28",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $29",
+    "name": "CB 29",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $2A",
+    "name": "CB 2A",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $2B",
+    "name": "CB 2B",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $2C",
+    "name": "CB 2C",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $2D",
+    "name": "CB 2D",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $2E",
+    "name": "CB 2E",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $2F",
+    "name": "CB 2F",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $30",
+    "name": "CB 30",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $31",
+    "name": "CB 31",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $32",
+    "name": "CB 32",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $33",
+    "name": "CB 33",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $34",
+    "name": "CB 34",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $35",
+    "name": "CB 35",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $36",
+    "name": "CB 36",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $37",
+    "name": "CB 37",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $38",
+    "name": "CB 38",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $39",
+    "name": "CB 39",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $3A",
+    "name": "CB 3A",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $3B",
+    "name": "CB 3B",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $3C",
+    "name": "CB 3C",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $3D",
+    "name": "CB 3D",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $3E",
+    "name": "CB 3E",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $3F",
+    "name": "CB 3F",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $40",
+    "name": "CB 40",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $41",
+    "name": "CB 41",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $42",
+    "name": "CB 42",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $43",
+    "name": "CB 43",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $44",
+    "name": "CB 44",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $45",
+    "name": "CB 45",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $46",
+    "name": "CB 46",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $47",
+    "name": "CB 47",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $48",
+    "name": "CB 48",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $49",
+    "name": "CB 49",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $4A",
+    "name": "CB 4A",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $4B",
+    "name": "CB 4B",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $4C",
+    "name": "CB 4C",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $4D",
+    "name": "CB 4D",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $4E",
+    "name": "CB 4E",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $4F",
+    "name": "CB 4F",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $50",
+    "name": "CB 50",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $51",
+    "name": "CB 51",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $52",
+    "name": "CB 52",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $53",
+    "name": "CB 53",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $54",
+    "name": "CB 54",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $55",
+    "name": "CB 55",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $56",
+    "name": "CB 56",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $57",
+    "name": "CB 57",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $58",
+    "name": "CB 58",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $59",
+    "name": "CB 59",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $5A",
+    "name": "CB 5A",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $5B",
+    "name": "CB 5B",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $5C",
+    "name": "CB 5C",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $5D",
+    "name": "CB 5D",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $5E",
+    "name": "CB 5E",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $5F",
+    "name": "CB 5F",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $60",
+    "name": "CB 60",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $61",
+    "name": "CB 61",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $62",
+    "name": "CB 62",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $63",
+    "name": "CB 63",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $64",
+    "name": "CB 64",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $65",
+    "name": "CB 65",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $66",
+    "name": "CB 66",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $67",
+    "name": "CB 67",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $68",
+    "name": "CB 68",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $69",
+    "name": "CB 69",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $6A",
+    "name": "CB 6A",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $6B",
+    "name": "CB 6B",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $6C",
+    "name": "CB 6C",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $6D",
+    "name": "CB 6D",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $6E",
+    "name": "CB 6E",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $6F",
+    "name": "CB 6F",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $70",
+    "name": "CB 70",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $71",
+    "name": "CB 71",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $72",
+    "name": "CB 72",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $73",
+    "name": "CB 73",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $74",
+    "name": "CB 74",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $75",
+    "name": "CB 75",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $76",
+    "name": "CB 76",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $77",
+    "name": "CB 77",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $78",
+    "name": "CB 78",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $79",
+    "name": "CB 79",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $7A",
+    "name": "CB 7A",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $7B",
+    "name": "CB 7B",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $7C",
+    "name": "CB 7C",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $7D",
+    "name": "CB 7D",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $7E",
+    "name": "CB 7E",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $7F",
+    "name": "CB 7F",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $80",
+    "name": "CB 80",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $81",
+    "name": "CB 81",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $82",
+    "name": "CB 82",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $83",
+    "name": "CB 83",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $84",
+    "name": "CB 84",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $85",
+    "name": "CB 85",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $86",
+    "name": "CB 86",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $87",
+    "name": "CB 87",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $88",
+    "name": "CB 88",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $89",
+    "name": "CB 89",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $8A",
+    "name": "CB 8A",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $8B",
+    "name": "CB 8B",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $8C",
+    "name": "CB 8C",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $8D",
+    "name": "CB 8D",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $8E",
+    "name": "CB 8E",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $8F",
+    "name": "CB 8F",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $90",
+    "name": "CB 90",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $91",
+    "name": "CB 91",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $92",
+    "name": "CB 92",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $93",
+    "name": "CB 93",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $94",
+    "name": "CB 94",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $95",
+    "name": "CB 95",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $96",
+    "name": "CB 96",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $97",
+    "name": "CB 97",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $98",
+    "name": "CB 98",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $99",
+    "name": "CB 99",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $9A",
+    "name": "CB 9A",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $9B",
+    "name": "CB 9B",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $9C",
+    "name": "CB 9C",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $9D",
+    "name": "CB 9D",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $9E",
+    "name": "CB 9E",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $9F",
+    "name": "CB 9F",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $A0",
+    "name": "CB A0",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $A1",
+    "name": "CB A1",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $A2",
+    "name": "CB A2",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $A3",
+    "name": "CB A3",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $A4",
+    "name": "CB A4",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $A5",
+    "name": "CB A5",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $A6",
+    "name": "CB A6",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $A7",
+    "name": "CB A7",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $A8",
+    "name": "CB A8",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $A9",
+    "name": "CB A9",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $AA",
+    "name": "CB AA",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $AB",
+    "name": "CB AB",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $AC",
+    "name": "CB AC",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $AD",
+    "name": "CB AD",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $AE",
+    "name": "CB AE",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $AF",
+    "name": "CB AF",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $B0",
+    "name": "CB B0",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $B1",
+    "name": "CB B1",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $B2",
+    "name": "CB B2",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $B3",
+    "name": "CB B3",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $B4",
+    "name": "CB B4",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $B5",
+    "name": "CB B5",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $B6",
+    "name": "CB B6",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $B7",
+    "name": "CB B7",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $B8",
+    "name": "CB B8",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $B9",
+    "name": "CB B9",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $BA",
+    "name": "CB BA",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $BB",
+    "name": "CB BB",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $BC",
+    "name": "CB BC",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $BD",
+    "name": "CB BD",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $BE",
+    "name": "CB BE",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $BF",
+    "name": "CB BF",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $C0",
+    "name": "CB C0",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $C1",
+    "name": "CB C1",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $C2",
+    "name": "CB C2",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $C3",
+    "name": "CB C3",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $C4",
+    "name": "CB C4",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $C5",
+    "name": "CB C5",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $C6",
+    "name": "CB C6",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $C7",
+    "name": "CB C7",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $C8",
+    "name": "CB C8",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $C9",
+    "name": "CB C9",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $CA",
+    "name": "CB CA",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $CB",
+    "name": "CB CB",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $CC",
+    "name": "CB CC",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $CD",
+    "name": "CB CD",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $CE",
+    "name": "CB CE",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $CF",
+    "name": "CB CF",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $D0",
+    "name": "CB D0",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $D1",
+    "name": "CB D1",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $D2",
+    "name": "CB D2",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $D3",
+    "name": "CB D3",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $D4",
+    "name": "CB D4",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $D5",
+    "name": "CB D5",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $D6",
+    "name": "CB D6",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $D7",
+    "name": "CB D7",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $D8",
+    "name": "CB D8",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $D9",
+    "name": "CB D9",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $DA",
+    "name": "CB DA",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $DB",
+    "name": "CB DB",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $DC",
+    "name": "CB DC",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $DD",
+    "name": "CB DD",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $DE",
+    "name": "CB DE",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $DF",
+    "name": "CB DF",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $E0",
+    "name": "CB E0",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $E1",
+    "name": "CB E1",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $E2",
+    "name": "CB E2",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $E3",
+    "name": "CB E3",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $E4",
+    "name": "CB E4",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $E5",
+    "name": "CB E5",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $E6",
+    "name": "CB E6",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $E7",
+    "name": "CB E7",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $E8",
+    "name": "CB E8",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $E9",
+    "name": "CB E9",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $EA",
+    "name": "CB EA",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $EB",
+    "name": "CB EB",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $EC",
+    "name": "CB EC",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $ED",
+    "name": "CB ED",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $EE",
+    "name": "CB EE",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $EF",
+    "name": "CB EF",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $F0",
+    "name": "CB F0",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $F1",
+    "name": "CB F1",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $F2",
+    "name": "CB F2",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $F3",
+    "name": "CB F3",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $F4",
+    "name": "CB F4",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $F5",
+    "name": "CB F5",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $F6",
+    "name": "CB F6",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $F7",
+    "name": "CB F7",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $F8",
+    "name": "CB F8",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $F9",
+    "name": "CB F9",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $FA",
+    "name": "CB FA",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $FB",
+    "name": "CB FB",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $FC",
+    "name": "CB FC",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $FD",
+    "name": "CB FD",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $FE",
+    "name": "CB FE",
+    "length": 2
+  },
+  {
+    "opcode": "$CB $FF",
+    "name": "CB FF",
+    "length": 2
+  },
+  {
     "opcode": "$CC",
     "name": "CALL 204, a16",
     "length": 3
@@ -1067,6 +2352,11 @@
   {
     "opcode": "$D8",
     "name": "RET 216",
+    "length": 1
+  },
+  {
+    "opcode": "$D9",
+    "name": "RETI",
     "length": 1
   },
   {
@@ -1160,6 +2450,11 @@
     "length": 1
   },
   {
+    "opcode": "$F3",
+    "name": "DI",
+    "length": 1
+  },
+  {
     "opcode": "$F5",
     "name": "PUSH AF",
     "length": 1
@@ -1188,6 +2483,11 @@
     "opcode": "$FA",
     "name": "LD A, (nn)",
     "length": 3
+  },
+  {
+    "opcode": "$FB",
+    "name": "EI",
+    "length": 1
   },
   {
     "opcode": "$FE",

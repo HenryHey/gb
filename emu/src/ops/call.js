@@ -40,6 +40,14 @@ export function registerCallOps(def) {
 
   def(0xc9, 'RET', (cpu) => ret(cpu));
 
+  // RETI — RET and enable interrupts immediately
+  def(0xd9, 'RETI', (cpu) => {
+    ret(cpu);
+    cpu.ime = true;
+    cpu.imeEnableCountdown = 0;
+    return 16;
+  });
+
   // RET cc instruction
   function retCond(cpu, opcode) {
     if (cond(cpu, (opcode >> 3) & 3)) {

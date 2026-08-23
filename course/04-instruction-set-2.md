@@ -30,7 +30,7 @@ Rotates vs shifts vs `SWAP` are the same barrel with different wiring:
 - **SRA** — arithmetic shift: bit 7 (the sign) is copied down. `$80` becomes `$C0`, not `$40`.
 - **SWAP** — exchange nibbles. Cheap packed-BCD / palette-index trick. Clears C.
 
-Unprefixed `RLCA`/`RLA`/… are **older 8080 ops on `A` only**. They clear Z instead of setting it from the result. The CB versions on `A` *do* set Z. Do not reuse one function for both.
+Unprefixed `RLCA`/`RLA`/… are **older 8080 ops on** `A` **only**. They clear Z instead of setting it from the result. The CB versions on `A` *do* set Z. Do not reuse one function for both.
 
 `$CB` itself costs 4 T-cycles. The 8/12/16 numbers in the opcode table are **totals**, prefix included.
 
@@ -40,10 +40,12 @@ Eleven unprefixed bytes (`$D3 $DB $DD …`) were never bonded out. On a real SM8
 
 `DI` / `EI` / `HALT` / `STOP` are not ALU. They are how the CPU talks to the interrupt pin and the clock:
 
-- **`DI`**: mask interrupts *now* (`IME = 0`).
-- **`EI`**: unmask *after the next instruction*. That delay is real silicon. Games write `EI` then `RET` or `HALT` and depend on the extra instruction running first. Implement the countdown now; chapter 6 is when it matters.
-- **`HALT`**: stop fetching until `IE & IF` is non-zero. Saves battery on hardware. Until peripherals set `IF`, your stub just freezes PC — that is OK to observe.
-- **`STOP`**: a DMG curiosity (very-low-power wait for a button). Commercial games you care about do not rely on it. Treat as a short `NOP`.
+- `DI`: mask interrupts *now* (`IME = 0`).
+- `EI`: unmask *after the next instruction*. That delay is real silicon. Games write `EI` then `RET` or `HALT` and depend on the extra instruction running first. Implement the countdown now; chapter 6 is when it matters.
+- `HALT`: stop fetching until `IE & IF` is non-zero. Saves battery on hardware. Until peripherals set `IF`, your stub just freezes PC — that is OK to observe.
+- `STOP`: a DMG curiosity (very-low-power wait for a button). Commercial games you care about do not rely on it. Treat as a short `NOP`.
+
+
 
 ## CB encoding
 
@@ -83,16 +85,18 @@ export function makeCbOps() {
 
 `rotShift` index 0–7: `RLC RRC RL RR SLA SRA SWAP SRL`.
 
-| Op | Result | C |
-| --- | --- | --- |
-| RLC | rotate left | old bit 7 |
-| RRC | rotate right | old bit 0 |
-| RL | rotate left **through** C | old bit 7 |
-| RR | rotate right through C | old bit 0 |
-| SLA | `v << 1`, bit 0 = 0 | old bit 7 |
-| SRA | arithmetic `v >> 1`, bit 7 preserved | old bit 0 |
-| SWAP | nibbles swapped | 0 |
-| SRL | `v >> 1`, bit 7 = 0 | old bit 0 |
+
+| Op   | Result                               | C         |
+| ---- | ------------------------------------ | --------- |
+| RLC  | rotate left                          | old bit 7 |
+| RRC  | rotate right                         | old bit 0 |
+| RL   | rotate left **through** C            | old bit 7 |
+| RR   | rotate right through C               | old bit 0 |
+| SLA  | `v << 1`, bit 0 = 0                  | old bit 7 |
+| SRA  | arithmetic `v >> 1`, bit 7 preserved | old bit 0 |
+| SWAP | nibbles swapped                      | 0         |
+| SRL  | `v >> 1`, bit 7 = 0                  | old bit 0 |
+
 
 All set Z from the result, N=0, H=0.
 
@@ -146,6 +150,8 @@ Optional: Vitest tests for a few CB ops (`SWAP A`, `BIT 7, H`, `SRL (HL)`).
 - Double-counting PC increment on CB (the core already ate `$CB` and the second byte).
 - Implementing `STOP` as an infinite halt with the LCD still running — just NOP it.
 
+
+
 ## Checkpoint
 
 **CB SWAP**
@@ -156,7 +162,7 @@ CB 37     SWAP A        ; A = $BA
 76        HALT
 ```
 
-Expect `A === 0xba`, Z=0, N=0, H=0, C=0.
+Bytes: `3e ab cb 37 76` with `PC` starting at 0. Expect `A === 0xba`, Z=0, N=0, H=0, C=0.
 
 **BIT**
 
@@ -166,7 +172,7 @@ CB 78     BIT 7, B      ; Z=0, H=1, N=0
 76        HALT
 ```
 
-Expect Z clear, H set.
+Bytes: `06 80 cb 78 76` with `PC` starting at 0. Expect Z clear, H set.
 
 **Missing-table dump** is empty.
 
@@ -177,6 +183,8 @@ You now have a CPU. It still cannot see a cartridge header or VRAM. That is the 
 - Opcode table CB page
 - [Pan Docs — instruction set, CB block](https://gbdev.io/pandocs/CPU_Instruction_Set.html)
 - [docs/reference/cpu-quirks.md](../docs/reference/cpu-quirks.md)
+
+
 
 ## Next
 

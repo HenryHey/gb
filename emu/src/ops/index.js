@@ -2,6 +2,7 @@ import { registerLdOps } from './ld.js';
 import { registerAluOps } from './alu.js';
 import { registerControlFlowOps } from './jp_jr.js';
 import { registerCallOps } from './call.js';
+import { registerCbOps } from './cbs.js';
 
 export { Z, N, H, C, setZNHC } from './helpers.js';
 
@@ -19,6 +20,7 @@ export function createCpu(bus) {
     sp: 0,
     pc: 0,
     ime: false,
+    imeEnableCountdown: 0,
     halted: false,
     imeEnableCountdown: 0, // chapter 6
   };
@@ -46,6 +48,22 @@ function halt(cpu) {
   return 4;
 }
 
+function di(cpu) {
+  cpu.ime = false;
+  cpu.imeEnableCountdown = 0;
+  return 4;
+}
+
+function stop(cpu) {
+  cpu.pc = (cpu.pc + 1) & 0xffff;
+  return 4;
+}
+
+function ei(cpu) {
+  cpu.imeEnableCountdown = 2;
+  return 4;
+}
+
 export const ops = [];
 export const opNames = [];
 export const opLen = [];
@@ -54,16 +72,28 @@ function def(op, name, fn, len = 1) {
   opNames[op] = name;
   opLen[op] = len;
 }
+
+export const cbOps = [];
+export const cbOpNames = [];
+export const cbOpLen = [];
+function defCB(op, name, fn, len = 1) {
+  cbOps[op] = fn;
+  cbOpNames[op] = name;
+  cbOpLen[op] = len;
+}
+
 def(0x00, 'NOP', nop);
+def(0x10, 'STOP', stop);
 def(0x76, 'HALT', halt);
+def(0xF3, 'DI', di);
+def(0xFB, 'EI', ei);
 
 registerLdOps(def);
 registerAluOps(def);
 registerControlFlowOps(def);
 registerCallOps(def);
+registerCbOps(defCB);
 
-export const cbOps = [];
-export const cbOpNames = [];
 
 export function listImplementedOpcodes() {
   const list = [];
