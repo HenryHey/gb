@@ -23,7 +23,6 @@ export function createCpu(bus) {
     ime: false,
     imeEnableCountdown: 0,
     halted: false,
-    imeEnableCountdown: 0, // chapter 6
   };
 }
 
@@ -71,7 +70,6 @@ registerAluOps(def);
 registerControlFlowOps(def);
 registerCallOps(def);
 registerCbOps(defCB);
-
 
 export function listImplementedOpcodes() {
   const list = [];

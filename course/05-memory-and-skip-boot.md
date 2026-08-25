@@ -34,9 +34,9 @@ FFFF       IE             interrupt enable (one byte, not part of HRAM)
 
 **HRAM is 127 bytes, not 128.** `$FFFF` is `IE`. Off-by-one here means `PUSH` at `SP = $FFFE` corrupts the interrupt mask.
 
-**Writes to `$0000–$7FFF` never change ROM.** On a real cart those writes are mapper commands (chapter 13). Ignore them for ROM-only games; never mutate the `Uint8Array`.
+**Writes to** `$0000–$7FFF` **never change ROM.** On a real cart those writes are mapper commands (chapter 13). Ignore them for ROM-only games; never mutate the `Uint8Array`.
 
-**Open bus / unused I/O reads `$FF`.** Returning `0` makes games think devices exist in impossible states.
+**Open bus / unused I/O reads** `$FF`**.** Returning `0` makes games think devices exist in impossible states.
 
 ### Skip-boot is faking a chip overlay
 
@@ -53,9 +53,10 @@ If you start at `PC = 0` you execute the header (logo tiles as “code”) and d
 ## Design
 
 ```
-src/bus.js     read8/write8
-src/cart.js    already parses the header; now supplies rom bytes
-src/emu.js     owns cpu, bus, reset()
+src/bus.js      read8/write8
+src/skipboot.js post-boot CPU + I/O values (DMG)
+src/cart.js     already parses the header; now supplies rom bytes
+src/emu.js      owns cpu, bus, reset() → skipBoot()
 ```
 
 Cartridge for this chapter: **ROM ONLY**. `$0000–$7FFF` maps `rom[addr]` (32 KiB). Writes ignored. Larger ROMs still map the first 32 KiB; they will jump into the wrong bank until chapter 13 — do not use Pokémon yet.
@@ -107,20 +108,26 @@ Returning `$FF` for unread hardware is the right default. Chapter 6 will special
 
 ### Skip-boot
 
-On “Reset” / after load:
+Put the post-boot values in `src/skipboot.js`. Call `skipBoot(emu)` on “Reset” / after load — `createEmu()` leaves the CPU at zeroes (`PC = 0`); skip-boot is what moves you to `$0100`.
 
 ```js
-import { DMG_AFTER_BOOT } from "./skipboot.js";
-
-export function reset(emu) {
+// src/skipboot.js
+export function skipBoot(emu) {
   const { cpu } = emu;
   Object.assign(cpu, {
-    a: 0x01, f: 0xb0,
-    b: 0x00, c: 0x13,
-    d: 0x00, e: 0xd8,
-    h: 0x01, l: 0x4d,
-    sp: 0xfffe, pc: 0x0100,
-    ime: false, halted: false, imeEnableCountdown: 0,
+    a: 0x01,
+    f: 0xb0,
+    b: 0x00,
+    c: 0x13,
+    d: 0x00,
+    e: 0xd8,
+    h: 0x01,
+    l: 0x4d,
+    sp: 0xfffe,
+    pc: 0x0100,
+    ime: false,
+    halted: false,
+    imeEnableCountdown: 0,
   });
   if (emu.rom[0x14d] === 0) cpu.f = 0x80;
   emu.io.regs[0x40] = 0x91; // LCDC
@@ -131,7 +138,17 @@ export function reset(emu) {
 }
 ```
 
-WRAM/HRAM/VRAM can stay zeros.
+`emu.js` wires it in:
+
+```js
+import { skipBoot } from "./skipboot.js";
+
+export function reset(emu) {
+  skipBoot(emu);
+}
+```
+
+WRAM/HRAM/VRAM can stay zeros. Tests: `test/skipboot.test.js`, `test/ch05-checkpoint.test.js`.
 
 ### The run loop (still no PPU)
 
@@ -155,7 +172,7 @@ Tetris’s entry is at `$0100`. After skip-boot it will:
 2. Zero memory, set up the stack in HRAM.
 3. Enable the LCD, copy tiles, wait for VBlank.
 
-Without a PPU, **`LY` never changes** and VBlank never fires. The game will eventually `HALT` waiting for an interrupt, or spin on `LY`. That is expected. What is **not** expected:
+Without a PPU, `LY` **never changes** and VBlank never fires. The game will eventually `HALT` waiting for an interrupt, or spin on `LY`. That is expected. What is **not** expected:
 
 - `unimplemented xx at aaaa`
 - `PC` stuck at `$0100` (you are not stepping)
@@ -174,6 +191,8 @@ Log the first ~30 opcodes (mnemonic optional) to confirm you are in game code, n
 - `SP = $FFFE` and `PUSH` writing `hram[0x7e]` — index is `addr - 0xff80`. Off-by-one here corrupts IE.
 - Starting with IME = 1. Boot left it 0.
 
+
+
 ## Checkpoint
 
 1. Load Tetris. Header still displays.
@@ -191,6 +210,8 @@ Debugger should show hex dumps of `PC` and last opcode. You will live here.
 - [docs/reference/io-registers.md](../docs/reference/io-registers.md)
 - [Pan Docs — Memory map](https://gbdev.io/pandocs/Memory_Map.html)
 - Nazar part 2 *Memory* (ranges; his BIOS overlay you are skipping)
+
+
 
 ## Next
 

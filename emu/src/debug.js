@@ -28,7 +28,7 @@ export function renderRegs(cpu) {
   regsEl.textContent = [
     `A:${hex(cpu.a, 2)}  F:${hex(cpu.f, 2)}  B:${hex(cpu.b, 2)}  C:${hex(cpu.c, 2)}  D:${hex(cpu.d, 2)}  E:${hex(cpu.e, 2)}  H:${hex(cpu.h, 2)}  L:${hex(cpu.l, 2)}`,
     `AF:${hex(af, 4)}  BC:${hex(bc, 4)}  DE:${hex(de, 4)}  HL:${hex(hl, 4)}  SP:${hex(cpu.sp, 4)}  PC:${hex(cpu.pc, 4)}`,
-    `Z:${cpu.f & Z ? 1 : 0}  N:${cpu.f & N ? 1 : 0}  H:${cpu.f & H ? 1 : 0}  C:${cpu.f & C ? 1 : 0}`,
+    `Z:${cpu.f & Z ? 1 : 0}  N:${cpu.f & N ? 1 : 0}  H:${cpu.f & H ? 1 : 0}  C:${cpu.f & C ? 1 : 0}  IME:${cpu.ime ? 1 : 0}  HALT:${cpu.halted ? 1 : 0}`,
   ].join('\n');
 }
 

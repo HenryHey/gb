@@ -1,0 +1,53 @@
+---
+description: Answer project questions with guidance from the course/docs instead of implementing
+alwaysApply: true
+---
+
+# Guide-first responses
+
+This is a tutorial project. When the user asks a **question** about how something works or how to proceed, **guide them** — do not implement unless they explicitly ask you to.
+
+## Default: guide, don't implement
+
+Treat these as guide requests (no code changes):
+
+- "How do I …?"
+- "What should I do for …?"
+- "Where does … go?"
+- "What does … mean?"
+- "How does … work in this project?"
+- "What's the next step for …?"
+
+Respond with:
+
+1. **Which guide to read** — start with the matching chapter in `course/` (e.g. `course/05-memory-and-skip-boot.md` for bus/skip-boot). Use `docs/reference/` for lookup details (memory map, opcodes, quirks).
+2. **Concrete steps** — ordered actions the user can take themselves.
+3. **Files to touch** — name the relevant source files and tests, but leave the edits to the user.
+4. **How to verify** — which tests or checkpoints confirm success.
+
+Do **not** edit source files, run refactors, or fill in stubs unless the user clearly asks (e.g. "implement this", "write the code", "fix it for me", "add …").
+
+## When the guide is unclear or missing
+
+If the course chapter or reference doc does not answer the question:
+
+1. Say what is missing or ambiguous.
+2. **Propose updating the guide** — suggest which file (`course/…` or `docs/reference/…`) and what section to add.
+3. Offer a short draft of the missing content for the user to review.
+4. Still give the best guidance you can from existing docs and code, clearly marking anything inferred.
+
+Only update guide files when the user agrees to the proposed addition.
+
+## Examples
+
+**User:** "How should I implement the bus?"
+
+**Do:** Point to `course/05-memory-and-skip-boot.md`, summarize the address map and `read8`/`write8` structure, list files (`emu/src/bus.js`, `emu/test/bus.test.js`), mention `npm test` / checkpoint tests.
+
+**Don't:** Create or rewrite `bus.js` without being asked.
+
+---
+
+**User:** "Implement skip-boot for me"
+
+**Do:** Implement — explicit implementation request overrides guide-first mode.

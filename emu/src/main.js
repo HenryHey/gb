@@ -1,16 +1,26 @@
 import './style.css';
 import { parseHeader } from './cart.js';
 import { log, renderCpu, formatOpcode } from './debug.js';
-import { createCpu, romBus, step, ops, cbOps } from './ops/index.js';
+import { createEmu, reset, runTCycles, FRAME_T } from './emu.js';
+import { cbOps, ops, step } from './ops/index.js';
 
-let cpu = createCpu(romBus(new Uint8Array()));
-renderCpu(cpu);
+let emu = createEmu(new Uint8Array());
+reset(emu);
+renderCpu(emu.cpu);
 
 const input = document.querySelector('#rom');
 const bytesInput = document.querySelector('#bytes');
 const loadBytes = document.querySelector('#load-bytes');
+const resetBtn = document.querySelector('#reset');
 const stepBtn = document.querySelector('#step');
+const frameBtn = document.querySelector('#frame');
 const info = document.querySelector('#info');
+
+function loadRom(rom) {
+  emu = createEmu(rom);
+  reset(emu);
+  renderCpu(emu.cpu);
+}
 
 input.addEventListener('change', async () => {
   const file = input.files?.[0];
@@ -23,8 +33,7 @@ input.addEventListener('change', async () => {
 
     const header = parseHeader(rom);
     info.textContent = '';
-    cpu = createCpu(romBus(rom));
-    renderCpu(cpu);
+    loadRom(rom);
     log(header);
   } catch (err) {
     info.textContent = err.message;
@@ -36,8 +45,7 @@ loadBytes.addEventListener('click', () => {
   try {
     const rom = parseByteArray(bytesInput.value);
     info.textContent = '';
-    cpu = createCpu(romBus(rom));
-    renderCpu(cpu);
+    loadRom(rom);
     log(`Loaded ${rom.length} byte${rom.length === 1 ? '' : 's'} (header skipped)`);
     log(formatBytes(rom));
   } catch (err) {
@@ -53,10 +61,24 @@ bytesInput.addEventListener('keydown', (e) => {
   }
 });
 
+resetBtn.addEventListener('click', () => {
+  try {
+    reset(emu);
+    info.textContent = '';
+    renderCpu(emu.cpu);
+    log('Reset (skip-boot)');
+  } catch (err) {
+    info.textContent = err.message;
+    log(err.message);
+  }
+});
+
 stepBtn.addEventListener('click', () => {
+  const { cpu } = emu;
   try {
     if (cpu.halted) {
       log('HALT');
+      renderCpu(cpu);
       return;
     }
     const opcode = cpu.bus.read8(cpu.pc);
@@ -65,6 +87,22 @@ stepBtn.addEventListener('click', () => {
     info.textContent = '';
     renderCpu(cpu);
     log(`${formatOpcode(opcode, cb)}  ${t}T`);
+  } catch (err) {
+    info.textContent = err.message;
+    log(err.message);
+    renderCpu(cpu);
+  }
+});
+
+frameBtn.addEventListener('click', () => {
+  const { cpu } = emu;
+  const pcBefore = cpu.pc;
+  try {
+    const t = runTCycles(emu, FRAME_T);
+    info.textContent = '';
+    renderCpu(cpu);
+    const haltNote = cpu.halted ? ' (HALT spin)' : '';
+    log(`Frame ${t}T${haltNote}  PC $${pcBefore.toString(16).padStart(4, '0').toUpperCase()} → $${cpu.pc.toString(16).padStart(4, '0').toUpperCase()}`);
   } catch (err) {
     info.textContent = err.message;
     log(err.message);

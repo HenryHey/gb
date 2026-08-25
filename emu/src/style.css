@@ -68,8 +68,10 @@ button:hover {
   width: 480px;
 }
 
-.debug-col button {
-  align-self: flex-start;
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 #regs,
