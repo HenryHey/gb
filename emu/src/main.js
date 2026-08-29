@@ -1,8 +1,7 @@
 import './style.css';
 import { parseHeader } from './cart.js';
 import { log, renderCpu, formatOpcode } from './debug.js';
-import { createEmu, reset, runTCycles, FRAME_T } from './emu.js';
-import { cbOps, ops, step } from './ops/index.js';
+import { createEmu, reset, runTCycles, tickEmu, FRAME_T } from './emu.js';
 
 let emu = createEmu(new Uint8Array());
 reset(emu);
@@ -76,17 +75,17 @@ resetBtn.addEventListener('click', () => {
 stepBtn.addEventListener('click', () => {
   const { cpu } = emu;
   try {
-    if (cpu.halted) {
-      log('HALT');
-      renderCpu(cpu);
-      return;
-    }
-    const opcode = cpu.bus.read8(cpu.pc);
+    const wasHalted = cpu.halted;
+    const opcode = wasHalted ? null : cpu.bus.read8(cpu.pc);
     const cb = opcode === 0xcb ? cpu.bus.read8((cpu.pc + 1) & 0xffff) : null;
-    const t = step(cpu, ops, cbOps);
+    const t = tickEmu(emu);
     info.textContent = '';
     renderCpu(cpu);
-    log(`${formatOpcode(opcode, cb)}  ${t}T`);
+    if (wasHalted) {
+      log(`HALT  ${t}T`);
+    } else {
+      log(`${formatOpcode(opcode, cb)}  ${t}T`);
+    }
   } catch (err) {
     info.textContent = err.message;
     log(err.message);
