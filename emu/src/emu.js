@@ -26,10 +26,32 @@ export function cpuStep(emu) {
   return t + extra;
 }
 
+function incrementTima(io) {
+  io.tima = (io.tima + 1) & 0xff;
+  if (io.tima === 0) {
+    io.tima = io.tma;
+    io.requestIf(2);
+  }
+}
+
+function timerStep(io, tCycles) {
+  for (let i = 0; i < tCycles; i++) {
+      io.divCounter = (io.divCounter + 1) & 0xffff;
+      if (!(io.tac & 0x04)) continue;
+      const bit = [9, 3, 5, 7][io.tac & 3];
+      const oldBit = (io.divCounter - 1) & (1 << bit);
+      const newBit = io.divCounter & (1 << bit);
+      if (oldBit && !newBit) incrementTima(io);
+    
+  }
+}
+
 export function runN(emu, n) {
   let t = 0;
   for (let i = 0; i < n; i++) {
-    t += cpuStep(emu);
+    const dt = cpuStep(emu);
+    timerStep(emu.io, dt);
+    t += dt;
   }
   return t;
 }
@@ -37,13 +59,10 @@ export function runN(emu, n) {
 /** Run until `target` T-cycles have elapsed. When halted, spin without fetch. */
 export function runTCycles(emu, target) {
   let t = 0;
-  const { cpu } = emu;
   while (t < target) {
-    if (cpu.halted) {
-      t += Math.min(4, target - t);
-      continue;
-    }
-    t += cpuStep(emu);
+    const dt = cpuStep(emu);
+    timerStep(emu.io, dt);
+    t += dt;
   }
   return t;
 }

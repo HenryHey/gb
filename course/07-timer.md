@@ -22,7 +22,7 @@ TMA  ($FF06)  value TIMA reloads on overflow
 TAC  ($FF07)  bit 2 = on/off; bits 1–0 = which bit of divCounter
 ```
 
-**Why falling edges, not “add N and divide”?** Because writes to `DIV` *reset* `divCounter` to 0, and changing TAC can coincide with a bit already high. The edge model gets those interactions right. The period table (1024 / 16 / 64 / 256 T-cycles) is the same frequencies with less accuracy on those edges — enough for Tetris/Pokémon if **any write to `$FF04` zeros `divCounter`**.
+**Why falling edges, not “add N and divide”?** Because writes to `DIV` *reset* `divCounter` to 0, and changing TAC can coincide with a bit already high. The edge model gets those interactions right. The period table (1024 / 16 / 64 / 256 T-cycles) is the same frequencies with less accuracy on those edges — enough for Tetris/Pokémon if **any write to** `$FF04` **zeros** `divCounter`.
 
 `DIV` looks read-only to games: they `LDH A,($FF04)` to seed RNG. A write is a reset, not a store. That surprise is the number-one timer bug.
 
@@ -42,25 +42,29 @@ TMA  = $FF06                    reloaded into TIMA on overflow
 TAC  = $FF07                    bit 2 = enable; bits 1–0 = clock
 ```
 
-Clock select (when TAC enable is 1), TIMA increments when this **bit of `divCounter` has a falling edge**:
+Clock select (when TAC enable is 1), TIMA increments when this **bit of** `divCounter` **has a falling edge**:
 
-| TAC 1–0 | Hz | Bit of `divCounter` |
-| --- | --- | --- |
-| 00 | 4096 | 9 |
-| 01 | 262144 | 3 |
-| 10 | 65536 | 5 |
-| 11 | 16384 | 7 |
+
+| TAC 1–0 | Hz     | Bit of `divCounter` |
+| ------- | ------ | ------------------- |
+| 00      | 4096   | 9                   |
+| 01      | 262144 | 3                   |
+| 10      | 65536  | 5                   |
+| 11      | 16384  | 7                   |
+
 
 Instruction-level version that is good enough: count T-cycles in a remainder and increment TIMA every `period` T-cycles:
 
-| TAC 1–0 | Period (T-cycles per TIMA tick) |
-| --- | --- |
-| 00 | 1024 |
-| 01 | 16 |
-| 10 | 64 |
-| 11 | 256 |
 
-DIV still comes from `divCounter >> 8`. The bit-edge version is more accurate (TAC changes and DIV resets interact). For Tetris/Pokémon the period version works if **any write to `$FF04` sets `divCounter = 0`** (and you reset the TIMA remainder).
+| TAC 1–0 | Period (T-cycles per TIMA tick) |
+| ------- | ------------------------------- |
+| 00      | 1024                            |
+| 01      | 16                              |
+| 10      | 64                              |
+| 11      | 256                             |
+
+
+DIV still comes from `divCounter >> 8`. The bit-edge version is more accurate (TAC changes and DIV resets interact). For Tetris/Pokémon the period version works if **any write to** `$FF04` **sets** `divCounter = 0` (and you reset the TIMA remainder).
 
 ```js
 const PERIOD = [1024, 16, 64, 256];
@@ -118,6 +122,8 @@ timerStep(emu.io, t);
 ppuStep(emu.ppu, t); // next chapter
 ```
 
+
+
 ## Pitfalls
 
 - Incrementing DIV every instruction instead of every 256 T-cycles. `NOP` would then bump DIV too fast.
@@ -127,7 +133,11 @@ ppuStep(emu.ppu, t); // next chapter
 - Not setting IF bit 2 on overflow. Pokémon’s IRQ handlers care; Tetris mostly reads DIV.
 - Overflow to 0 without reloading TMA — the timer dies at 0 forever if TMA is 0, which is valid, but then IF must still fire **once per wrap**.
 
+
+
 ## Checkpoint
+
+Put these in `test/ch07-checkpoint.test.js` (or run in the debugger):
 
 **DIV moves**
 
@@ -154,6 +164,8 @@ Simpler assertion without interrupts: enable TAC at 262144 Hz (`TAC = 0x05`), st
 - [Pan Docs — Timer and Divider](https://gbdev.io/pandocs/Timer_and_Divider_Registers.html)
 - [docs/reference/io-registers.md](../docs/reference/io-registers.md)
 - Nazar part 10 (read, then ignore his DIV write)
+
+
 
 ## Next
 

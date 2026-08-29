@@ -19,5 +19,9 @@ export function skipBoot(emu) {
   emu.io.regs[0x40] = 0x91;
   emu.io.regs[0x47] = 0xfc;
   emu.io.regs[0x0f] = 0xe1;
+  emu.io.divCounter = 0xab00;
+  emu.io.tima = 0;
+  emu.io.tma = 0;
+  emu.io.tac = 0;
   emu.bus.ie = 0;
 }
