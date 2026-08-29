@@ -1,6 +1,7 @@
 import { createBus } from './bus.js';
 import { createIo } from './io.js';
 import { skipBoot } from './skipboot.js';
+import { createPpu, ppuStep } from './ppu.js';
 import { cbOps, createCpu, ops, step } from './ops/index.js';
 import { handleHalt, serviceIfNeeded, tickImeCountdown } from './interrupts.js';
 
@@ -9,13 +10,17 @@ export const FRAME_T = 70224;
 
 export function createEmu(rom) {
   const io = createIo();
-  const bus = createBus({ rom, io });
+  const ppu = createPpu();
+  const bus = createBus({ rom, io, ppu });
   const cpu = createCpu(bus);
-  return { cpu, bus, io, rom };
+  return { cpu, bus, io, rom, ppu };
 }
 
 export function reset(emu) {
   skipBoot(emu);
+  Object.assign(emu.ppu, createPpu());
+  emu.ppu.lcdc = emu.io.regs[0x40];
+  emu.ppu.framebuffer.fill(255);
 }
 
 export function cpuStep(emu) {
@@ -46,23 +51,28 @@ function timerStep(io, tCycles) {
   }
 }
 
+/** Advance CPU, timer, and PPU by one instruction (or HALT spin). */
+export function tickEmu(emu) {
+  const dt = cpuStep(emu);
+  timerStep(emu.io, dt);
+  ppuStep(emu.ppu, emu.io, dt);
+  return dt;
+}
+
 export function runN(emu, n) {
   let t = 0;
-  for (let i = 0; i < n; i++) {
-    const dt = cpuStep(emu);
-    timerStep(emu.io, dt);
-    t += dt;
-  }
+  for (let i = 0; i < n; i++) t += tickEmu(emu);
   return t;
 }
 
 /** Run until `target` T-cycles have elapsed. When halted, spin without fetch. */
 export function runTCycles(emu, target) {
   let t = 0;
-  while (t < target) {
-    const dt = cpuStep(emu);
-    timerStep(emu.io, dt);
-    t += dt;
-  }
+  while (t < target) t += tickEmu(emu);
   return t;
+}
+
+/** Run exactly one DMG frame (70224 T-cycles). */
+export function runFrame(emu) {
+  return runTCycles(emu, FRAME_T);
 }

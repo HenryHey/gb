@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 import { createBus } from '../src/bus.js';
 import { createIo } from '../src/io.js';
+import { createPpu } from '../src/ppu.js';
 
 function makeBus(romBytes = []) {
   const rom = Uint8Array.from(romBytes);
   const io = createIo();
-  return { bus: createBus({ rom, io }), io, rom };
+  const ppu = createPpu();
+  return { bus: createBus({ rom, io, ppu }), io, rom, ppu };
 }
 
 describe('bus memory map', () => {
@@ -75,12 +77,12 @@ describe('bus memory map', () => {
   });
 
   test('I/O stub defaults to $FF and accepts writes', () => {
-    const { bus, io } = makeBus();
+    const { bus, ppu } = makeBus();
     expect(bus.read8(0xff00)).toBe(0xff);
     expect(bus.read8(0xff7f)).toBe(0xff);
     bus.write8(0xff40, 0x91);
     expect(bus.read8(0xff40)).toBe(0x91);
-    expect(io.regs[0x40]).toBe(0x91);
+    expect(ppu.lcdc).toBe(0x91);
   });
 
   test('HRAM is 127 bytes ($FF80–$FFFE)', () => {

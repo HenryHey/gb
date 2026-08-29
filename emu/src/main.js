@@ -149,3 +149,23 @@ function parseByteArray(text) {
 function formatBytes(rom) {
   return '[' + [...rom].map((b) => '0x' + b.toString(16).padStart(2, '0')).join(', ') + ']';
 }
+
+export function frame(emu) {
+  let budget = FRAME_T;
+  while (budget > 0) {
+    const t = cpuStep(emu);
+    timerStep(emu.io, t);
+    budget -= t;
+
+  }
+
+  blit(emu.ppu.framebuffer);
+
+}
+
+function blit(fb) {
+  const canvas = document.querySelector('#screen');
+  const ctx = canvas.getContext('2d');
+  const img = new ImageData(fb, 160, 144);
+  ctx.putImageData(img, 0, 0);
+}

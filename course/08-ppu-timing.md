@@ -66,7 +66,38 @@ export function createPpu() {
 }
 ```
 
-Own LCD registers in the PPU (or in `io` with the PPU reading them). `bus.read(0xff44)` returns `ppu.ly`. Writes to LY ignored. LCDC/STAT/SCX/… go to the PPU.
+### Bus wiring (minimum)
+
+The mode machine lives in `ppu.js`, but games reach it through the bus. `LDH A,($FF44)` is just `read8(0xFF44)` — if that still returns the `io` stub `$FF`, Tetris spins forever on `CP $90` even when `ppu.ly` is moving internally.
+
+Your bus already sends `$FF00–$FF7F` to `io.read` / `io.write`. Either give `io` a reference to `ppu` and delegate the LCD range, or handle `$FF40–$FF4B` in `bus.js` before falling through to `io`. Pick one place; do not duplicate register state in both `io.regs` and `ppu`.
+
+| Addr | Reg | Read | Write |
+| --- | --- | --- | --- |
+| `$FF40` | LCDC | `ppu.lcdc` | `ppu.lcdc`; detect bit 7 **1→0** (LCD off) and **0→1** (LCD on) for reset behaviour below |
+| `$FF41` | STAT | `(ppu.stat & 0xF8) \| ppu.mode \| (ly===lyc ? 4 : 0)` | writable bits 3–6 only — **ignore** writes to mode bits 0–1 and bit 2 |
+| `$FF42` | SCY | `ppu.scy` | `ppu.scy` |
+| `$FF43` | SCX | `ppu.scx` | `ppu.scx` |
+| `$FF44` | LY | **`ppu.ly`** | **ignored** |
+| `$FF45` | LYC | `ppu.lyc` | `ppu.lyc` |
+| `$FF47` | BGP | `ppu.bgp` | `ppu.bgp` |
+| `$FF48` | OBP0 | `ppu.obp0` | `ppu.obp0` |
+| `$FF49` | OBP1 | `ppu.obp1` | `ppu.obp1` |
+| `$FF4A` | WY | `ppu.wy` | `ppu.wy` |
+| `$FF4B` | WX | `ppu.wx` | `ppu.wx` |
+
+Skip `$FF46` (OAM DMA) until a later chapter. `$FF4C` does not exist on DMG — reads return `$FF`, writes are ignored.
+
+On **LCDC write**, compare old and new bit 7:
+
+- **1→0:** white framebuffer, `ly = 0`, `mode = 0`, `lineCycles = 0`, no VBlank requests.
+- **0→1:** `ly = 0`, `mode = 2`, `lineCycles = 0` — beam starts fresh.
+
+On reset / skip-boot, keep `ppu.lcdc` in sync with the post-boot `$91` you already store (either copy from `io.regs[0x40]` into a fresh `createPpu()`, or stop mirroring LCDC in `io.regs` once the PPU owns it).
+
+**Files:** `src/bus.js` and/or `src/io.js`, plus `src/emu.js` if you pass `ppu` into `createBus` / `createIo`. **Verify:** `bun test test/ch08-checkpoint.test.js` — once `$FF44` reads `ppu.ly`, drop any test-only `io.read` patch for LY.
+
+VRAM (`$8000–$9FFF`) and OAM (`$FE00–$FE9F`) stay on the bus as they are; this chapter does not add PPU access restrictions during mode 3.
 
 ```js
 export function ppuStep(ppu, io, t) {
@@ -148,13 +179,31 @@ Show `LY`, `mode`, `STAT`, `LCDC`. After one frame: `LY` should have wrapped (yo
 - `while (lineCycles >= length)` forgotten: one instruction can be 24 T-cycles and cross a mode boundary; a 20 T-cycle interrupt can too.
 - Blitting every instruction. Once per frame.
 - STAT writable bits 1–0: ignore writes to mode bits.
+- LCDC in two places (`io.regs` **and** `ppu.lcdc`) with no sync — skip-boot writes one, PPU reads the other, beam never runs.
 
 ## Checkpoint
 
-1. Reset, LCDC `$91`. Run one frame (70 224 T). `frameReady` true. IF bit 0 set at some point (the game may have cleared it — log on the edge).
-2. Debugger: spam “step 1000 T-cycles”; LY climbs 0→153→0.
-3. Tetris: it should **get past** the “wait for vblank” spin. Still a blank canvas. If PC is alive in a main loop rather than stuck on `LDH A,($FF44); CP $90; JR NZ`, you win.
-4. Turn LCDC bit 7 off in the debugger; LY stays 0.
+Put these in `test/ch08-checkpoint.test.js` (or run in the debugger):
+
+```bash
+cd emu && bun test test/ch08-checkpoint.test.js
+```
+
+**One frame**
+
+Reset, LCDC `$91`. Run one frame (70 224 T). `frameReady` true. IF bit 0 set at some point (the game may have cleared it — log on the edge). Tests: `one frame sets frameReady and requests VBlank IF`, `reset with LCDC $91; runFrame sets frameReady`.
+
+**LY moves**
+
+Spam “step 1000 T-cycles”; LY climbs 0→153→0. Tests: `LY visits 0..153 over one frame`, `1000-T chunks advance LY through a full frame`. Also `one large PPU step crosses mode boundaries` — a single `ppuStep` with 100 T must leave mode 2 (OAM) and enter mode 3 (draw); if you forget the `while (lineCycles >= length)` loop, large steps stall in the first mode.
+
+**VBlank wait**
+
+Tetris should **get past** the “wait for vblank” spin. Still a blank canvas. If PC is alive in a main loop rather than stuck on `LDH A,($FF44); CP $90; JR NZ`, you win. Test: `vblank wait loop exits instead of spinning forever` — requires `$FF44` → `ppu.ly` via bus wiring above.
+
+**LCD off**
+
+Turn LCDC bit 7 off in the debugger; LY stays 0. Test: `LCD off keeps LY at 0 while T-cycles advance`.
 
 ## Further reading
 
