@@ -102,7 +102,9 @@ frameBtn.addEventListener('click', () => {
     info.textContent = '';
     renderCpu(cpu);
     const haltNote = cpu.halted ? ' (HALT spin)' : '';
-    log(`Frame ${t}T${haltNote}  PC $${pcBefore.toString(16).padStart(4, '0').toUpperCase()} → $${cpu.pc.toString(16).padStart(4, '0').toUpperCase()}`);
+    log(
+      `Frame ${t}T${haltNote}  PC $${pcBefore.toString(16).padStart(4, '0').toUpperCase()} → $${cpu.pc.toString(16).padStart(4, '0').toUpperCase()}`,
+    );
   } catch (err) {
     info.textContent = err.message;
     log(err.message);
