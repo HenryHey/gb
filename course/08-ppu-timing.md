@@ -94,14 +94,14 @@ function modeLength(mode) {
 
 - Mode 2 → 3.
 - Mode 3 → 0, and **later** call `renderScanline(ppu)` (stub for now).
-- Mode 0 → increment LY. If LY === 144: mode 1, `io.if |= 1`, `ppu.frameReady = true`. Else mode 2.
+- Mode 0 → increment LY. If LY === 144: mode 1, `io.requestIf(0)`, `ppu.frameReady = true`. Else mode 2.
 - Mode 1: increment LY. If LY === 154: LY = 0, mode 2. Else stay in mode 1 (each 456 T-cycles is one VBlank line).
 
 STAT bits 1–0 should reflect `mode`. Bit 2 is `ly === lyc`.
 
 ### STAT interrupts (minimum)
 
-When **entering** a mode, if the corresponding enable bit is set, `io.if |= 0x02`. When `ly === lyc` becomes true, if STAT bit 6 is set, same. Do not fire every T-cycle.
+When **entering** a mode, if the corresponding enable bit is set, `io.requestIf(1)`. When `ly === lyc` becomes true, if STAT bit 6 is set, same. Do not fire every T-cycle.
 
 STAT mode-1 interrupt is **in addition to** VBlank (IF bit 0).
 

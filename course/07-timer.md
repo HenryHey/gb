@@ -12,7 +12,7 @@ Nazar’s timer is a reasonable sketch and **wrong about DIV writes**. Read this
 
 ## One crystal, two software views
 
-The same 4.194304 MHz clock that drives the CPU also drives a 16-bit counter on the motherboard. There is no separate “timer chip clock.” That is why this chapter ticks from the T-cycle budget `step()` already returns.
+The same 4.194304 MHz clock that drives the CPU also drives a 16-bit counter on the motherboard. There is no separate “timer chip clock.” That is why this chapter ticks from the T-cycle budget `cpuStep()` already returns.
 
 ```
 every T-cycle:  divCounter = (divCounter + 1) & 0xffff
@@ -80,7 +80,7 @@ function incrementTima(io) {
   io.tima = (io.tima + 1) & 0xff;
   if (io.tima === 0) {
     io.tima = io.tma;
-    io.if |= 0x04; // timer interrupt
+    io.requestIf(2); // timer interrupt
   }
 }
 ```
