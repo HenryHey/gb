@@ -200,6 +200,7 @@ Once you can manually set IF and see `PC → $0040`, the interrupt path is wired
 ## Pitfalls
 
 - Servicing interrupts **before** `EI`’s following instruction. `EI; HALT` is a standard pair: if IME turns on too soon, you can fire, return, and HALT with IME on but IF already cleared — or the opposite desync. Use the countdown.
+- Assuming the VBlank handler **must** run during LY 144–153. IF is **requested** at LY=144; **service** happens on the first enabled instruction after that. Long init with `DI` can defer it to LY=0 — Tetris does this routinely. See [09 — Background](09-background.md#tetris-and-other-rabbit-holes-read-this-before-debugging).
 - Clearing **all** of IF when servicing one source.
 - Not waking HALT when `IME === 0` but `IE & IF !== 0`. The CPU must continue so the game can `DI`/`EI` around critical sections.
 - Pushing the wrong PC (already incremented vs not). Push the PC of the **next** instruction that would have run — which is the current `cpu.pc` after the last execute.

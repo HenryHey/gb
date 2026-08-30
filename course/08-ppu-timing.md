@@ -201,6 +201,8 @@ Spam “step 1000 T-cycles”; LY climbs 0→153→0. Tests: `LY visits 0..153 o
 
 Tetris should **get past** the “wait for vblank” spin. Still a blank canvas. If PC is alive in a main loop rather than stuck on `LDH A,($FF44); CP $90; JR NZ`, you win. Test: `vblank wait loop exits instead of spinning forever` — requires `$FF44` → `ppu.ly` via bus wiring above.
 
+**VBlank handler at LY = 0:** IF bit 0 is set when the beam **enters** LY=144, but the CPU only services it when `IME = 1`. Tetris init often runs long setup with interrupts off; `EI` at the end can land at **LY=0** of the next frame, so the vector at `$0040` runs there. That matches hardware — do not restrict VBlank service to LY 144–153. Chapter 9 has a fuller “rabbit hole” table if you are debugging Tetris with the canvas open.
+
 **LCD off**
 
 Turn LCDC bit 7 off in the debugger; LY stays 0. Test: `LCD off keeps LY at 0 while T-cycles advance`.
