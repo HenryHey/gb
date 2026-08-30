@@ -17,9 +17,21 @@ export function createEmu(rom) {
 }
 
 export function reset(emu) {
-  skipBoot(emu);
+  emu.bus.vram.fill(0);
+  emu.bus.oam.fill(0);
+  emu.bus.wram.fill(0);
+  emu.bus.hram.fill(0);
+
+  emu.io.regs.fill(0xff);
+  emu.io.divCounter = 0;
+  emu.io.tima = 0;
+  emu.io.tma = 0;
+  emu.io.tac = 0;
+
   Object.assign(emu.ppu, createPpu());
+  skipBoot(emu);
   emu.ppu.lcdc = emu.io.regs[0x40];
+  emu.ppu.bgp = emu.io.regs[0x47];
   emu.ppu.framebuffer.fill(255);
 }
 
@@ -55,8 +67,13 @@ function timerStep(io, tCycles) {
 export function tickEmu(emu) {
   const dt = cpuStep(emu);
   timerStep(emu.io, dt);
-  ppuStep(emu.ppu, emu.io, dt);
-  return dt;
+  ppuStep(emu.ppu, emu.io, dt, emu.bus.vram);
+  const extra = serviceIfNeeded(emu);
+  if (extra) {
+    timerStep(emu.io, extra);
+    ppuStep(emu.ppu, emu.io, extra, emu.bus.vram);
+  }
+  return dt + extra;
 }
 
 export function runN(emu, n) {

@@ -51,6 +51,40 @@ describe('chapter 5 checkpoint', () => {
     expect(emu.bus.ie).toBe(0);
   });
 
+  test('reset clears mutable state before restoring skip-boot values', () => {
+    const emu = createEmu(gameRom());
+    reset(emu);
+
+    emu.bus.vram.fill(0xaa);
+    emu.bus.oam.fill(0xbb);
+    emu.bus.wram.fill(0xcc);
+    emu.bus.hram.fill(0xdd);
+    emu.io.regs.fill(0);
+    emu.io.divCounter = 1;
+    emu.io.tima = 2;
+    emu.io.tma = 3;
+    emu.io.tac = 4;
+    emu.bus.ie = 0x1f;
+    emu.ppu.ly = 99;
+    emu.ppu.framebuffer.fill(0);
+
+    reset(emu);
+
+    for (const memory of [emu.bus.vram, emu.bus.oam, emu.bus.wram, emu.bus.hram]) {
+      expect(memory.every((byte) => byte === 0)).toBe(true);
+    }
+    expect(emu.io.regs[0x01]).toBe(0xff);
+    expect(emu.io.divCounter).toBe(0xab00);
+    expect(emu.io.tima).toBe(0);
+    expect(emu.io.tma).toBe(0);
+    expect(emu.io.tac).toBe(0);
+    expect(emu.bus.ie).toBe(0);
+    expect(emu.ppu.ly).toBe(0);
+    expect(emu.ppu.lcdc).toBe(0x91);
+    expect(emu.ppu.bgp).toBe(0xfc);
+    expect(emu.ppu.framebuffer.every((byte) => byte === 0xff)).toBe(true);
+  });
+
   test('first step leaves $0100 (JP entry)', () => {
     const emu = createEmu(gameRom());
     reset(emu);
