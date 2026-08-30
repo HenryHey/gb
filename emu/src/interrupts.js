@@ -12,7 +12,7 @@ export function handleHalt(emu) {
 }
 
 export function serviceIfNeeded(emu) {
-  const pending = emu.bus.ie && emu.io.ifBits() & 0x1f;
+  const pending = emu.bus.ie & emu.io.ifBits() & 0x1f;
   if (!pending) return 0;
 
   emu.cpu.halted = false; // wake even if IME is 0
