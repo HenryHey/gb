@@ -7,19 +7,59 @@ let emu = createEmu(new Uint8Array());
 reset(emu);
 renderCpu(emu.cpu);
 
+let running = false;
+
 const input = document.querySelector('#rom');
 const bytesInput = document.querySelector('#bytes');
 const loadBytes = document.querySelector('#load-bytes');
 const resetBtn = document.querySelector('#reset');
+const playBtn = document.querySelector('#play');
 const stepBtn = document.querySelector('#step');
 const frameBtn = document.querySelector('#frame');
 const info = document.querySelector('#info');
 
+function setRunning(on) {
+  running = on;
+  playBtn.textContent = on ? 'Pause' : 'Play';
+}
+
 function loadRom(rom) {
+  setRunning(false);
   emu = createEmu(rom);
   reset(emu);
   renderCpu(emu.cpu);
 }
+
+function advanceOneFrame({ logFrame = false } = {}) {
+  const { cpu } = emu;
+  const pcBefore = cpu.pc;
+  const t = runTCycles(emu, FRAME_T);
+  blit(emu.ppu.framebuffer);
+  info.textContent = '';
+  renderCpu(cpu);
+  if (logFrame) {
+    const haltNote = cpu.halted ? ' (HALT spin)' : '';
+    log(
+      `Frame ${t}T${haltNote}  PC $${pcBefore.toString(16).padStart(4, '0').toUpperCase()} → $${cpu.pc.toString(16).padStart(4, '0').toUpperCase()}`,
+    );
+  }
+}
+
+function hostTick() {
+  if (running) {
+    try {
+      advanceOneFrame();
+    } catch (err) {
+      setRunning(false);
+      info.textContent = err.message;
+      log(err.message);
+      renderCpu(emu.cpu);
+    }
+  }
+  requestAnimationFrame(hostTick);
+}
+
+requestAnimationFrame(hostTick);
 
 input.addEventListener('change', async () => {
   const file = input.files?.[0];
@@ -62,7 +102,9 @@ bytesInput.addEventListener('keydown', (e) => {
 
 resetBtn.addEventListener('click', () => {
   try {
+    setRunning(false);
     reset(emu);
+    blit(emu.ppu.framebuffer);
     info.textContent = '';
     renderCpu(emu.cpu);
     log('Reset (skip-boot)');
@@ -72,7 +114,12 @@ resetBtn.addEventListener('click', () => {
   }
 });
 
+playBtn.addEventListener('click', () => {
+  setRunning(!running);
+});
+
 stepBtn.addEventListener('click', () => {
+  setRunning(false);
   const { cpu } = emu;
   try {
     const wasHalted = cpu.halted;
@@ -94,20 +141,13 @@ stepBtn.addEventListener('click', () => {
 });
 
 frameBtn.addEventListener('click', () => {
-  const { cpu } = emu;
-  const pcBefore = cpu.pc;
+  setRunning(false);
   try {
-    const t = runTCycles(emu, FRAME_T);
-    info.textContent = '';
-    renderCpu(cpu);
-    const haltNote = cpu.halted ? ' (HALT spin)' : '';
-    log(
-      `Frame ${t}T${haltNote}  PC $${pcBefore.toString(16).padStart(4, '0').toUpperCase()} → $${cpu.pc.toString(16).padStart(4, '0').toUpperCase()}`,
-    );
+    advanceOneFrame({ logFrame: true });
   } catch (err) {
     info.textContent = err.message;
     log(err.message);
-    renderCpu(cpu);
+    renderCpu(emu.cpu);
   }
 });
 
@@ -149,22 +189,13 @@ function formatBytes(rom) {
   return '[' + [...rom].map((b) => '0x' + b.toString(16).padStart(2, '0')).join(', ') + ']';
 }
 
-export function frame(emu) {
-  let budget = FRAME_T;
-  while (budget > 0) {
-    const t = cpuStep(emu);
-    timerStep(emu.io, t);
-    budget -= t;
-
-  }
-
-  blit(emu.ppu.framebuffer);
-
-}
-
 function blit(fb) {
   const canvas = document.querySelector('#screen');
   const ctx = canvas.getContext('2d');
-  const img = new ImageData(fb, 160, 144);
-  ctx.putImageData(img, 0, 0);
+  ctx.putImageData(new ImageData(fb, 160, 144), 0, 0);
+}
+
+if (import.meta.env.DEV) {
+  window.emu = () => emu;
+  window.runFrame = () => advanceOneFrame({ logFrame: true });
 }
