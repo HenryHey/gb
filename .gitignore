@@ -1,9 +1,6 @@
 # Ignore local emulator scaffolding and ROMs
 emu/node_modules/
 emu/dist/
-*.gb
-*.gbc
-*.gba
 *.sav
 *.srm
 .DS_Store
