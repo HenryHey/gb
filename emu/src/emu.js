@@ -23,6 +23,7 @@ export function reset(emu) {
   emu.bus.hram.fill(0);
 
   emu.io.regs.fill(0xff);
+  emu.io.serialOut.length = 0;
   emu.io.divCounter = 0;
   emu.io.tima = 0;
   emu.io.tma = 0;

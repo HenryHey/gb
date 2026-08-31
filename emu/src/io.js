@@ -1,5 +1,12 @@
 export function createIo() {
   const regs = new Uint8Array(0x80).fill(0xff);
+  const serialOut = [];
+
+  function completeSerialTransfer(scValue) {
+    serialOut.push(regs[0x01]);
+    regs[0x02] = scValue & 0x7f;
+  }
+
   return {
     read(addr) {
       // IF ($FF0F): lower 5 bits are flags; bits 7-5 read as 1 on real hardware.
@@ -37,6 +44,11 @@ export function createIo() {
         this.tac = v;
         return;
       }
+      if (addr === 0xff02) {
+        regs[0x02] = v;
+        if (v & 0x80) completeSerialTransfer(v);
+        return;
+      }
       regs[addr - 0xff00] = v;
     },
     ifBits() {
@@ -58,6 +70,7 @@ export function createIo() {
       regs[0x000f] |= 1 << bit;
     },
     regs,
+    serialOut,
     divCounter: 0,
     tac: 0,
     tima: 0,
