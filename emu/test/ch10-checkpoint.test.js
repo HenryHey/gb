@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { createIo } from '../src/io.js';
 import { createPpu, ppuStep } from '../src/ppu.js';
+import { createEmu, reset, runTCycles } from '../src/emu.js';
 
 const GREEN = [0xe0f8d0, 0x88c070, 0x346856, 0x081820];
 
@@ -34,6 +35,14 @@ function stepPpu(ppu, io, t, vram) {
 /** LCD on, BG+window, unsigned tiles $8000, BG map $9800, window map $9C00. */
 function windowLcdc() {
   return 0x80 | 0x01 | 0x20 | 0x10 | 0x40;
+}
+
+function nopRom() {
+  return new Uint8Array(0x8000);
+}
+
+function expectWhiteFramebuffer(fb) {
+  expect([...fb].every((b) => b === 255)).toBe(true);
 }
 
 describe('chapter 10 checkpoint', () => {
@@ -140,5 +149,26 @@ describe('chapter 10 checkpoint', () => {
     expect(ppu.windowLine).toBe(2);
     expectPixel(ppu.framebuffer, 0, 0, 0);
     expectPixel(ppu.framebuffer, 0, 1, 3);
+  });
+
+  test('LCD off clears framebuffer to white', () => {
+    const emu = createEmu(nopRom());
+    reset(emu);
+    expectWhiteFramebuffer(emu.ppu.framebuffer);
+
+    emu.ppu.lcdc = 0x91;
+    emu.bus.vram[0x9800 - 0x8000] = 0x00;
+    emu.bus.vram[0x8000 - 0x8000] = 0xff;
+    emu.bus.vram[0x8000 - 0x8000 + 1] = 0xff;
+
+    runTCycles(emu, FIRST_SCANLINE_T);
+    expect(emu.ppu.framebuffer[0]).not.toBe(255);
+
+    emu.bus.write8(0xff40, 0x11); // LCD off
+    expectWhiteFramebuffer(emu.ppu.framebuffer);
+    expect(emu.ppu.ly).toBe(0);
+
+    runTCycles(emu, FIRST_SCANLINE_T);
+    expectWhiteFramebuffer(emu.ppu.framebuffer);
   });
 });
