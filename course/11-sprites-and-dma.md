@@ -26,9 +26,9 @@ Constraints that look like bugs are the scanline hardware:
 
 - **10 sprites per line.** Mode 2 walks OAM in index order and keeps the first 10 whose Y hits this `LY`. The rest are dropped (the famous flicker when too much overlaps).
 - **Priority:** smallest X wins; ties go to earlier OAM index. Colour 0 is transparent (you see BG through it). “BG priority” flag means “only draw over BG colour 0” — sprites behind trees, etc.
-- **OBJ tiles always live at** `$8000`, ignoring LCDC bit 4. 8×16 mode (LCDC bit 2) pairs two tiles; bit 0 of the index is ignored.
+- **OBJ tiles always live at `$8000`**, ignoring LCDC bit 4. 8×16 mode (LCDC bit 2) pairs two tiles; bit 0 of the index is ignored.
 
-`OBP0` / `OBP1` (`$FF48` / `$FF49`) work like BGP for sprites. Two palettes so enemies and the player can differ without extra tile art. `ppu.obp0` **/** `ppu.obp1` **are already wired** through the bus from chapter 10; use `paletteShades` on them the same way you do for BGP.
+`OBP0` / `OBP1` (`$FF48` / `$FF49`) work like BGP for sprites. Two palettes so enemies and the player can differ without extra tile art. **`ppu.obp0` / `ppu.obp1` are already wired** through the bus from chapter 10; use `paletteShades` on them the same way you do for BGP.
 
 LCDC bit 1 enables objects. Skip-boot `LCDC = $91` has it **clear** — games turn it on when they are ready to show sprites.
 
@@ -53,60 +53,73 @@ LCDC bit 1 must be set or you draw no objects.
 
 ## Wiring
 
-**You already have:**
+**You already had (chapters 5–10):**
 
-- `bus.oam` — 160 bytes, read/write at `$FE00–$FE9F` (chapter 5).
-- `ppu.obp0` / `ppu.obp1` — mirrored on `$FF48` / `$FF49` (chapter 10).
-- `renderScanline(ppu, vram)` — BGP + window from chapter 10.
+- `bus.oam` — 160 bytes, read/write at `$FE00–$FE9F`.
+- `ppu.obp0` / `ppu.obp1` — mirrored on `$FF48` / `$FF49`.
+- `renderScanline(ppu, vram)` — BGP + window.
 - `colorIndex`, `paletteShades`, `putPixel` in `ppu.js`.
 
-**Add:**
+**This chapter adds:**
 
-1. **OAM DMA in** `bus.js`**.** `$FF46` is **not** a PPU register (`isPpuReg` already excludes it). On **write** to `$FF46`, copy `$src00–$src9F` → `oam[]` via `read8`, and remember `src` for reads. On read, return the last written value (skip-boot `$FF` until the game writes).
-2. **Pass OAM into the PPU** the same way you pass VRAM — optional argument on `ppuStep` / `renderScanline`, threaded from `tickEmu`:
+1. **OAM DMA in `bus.js`.** `$FF46` is **not** a PPU register (`isPpuReg` excludes it). On write, copy `$src00–$src9F` → `oam[]` via `read8`, remember `src` for reads.
+2. **Pass OAM into the PPU** — optional fifth argument on `ppuStep` / `renderScanline`, threaded from `tickEmu`.
+3. **`spritesOnLine` + sprite compositing** inside `renderScanline`.
+
+**Files:** `src/bus.js`, `src/ppu.js`, `src/emu.js`.  
+**Tests:** `test/ch11-checkpoint.test.js`.
+
+Do **not** allocate a second OAM buffer on `ppu` — `reset` rebuilds `ppu` from `createPpu()` and would drop it. Use `bus.oam`.
+
+### Thread OAM through the emulator
 
 ```js
 // emu.js — tickEmu (both ppuStep calls)
 ppuStep(emu.ppu, emu.io, dt, emu.bus.vram, emu.bus.oam);
+```
 
-// ppu.js — advanceMode → renderScanline(ppu, vram, oam)
-function renderScanline(ppu, vram, oam) {
-  if (!vram || !oam) return;
+```js
+// ppu.js
+export function ppuStep(ppu, io, t, vram, oam) {
   …
+  advanceMode(ppu, io, vram, oam);
+}
+
+function advanceMode(ppu, io, vram, oam) {
+  …
+  case MODE_DRAW:
+    ppu.mode = MODE_HBLANK;
+    if (ppu.stat & STAT_HBLANK_IE) io.requestIf(1);
+    renderScanline(ppu, vram, oam);
+    break;
 }
 ```
 
-If `oam` is missing, skip sprites (chapter 8–10 tests keep passing).
-
-**Files:** `src/bus.js` (DMA on `$FF46`), `src/ppu.js` (sprite pass + helpers), `src/emu.js` (pass `bus.oam`).  
-**Tests:** add `test/ch11-checkpoint.test.js` (see [Checkpoint](#checkpoint)).
-
-Do **not** allocate a second OAM buffer on `ppu` — `reset` rebuilds `ppu` from `createPpu()` and would drop it. Use `bus.oam`.
+If `oam` is omitted, the BG/window pass still runs; the sprite pass is skipped (`if (!oam || !(ppu.lcdc & 0x02)) return`). Chapter 8–10 tests keep passing.
 
 ## Which sprites on this line
 
 ```js
 function spritesOnLine(ppu, oam, ly) {
   const h = (ppu.lcdc & 0x04) ? 16 : 8;
-  const list = [];
+  const sprites = [];
   for (let i = 0; i < 40; i++) {
     const y = oam[i * 4] - 16;
-    if (ly >= y && ly < y + h) list.push(i);
-    if (list.length === 10) break; // hardware cap, OAM order
+    if (ly >= y && ly < y + h) sprites.push(i);
+    if (sprites.length === 10) break; // hardware cap
   }
-  return list;
+
+  sprites.sort((a, b) => {
+    const ax = oam[a * 4 + 1];
+    const bx = oam[b * 4 + 1];
+    if (ax !== bx) return bx - ax; // larger X first
+    return b - a; // later OAM first
+  });
+  return sprites;
 }
 ```
 
-DMG **priority**: among pixels, the object with **smallest X** wins; ties go to **earlier OAM index**. Draw in reverse priority so the winner is painted last:
-
-```js
-list.sort((a, b) => {
-  const ax = oam[a * 4 + 1], bx = oam[b * 4 + 1];
-  if (ax !== bx) return bx - ax; // larger X first
-  return b - a;                  // later OAM first
-});
-```
+DMG **priority**: among pixels, the object with **smallest X** wins; ties go to **earlier OAM index**. Draw in reverse priority so the winner is painted last (sort above).
 
 Then for each sprite, for each of 8 pixels on this scanline, if the sprite pixel’s color index is **0**, skip (transparent). Else if BG-priority is set **and** the BG color index already in the line is not 0, skip. Else write OBJ shade from OBP0/OBP1.
 
@@ -116,26 +129,46 @@ Keep a per-line array of BG color indices (0–3), not just RGB, so priority can
 
 Extend chapter 10’s `renderScanline`:
 
-1. Allocate `bgIdx[160]` (or reuse a scratch buffer on `ppu`).
-2. Render BG+window as today — store each pixel’s **VRAM color index** in `bgIdx[x]`, then `putPixel` with `paletteShades(ppu.bgp, GREEN)[idx]`.
-3. If LCDC bit 1 is set, run the sprite pass below on top of that row.
+1. Allocate `bgIdx[160]`.
+2. Render BG+window as in chapter 10 — store each pixel’s **VRAM color index** in `bgIdx[x]`, then `putPixel` with `paletteShades(ppu.bgp, GREEN)[idx]`.
+3. If LCDC bit 1 is set and `oam` is present, run the sprite pass below on top of that row.
 4. If LCDC bit 1 is clear, skip step 3.
+
+BG + window loop (unchanged from chapter 10, now recording indices):
 
 ```js
 function renderScanline(ppu, vram, oam) {
-  if (!vram | !oam) return;
+  if (!vram) return;
+
   const y = ppu.ly;
   if (y >= 144) return;
 
   const bgIdx = new Uint8Array(160);
-  // … chapter 10 BG + window loop, filling bgIdx[x] and putPixel with BGP …
 
-  if (!(ppu.lcdc & 0x02)) return;
+  const winOn = ppu.lcdc & 0x20 && ppu.lcdc & 0x01 && y >= ppu.wy && ppu.wx <= 166;
+  let usedWindow = false;
 
-  const list = spritesOnLine(ppu, oam, y);
-  list.sort(/* priority sort above */);
+  for (let x = 0; x < 160; x++) {
+    let idx;
+    const useWin = winOn && x >= ppu.wx - 7;
+    if (useWin) {
+      usedWindow = true;
+      const wx = x - (ppu.wx - 7);
+      const wy = ppu.windowLine;
+      idx = sampleMap(ppu, vram, { mapBit: 0x40, px: wx, py: wy });
+    } else {
+      idx = sampleBg(ppu, vram, x, y);
+    }
 
-  for (const i of list) {
+    bgIdx[x] = idx;
+    putPixel(ppu.framebuffer, x, y, paletteShades(ppu.bgp, GREEN)[idx]);
+  }
+  if (usedWindow) ppu.windowLine++;
+
+  if (!oam || !(ppu.lcdc & 0x02)) return;
+
+  const sprites = spritesOnLine(ppu, oam, y);
+  for (const i of sprites) {
     const base = i * 4;
     const oamY = oam[base];
     const oamX = oam[base + 1];
@@ -146,11 +179,14 @@ function renderScanline(ppu, vram, oam) {
     if (screenX <= -8 || screenX >= 160) continue;
 
     let row = y - (oamY - 16);
-    if (flags & 0x40) row = h - 1 - row;
+    if (flags & 0x40) {
+      row = h - 1 - row;
+    }
 
     const tile = (h === 16)
       ? (tileIndex & 0xfe) + (row >= 8 ? 1 : 0)
       : tileIndex;
+
     const rowInTile = row & 7;
     const addr = tile * 16 + rowInTile * 2; // OBJ tiles always $8000-based in vram[]
 
@@ -162,7 +198,9 @@ function renderScanline(ppu, vram, oam) {
       if (x < 0 || x >= 160) continue;
 
       let col = xFine;
-      if (flags & 0x20) col = 7 - col;
+      if (flags & 0x20) {
+        col = 7 - col;
+      }
 
       const idx = colorIndex(vram[addr], vram[addr + 1], col);
       if (idx === 0) continue;
@@ -183,14 +221,27 @@ X/Y of 0 or 248+ hide the sprite off-screen. Still count toward the 10-per-line 
 On write to `$FF46` in `bus.js`:
 
 ```js
+let dmaReg = 0xff;
+
 function writeDma(src) {
   src &= 0xff;
-  dmaReg = src; // last value for reads
+  dmaReg = src;
   const base = src << 8;
   for (let i = 0; i < 0xa0; i++) {
     oam[i] = read8(base + i);
   }
-  // optional: dmaLeft = 160; // T-cycles — decrement in tickEmu if you add a lock
+}
+
+function readIo(addr) {
+  if (addr === 0xff4c) return 0xff;
+  if (addr === 0xff46) return dmaReg;
+  …
+}
+
+function writeIo(addr, v) {
+  if (addr === 0xff4c) return;
+  if (addr === 0xff46) return writeDma(v);
+  …
 }
 ```
 
@@ -215,27 +266,25 @@ Trigger DMA on **write**, not read. Reading `$FF46` returns the last written val
 - A second OAM array on `ppu` that `reset` wipes — use `bus.oam`.
 - OAM writes during mode 2/3 blocked on hardware; ignore at this accuracy.
 
-
-
 ## Checkpoint
 
-Put these in `test/ch11-checkpoint.test.js`. No ROM required — plant bytes in `bus.vram` and `bus.oam` (or bare arrays passed to `ppuStep`).
+`test/ch11-checkpoint.test.js` — no ROM required. Plant bytes in `bus.vram` / `bus.oam` (or bare arrays passed to `ppuStep`).
 
 ```bash
 cd emu && bun test test/ch11-checkpoint.test.js
 ```
 
-Reuse the helpers from `ch10-checkpoint.test.js` (`FIRST_SCANLINE_T = 252`, `expectPixel`, `paletteShades` / BGP identity tricks).
+Helpers: `FIRST_SCANLINE_T = 252` (mode 2 + mode 3 on the first visible line), `expectPixel`, `spriteLcdc()` = LCD on + BG + OBJ + unsigned tiles.
 
-Worth asserting:
-
-- **DMA copy** — write shadow OAM bytes in WRAM at `$C000`, `write8($FF46, $C0)`, read `$FE00–$FE9F` matches WRAM.
-- **DMA readback** — after `write8($FF46, $D0)`, `read8($FF46) === $D0`.
-- **OBJ transparent** — one OAM entry on line 0, tile pixel index 0 → framebuffer unchanged from BG-only row.
-- **OBJ pixel** — tile row with index 3, OBP0 identity (`$E4`), LCDC OBJ on (`bit 1`) → pixel uses shade 3.
-- **BG priority** — BG index 3 under sprite; flag bit 7 set → sprite pixel skipped; flag clear → sprite drawn.
-- **10-sprite cap** — 11 entries on the same line; only the first 10 in OAM order affect the row (spot-check one dropped sprite).
-- **Priority sort** — two overlapping sprites, same Y, different X; lower X wins (later draw overwrites).
+| Test | What it proves |
+| --- | --- |
+| DMA copies 160 bytes from WRAM page into OAM | `write8($FF46, $C0)` after shadow OAM at `$C000` |
+| DMA register readback | `read8($FF46)` returns last written page |
+| OBJ color index 0 is transparent | BG shows through at overlapping pixel |
+| OBJ pixel uses OBP0 shade | Non-zero tile index → shade from OBP0 |
+| BG priority flag blocks sprite | Flag bit 7 + BG index ≠ 0 → sprite skipped |
+| Only first 10 OAM entries on a line | 11th entry on same line is dropped |
+| Sprite priority: lower X wins | Two overlapping sprites → smaller X overwrites |
 
 Then load Tetris, reset, run frames. **Passing the unit tests is the chapter 11 bar.**
 
@@ -251,8 +300,6 @@ You still cannot **play** — no keypad. That is the next chapter. Watching the 
 - [Pan Docs — OAM DMA](https://gbdev.io/pandocs/OAM_DMA_Transfer.html)
 - [docs/reference/ppu.md](../docs/reference/ppu.md)
 - Nazar part 7 *Sprites* (compositing idea; verify priority against Pan Docs)
-
-
 
 ## Next
 
