@@ -10,13 +10,19 @@ renderCpu(emu.cpu);
 let running = false;
 
 const input = document.querySelector('#rom');
-const bytesInput = document.querySelector('#bytes');
-const loadBytes = document.querySelector('#load-bytes');
 const resetBtn = document.querySelector('#reset');
 const playBtn = document.querySelector('#play');
 const stepBtn = document.querySelector('#step');
 const frameBtn = document.querySelector('#frame');
+const debugUi = document.querySelector('#debug-ui');
 const info = document.querySelector('#info');
+
+function syncDebugUi() {
+  document.body.classList.toggle('debug-ui', debugUi.checked);
+}
+
+syncDebugUi();
+debugUi.addEventListener('change', syncDebugUi);
 
 function setRunning(on) {
   running = on;
@@ -80,26 +86,6 @@ input.addEventListener('change', async () => {
   }
 });
 
-loadBytes.addEventListener('click', () => {
-  try {
-    const rom = parseByteArray(bytesInput.value);
-    info.textContent = '';
-    loadRom(rom);
-    log(`Loaded ${rom.length} byte${rom.length === 1 ? '' : 's'} (header skipped)`);
-    log(formatBytes(rom));
-  } catch (err) {
-    info.textContent = err.message;
-    log(err.message);
-  }
-});
-
-bytesInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-    e.preventDefault();
-    loadBytes.click();
-  }
-});
-
 resetBtn.addEventListener('click', () => {
   try {
     setRunning(false);
@@ -150,44 +136,6 @@ frameBtn.addEventListener('click', () => {
     renderCpu(emu.cpu);
   }
 });
-
-/** Accept a JS array (`[0x3e, 0x01]`) or a hex dump (`3e 01 06`). */
-function parseByteArray(text) {
-  const src = text.trim();
-  if (!src) throw new Error('No bytes entered');
-
-  if (src.startsWith('[')) {
-    const jsonish = src.replace(/0x([0-9a-fA-F]+)/gi, (_, h) => String(parseInt(h, 16)));
-    let arr;
-    try {
-      arr = JSON.parse(jsonish);
-    } catch {
-      throw new Error('Invalid byte array');
-    }
-    if (!Array.isArray(arr) || arr.length === 0) {
-      throw new Error('Byte array is empty');
-    }
-    if (!arr.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)) {
-      throw new Error('Byte array must contain integers 0–255');
-    }
-    return new Uint8Array(arr);
-  }
-
-  const tokens = src.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
-  const bytes = tokens.map((tok) => {
-    const hex = tok.replace(/^0x/i, '');
-    if (!/^[0-9a-fA-F]{1,2}$/.test(hex)) {
-      throw new Error(`Invalid byte: ${tok}`);
-    }
-    return parseInt(hex, 16);
-  });
-  if (!bytes.length) throw new Error('No bytes entered');
-  return new Uint8Array(bytes);
-}
-
-function formatBytes(rom) {
-  return '[' + [...rom].map((b) => '0x' + b.toString(16).padStart(2, '0')).join(', ') + ']';
-}
 
 function blit(fb) {
   const canvas = document.querySelector('#screen');

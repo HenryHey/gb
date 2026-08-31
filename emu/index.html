@@ -8,33 +8,36 @@
   </head>
 
   <body>
-    <p><a href="/opcodes.html">Opcode table</a></p>
-    <label for="rom">Load a ROM</label>
-    <input type="file" id="rom" accept=".gb,.gbc,.bin" />
-    <label for="bytes">Or paste bytes</label>
-    <textarea
-      id="bytes"
-      rows="3"
-      placeholder="[0x3e, 0x01, 0x06, 0x02, 0x04, 0x18, 0xfe]"
-    ></textarea>
-    <button type="button" id="load-bytes">Load bytes</button>
+    <div class="rom-bar">
+      <label for="rom">Load a ROM</label>
+      <input type="file" id="rom" accept=".gb,.gbc,.bin" />
+      <label class="control-label">
+        <input type="checkbox" id="debug-ui" checked />
+        Debugging
+      </label>
+    </div>
     <pre id="info"></pre>
+    <div class="controls">
+      <button type="button" id="reset">Reset</button>
+      <button type="button" id="play">Play</button>
+      <span class="controls-debug">
+        <button type="button" id="step">Step</button>
+        <button type="button" id="frame">Step Frame</button>
+      </span>
+    </div>
     <div class="row">
       <div class="screen-col">
         <canvas id="screen" width="160" height="144"></canvas>
         <pre id="debug"></pre>
       </div>
       <div class="debug-col">
-        <div class="controls">
-          <button type="button" id="reset">Reset</button>
-          <button type="button" id="play">Play</button>
-          <button type="button" id="step">Step</button>
-          <button type="button" id="frame">Run 70224 T-cycles</button>
-        </div>
         <pre id="regs"></pre>
         <pre id="code"></pre>
       </div>
     </div>
+    <footer class="footer">
+      <a href="/opcodes.html">Opcode table</a>
+    </footer>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
