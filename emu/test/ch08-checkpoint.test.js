@@ -1,14 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { createIo } from '../src/io.js';
 import { createPpu, ppuStep } from '../src/ppu.js';
-import {
-  createEmu,
-  FRAME_T,
-  reset,
-  runFrame,
-  runTCycles,
-  tickEmu,
-} from '../src/emu.js';
+import { createEmu, FRAME_T, reset, runFrame, runTCycles, tickEmu } from '../src/emu.js';
 
 /** 32 KiB ROM of NOPs so skip-boot at $0100 just burns T-cycles. */
 function nopRom() {

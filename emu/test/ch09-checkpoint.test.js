@@ -54,7 +54,8 @@ describe('chapter 9 checkpoint', () => {
     }
   });
 
-  test('signed addressing: tile id $00 reads tile data at $9000', () => {
+  // Signed addressing + BGP-aware colors moved to ch10-checkpoint.test.js
+  test.skip('signed addressing: tile id $00 reads tile data at $9000', () => {
     const ppu = createPpu();
     const io = createIo();
     const vram = new Uint8Array(0x2000);

@@ -53,13 +53,12 @@ function incrementTima(io) {
 
 function timerStep(io, tCycles) {
   for (let i = 0; i < tCycles; i++) {
-      io.divCounter = (io.divCounter + 1) & 0xffff;
-      if (!(io.tac & 0x04)) continue;
-      const bit = [9, 3, 5, 7][io.tac & 3];
-      const oldBit = (io.divCounter - 1) & (1 << bit);
-      const newBit = io.divCounter & (1 << bit);
-      if (oldBit && !newBit) incrementTima(io);
-    
+    io.divCounter = (io.divCounter + 1) & 0xffff;
+    if (!(io.tac & 0x04)) continue;
+    const bit = [9, 3, 5, 7][io.tac & 3];
+    const oldBit = (io.divCounter - 1) & (1 << bit);
+    const newBit = io.divCounter & (1 << bit);
+    if (oldBit && !newBit) incrementTima(io);
   }
 }
 

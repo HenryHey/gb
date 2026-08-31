@@ -21,10 +21,22 @@ export function createIo() {
         regs[0x0f] = (v & 0x1f) | 0xe0;
         return;
       }
-      if (addr === 0xff04) { this.divCounter = 0; return; }
-      if (addr === 0xff05) { this.tima = v; return; }
-      if (addr === 0xff06) { this.tma = v; return; }
-      if (addr === 0xff07) { this.tac = v; return; }
+      if (addr === 0xff04) {
+        this.divCounter = 0;
+        return;
+      }
+      if (addr === 0xff05) {
+        this.tima = v;
+        return;
+      }
+      if (addr === 0xff06) {
+        this.tma = v;
+        return;
+      }
+      if (addr === 0xff07) {
+        this.tac = v;
+        return;
+      }
       regs[addr - 0xff00] = v;
     },
     ifBits() {
