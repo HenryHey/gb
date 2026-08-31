@@ -16,6 +16,9 @@ const stepBtn = document.querySelector('#step');
 const frameBtn = document.querySelector('#frame');
 const debugUi = document.querySelector('#debug-ui');
 const info = document.querySelector('#info');
+const screenCanvas = document.querySelector('#screen');
+const screenCtx = screenCanvas.getContext('2d');
+const screenImageData = screenCtx.createImageData(160, 144);
 
 function syncDebugUi() {
   document.body.classList.toggle('debug-ui', debugUi.checked);
@@ -42,7 +45,6 @@ function advanceOneFrame({ logFrame = false } = {}) {
   const t = runTCycles(emu, FRAME_T);
   blit(emu.ppu.framebuffer);
   info.textContent = '';
-  renderCpu(cpu);
   if (logFrame) {
     const haltNote = cpu.halted ? ' (HALT spin)' : '';
     log(
@@ -101,7 +103,9 @@ resetBtn.addEventListener('click', () => {
 });
 
 playBtn.addEventListener('click', () => {
+  const wasRunning = running;
   setRunning(!running);
+  if (wasRunning) renderCpu(emu.cpu);
 });
 
 stepBtn.addEventListener('click', () => {
@@ -130,6 +134,7 @@ frameBtn.addEventListener('click', () => {
   setRunning(false);
   try {
     advanceOneFrame({ logFrame: true });
+    renderCpu(emu.cpu);
   } catch (err) {
     info.textContent = err.message;
     log(err.message);
@@ -138,9 +143,8 @@ frameBtn.addEventListener('click', () => {
 });
 
 function blit(fb) {
-  const canvas = document.querySelector('#screen');
-  const ctx = canvas.getContext('2d');
-  ctx.putImageData(new ImageData(fb, 160, 144), 0, 0);
+  screenImageData.data.set(fb);
+  screenCtx.putImageData(screenImageData, 0, 0);
 }
 
 function mapKey(code, down) {
@@ -191,5 +195,8 @@ window.addEventListener('keyup', (e) => mapKey(e.code, false));
 
 if (import.meta.env.DEV) {
   window.emu = () => emu;
-  window.runFrame = () => advanceOneFrame({ logFrame: true });
+  window.runFrame = () => {
+    advanceOneFrame({ logFrame: true });
+    renderCpu(emu.cpu);
+  };
 }
