@@ -1,6 +1,9 @@
+import { createJoypad, readP1, writeP1 } from './joypad.js';
+
 export function createIo() {
   const regs = new Uint8Array(0x80).fill(0xff);
   const serialOut = [];
+  const joypad = createJoypad();
 
   function completeSerialTransfer(scValue) {
     serialOut.push(regs[0x01]);
@@ -19,6 +22,7 @@ export function createIo() {
       if (addr === 0xff05) return this.tima;
       if (addr === 0xff06) return this.tma;
       if (addr === 0xff07) return this.tac | 0xf8;
+      if (addr === 0xff00) return readP1(joypad);
       return regs[addr - 0xff00];
     },
     write(addr, v) {
@@ -49,6 +53,10 @@ export function createIo() {
         if (v & 0x80) completeSerialTransfer(v);
         return;
       }
+      if (addr === 0xff00) {
+        writeP1(joypad, v);
+        return;
+      }
       regs[addr - 0xff00] = v;
     },
     ifBits() {
@@ -70,6 +78,7 @@ export function createIo() {
       regs[0x000f] |= 1 << bit;
     },
     regs,
+    joypad,
     serialOut,
     divCounter: 0,
     tac: 0,

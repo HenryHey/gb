@@ -1,5 +1,6 @@
 import { createBus } from './bus.js';
 import { createIo } from './io.js';
+import { createJoypad } from './joypad.js';
 import { skipBoot } from './skipboot.js';
 import { createPpu, ppuStep } from './ppu.js';
 import { cbOps, createCpu, ops, step } from './ops/index.js';
@@ -28,6 +29,7 @@ export function reset(emu) {
   emu.io.tima = 0;
   emu.io.tma = 0;
   emu.io.tac = 0;
+  Object.assign(emu.io.joypad, createJoypad());
 
   Object.assign(emu.ppu, createPpu());
   skipBoot(emu);

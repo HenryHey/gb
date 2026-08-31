@@ -78,7 +78,7 @@ describe('bus memory map', () => {
 
   test('I/O stub defaults to $FF and accepts writes', () => {
     const { bus, ppu } = makeBus();
-    expect(bus.read8(0xff00)).toBe(0xff);
+    expect(bus.read8(0xff00)).toBe(0xcf);
     expect(bus.read8(0xff7f)).toBe(0xff);
     bus.write8(0xff40, 0x91);
     expect(bus.read8(0xff40)).toBe(0x91);
