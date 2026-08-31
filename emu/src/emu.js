@@ -66,11 +66,11 @@ function timerStep(io, tCycles) {
 export function tickEmu(emu) {
   const dt = cpuStep(emu);
   timerStep(emu.io, dt);
-  ppuStep(emu.ppu, emu.io, dt, emu.bus.vram);
+  ppuStep(emu.ppu, emu.io, dt, emu.bus.vram, emu.bus.oam);
   const extra = serviceIfNeeded(emu);
   if (extra) {
     timerStep(emu.io, extra);
-    ppuStep(emu.ppu, emu.io, extra, emu.bus.vram);
+    ppuStep(emu.ppu, emu.io, extra, emu.bus.vram, emu.bus.oam);
   }
   return dt + extra;
 }

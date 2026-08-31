@@ -7,6 +7,7 @@ export function createBus({ rom, io, ppu }) {
   const vram = new Uint8Array(0x2000); // PPU will own this later; bus can hold it
   const oam = new Uint8Array(0xa0);
   let ie = 0;
+  let dmaReg = 0xff;
 
   function isPpuReg(addr) {
     if (!ppu) return false;
@@ -97,14 +98,25 @@ export function createBus({ rom, io, ppu }) {
     }
   }
 
+  function writeDma(src) {
+    src &= 0xff;
+    dmaReg = src;
+    const base = src << 8;
+    for (let i=0; i < 0xa0; i++) {
+      oam[i] = read8(base + i);
+    }
+  }
+
   function readIo(addr) {
     if (addr === 0xff4c) return 0xff;
+    if (addr === 0xff46) return dmaReg;
     if (isPpuReg(addr)) return readPpuReg(addr);
     return io.read(addr);
   }
 
   function writeIo(addr, v) {
     if (addr === 0xff4c) return;
+    if (addr === 0xff46) return writeDma(v);
     if (isPpuReg(addr)) {
       writePpuReg(addr, v);
       return;

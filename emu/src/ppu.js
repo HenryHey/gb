@@ -31,7 +31,7 @@ export function createPpu() {
   };
 }
 
-export function ppuStep(ppu, io, t, vram) {
+export function ppuStep(ppu, io, t, vram, oam) {
   if (!(ppu.lcdc & 0x80)) {
     // LCD off
     ppu.ly = 0;
@@ -43,7 +43,7 @@ export function ppuStep(ppu, io, t, vram) {
   ppu.lineCycles += t;
   while (ppu.lineCycles >= modeLength(ppu.mode)) {
     ppu.lineCycles -= modeLength(ppu.mode);
-    advanceMode(ppu, io, vram);
+    advanceMode(ppu, io, vram, oam);
   }
 
   updateStatLyEquals(ppu, io);
@@ -53,7 +53,7 @@ function modeLength(mode) {
   return [204, 456, 80, 172][mode];
 }
 
-function advanceMode(ppu, io, vram) {
+function advanceMode(ppu, io, vram, oam) {
   switch (ppu.mode) {
     case MODE_HBLANK:
       ppu.ly++;
@@ -81,7 +81,7 @@ function advanceMode(ppu, io, vram) {
     case MODE_DRAW:
       ppu.mode = MODE_HBLANK;
       if (ppu.stat & STAT_HBLANK_IE) io.requestIf(1);
-      renderScanline(ppu, vram);
+      renderScanline(ppu, vram, oam);
       break;
     default:
       throw new Error(`Invalid PPU mode: ${ppu.mode}`);
@@ -124,11 +124,13 @@ function sampleMap(ppu, vram, { mapBit, px, py }) {
   return colorIndex(lo, hi, px & 7);
 }
 
-function renderScanline(ppu, vram) {
+function renderScanline(ppu, vram, oam) {
   if (!vram) return;
 
   const y = ppu.ly;
   if (y >= 144) return;
+
+  const bgIdx = new Uint8Array(160);
 
   const winOn = ppu.lcdc & 0x20 && ppu.lcdc & 0x01 && y >= ppu.wy && ppu.wx <= 166;
   let usedWindow = false;
@@ -149,9 +151,58 @@ function renderScanline(ppu, vram) {
       idx = sampleBg(ppu, vram, x, y);
     }
 
+    bgIdx[x] = idx;
     putPixel(ppu.framebuffer, x, y, paletteShades(ppu.bgp, GREEN)[idx]);
   }
   if (usedWindow) ppu.windowLine++;
+
+  if (!oam || !(ppu.lcdc & 0x02)) return;
+
+  const sprites = spritesOnLine(ppu, oam, y);
+  for (const i of sprites) {
+    const base = i* 4;
+    const oamY = oam[base];
+    const oamX = oam[base + 1];
+    const tileIndex = oam[base + 2];
+    const flags = oam[base + 3];
+    const h = (ppu.lcdc & 0x04) ? 16 : 8;
+    const screenX = oamX - 8;
+    if (screenX <= -8 || screenX >= 160) continue;
+
+    let row = y - (oamY - 16);
+    if (flags & 0x40) {
+      row = h -1 -row;
+    }
+
+    const tile = (h === 16)
+      ? (tileIndex & 0xfe) + (row >= 8 ? 1 : 0)
+      : tileIndex;
+
+    const rowInTile = row & 7;
+    const addr = tile * 16 + rowInTile * 2; // OBJ tiles always $8000-based in vram[]
+
+    // OAM flags bit 4: 0 → OBP0 ($FF48), 1 → OBP1 ($FF49)
+    const obp = flags & 0x10 ? ppu.obp1 : ppu.obp0;
+
+    const shades = paletteShades(obp, GREEN);
+
+    for (let xFine = 0; xFine < 8; xFine++) {
+      const x = screenX + xFine;
+      if (x < 0 || x >= 160) continue;
+
+      let col = xFine;
+      if (flags & 0x20) {
+        col = 7 - col;
+      }
+
+      const idx = colorIndex(vram[addr], vram[addr+1], col);
+      if (idx === 0) continue;
+      if ((flags & 0x80) && bgIdx[x] !== 0) continue;
+
+      putPixel(ppu.framebuffer, x, y, shades[idx]);
+    }
+  }
+
 
   return;
 }
@@ -177,4 +228,22 @@ function updateStatLyEquals(ppu, io) {
   if (ppu.ly === ppu.lyc && ppu.stat & STAT_LYC_IE) {
     io.requestIf(1);
   }
+}
+
+function spritesOnLine(ppu, oam, ly) {
+  const h = (ppu.lcdc & 0x04) ? 16 : 8;
+  const sprites = [];
+  for (let i = 0; i < 40; i++) {
+    const y = oam[i * 4] - 16;
+    if (ly >= y && ly < y + h) sprites.push(i);
+    if (sprites.length === 10) break; // hardware cap
+  }
+
+  sprites.sort((a, b) => {
+    const ax = oam[a * 4 + 1];
+    const bx = oam[b * 4 + 1];
+    if (ax !== bx) return bx - ax; // larger X first
+    return b - a; // later OAM first
+  });
+  return sprites;
 }

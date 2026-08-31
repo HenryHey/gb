@@ -26,9 +26,9 @@ Constraints that look like bugs are the scanline hardware:
 
 - **10 sprites per line.** Mode 2 walks OAM in index order and keeps the first 10 whose Y hits this `LY`. The rest are dropped (the famous flicker when too much overlaps).
 - **Priority:** smallest X wins; ties go to earlier OAM index. Colour 0 is transparent (you see BG through it). “BG priority” flag means “only draw over BG colour 0” — sprites behind trees, etc.
-- **OBJ tiles always live at `$8000`**, ignoring LCDC bit 4. 8×16 mode (LCDC bit 2) pairs two tiles; bit 0 of the index is ignored.
+- **OBJ tiles always live at** `$8000`, ignoring LCDC bit 4. 8×16 mode (LCDC bit 2) pairs two tiles; bit 0 of the index is ignored.
 
-`OBP0` / `OBP1` (`$FF48` / `$FF49`) work like BGP for sprites. Two palettes so enemies and the player can differ without extra tile art. **`ppu.obp0` / `ppu.obp1` are already wired** through the bus from chapter 10; use `paletteShades` on them the same way you do for BGP.
+`OBP0` / `OBP1` (`$FF48` / `$FF49`) work like BGP for sprites. Two palettes so enemies and the player can differ without extra tile art. `ppu.obp0` **/** `ppu.obp1` **are already wired** through the bus from chapter 10; use `paletteShades` on them the same way you do for BGP.
 
 LCDC bit 1 enables objects. Skip-boot `LCDC = $91` has it **clear** — games turn it on when they are ready to show sprites.
 
@@ -62,8 +62,7 @@ LCDC bit 1 must be set or you draw no objects.
 
 **Add:**
 
-1. **OAM DMA in `bus.js`.** `$FF46` is **not** a PPU register (`isPpuReg` already excludes it). On **write** to `$FF46`, copy `$src00–$src9F` → `oam[]` via `read8`, and remember `src` for reads. On read, return the last written value (skip-boot `$FF` until the game writes).
-
+1. **OAM DMA in** `bus.js`**.** `$FF46` is **not** a PPU register (`isPpuReg` already excludes it). On **write** to `$FF46`, copy `$src00–$src9F` → `oam[]` via `read8`, and remember `src` for reads. On read, return the last written value (skip-boot `$FF` until the game writes).
 2. **Pass OAM into the PPU** the same way you pass VRAM — optional argument on `ppuStep` / `renderScanline`, threaded from `tickEmu`:
 
 ```js
@@ -124,7 +123,7 @@ Extend chapter 10’s `renderScanline`:
 
 ```js
 function renderScanline(ppu, vram, oam) {
-  if (!vram) return;
+  if (!vram | !oam) return;
   const y = ppu.ly;
   if (y >= 144) return;
 
@@ -216,6 +215,8 @@ Trigger DMA on **write**, not read. Reading `$FF46` returns the last written val
 - A second OAM array on `ppu` that `reset` wipes — use `bus.oam`.
 - OAM writes during mode 2/3 blocked on hardware; ignore at this accuracy.
 
+
+
 ## Checkpoint
 
 Put these in `test/ch11-checkpoint.test.js`. No ROM required — plant bytes in `bus.vram` and `bus.oam` (or bare arrays passed to `ppuStep`).
@@ -250,6 +251,8 @@ You still cannot **play** — no keypad. That is the next chapter. Watching the 
 - [Pan Docs — OAM DMA](https://gbdev.io/pandocs/OAM_DMA_Transfer.html)
 - [docs/reference/ppu.md](../docs/reference/ppu.md)
 - Nazar part 7 *Sprites* (compositing idea; verify priority against Pan Docs)
+
+
 
 ## Next
 
