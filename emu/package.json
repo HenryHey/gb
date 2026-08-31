@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "bun test",
+    "test:mooneye": "MOONEYE=1 bun test mooneye.test.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
