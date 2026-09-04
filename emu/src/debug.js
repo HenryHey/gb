@@ -3,6 +3,13 @@ import { Z, N, H, C, opNames, cbOpNames, opLen } from './ops/index.js';
 const el = document.querySelector('#debug');
 const regsEl = document.querySelector('#regs');
 const codeEl = document.querySelector('#code');
+const vramCanvas = document.querySelector('#vram');
+const vramCtx = vramCanvas.getContext('2d');
+const vramImageData = vramCtx.createImageData(vramCanvas.width, vramCanvas.height);
+
+const GREEN = [0xe0f8d0, 0x88c070, 0x346856, 0x081820];
+const VRAM_TILES = 384;
+const VRAM_TILE_COLS = 16;
 
 export function log(...args) {
   const line = args.map(format).join(' ');
@@ -17,6 +24,45 @@ export function clear() {
 export function renderCpu(cpu) {
   renderRegs(cpu);
   renderCode(cpu);
+  renderVram(cpu);
+}
+
+function paletteShades(bgp) {
+  return [0, 1, 2, 3].map((i) => GREEN[(bgp >> (i * 2)) & 3]);
+}
+
+function decodeTilePixel(lo, hi, x) {
+  const bit = 7 - x;
+  return (((hi >> bit) & 1) << 1) | ((lo >> bit) & 1);
+}
+
+export function renderVram(cpu) {
+  const vram = cpu.bus.vram;
+  const shades = paletteShades(cpu.bus.read8(0xff47));
+  const data = vramImageData.data;
+  const width = vramCanvas.width;
+
+  for (let tile = 0; tile < VRAM_TILES; tile++) {
+    const base = tile * 16;
+    const originX = (tile % VRAM_TILE_COLS) * 8;
+    const originY = (tile / VRAM_TILE_COLS | 0) * 8;
+    for (let row = 0; row < 8; row++) {
+      const lo = vram[base + row * 2];
+      const hi = vram[base + row * 2 + 1];
+      for (let col = 0; col < 8; col++) {
+        const rgb = shades[decodeTilePixel(lo, hi, col)];
+        const x = originX + col;
+        const y = originY + row;
+        const i = (y * width + x) * 4;
+        data[i] = (rgb >> 16) & 0xff;
+        data[i + 1] = (rgb >> 8) & 0xff;
+        data[i + 2] = rgb & 0xff;
+        data[i + 3] = 255;
+      }
+    }
+  }
+
+  vramCtx.putImageData(vramImageData, 0, 0);
 }
 
 export function renderRegs(cpu) {

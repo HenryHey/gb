@@ -1,6 +1,6 @@
 import './style.css';
 import { parseHeader } from './cart.js';
-import { log, renderCpu, formatOpcode } from './debug.js';
+import { log, renderCpu, renderVram, formatOpcode } from './debug.js';
 import { createEmu, reset, runTCycles, tickEmu, FRAME_T } from './emu.js';
 
 let emu = createEmu(new Uint8Array());
@@ -145,6 +145,7 @@ frameBtn.addEventListener('click', () => {
 function blit(fb) {
   screenImageData.data.set(fb);
   screenCtx.putImageData(screenImageData, 0, 0);
+  if (debugUi.checked) renderVram(emu.cpu);
 }
 
 function mapKey(code, down) {

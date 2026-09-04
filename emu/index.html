@@ -32,7 +32,14 @@
       </div>
       <div class="debug-col">
         <pre id="regs"></pre>
-        <pre id="code"></pre>
+        <details class="debug-section" open>
+          <summary>Code</summary>
+          <pre id="code"></pre>
+        </details>
+        <details class="debug-section" open>
+          <summary>VRAM tiles ($8000–$97FF)</summary>
+          <canvas id="vram" width="128" height="192"></canvas>
+        </details>
       </div>
     </div>
     <footer class="footer">

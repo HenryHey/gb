@@ -90,7 +90,7 @@ body:not(.debug-ui) .footer {
 body.debug-ui .row {
   flex: 1;
   min-height: 0;
-  align-items: stretch;
+  align-items: start;
   overflow: hidden;
   padding-bottom: 40px;
   box-sizing: border-box;
@@ -134,10 +134,11 @@ body:not(.debug-ui) .controls-debug {
   gap: 8px;
   width: 480px;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
-canvas {
+#screen {
   display: block;
   width: 480px;
   height: 432px;
@@ -174,7 +175,6 @@ button:hover {
   color: #e0f8d0;
   font-size: 12px;
   line-height: 1.4;
-  overflow: hidden;
 }
 
 #regs {
@@ -187,10 +187,43 @@ button:hover {
   min-height: 0;
   white-space: pre-wrap;
   word-break: break-all;
+  overflow: hidden;
+}
+
+.debug-section {
+  flex: none;
+  width: 100%;
+}
+
+.debug-section > summary {
+  cursor: pointer;
+  font-size: 11px;
+  color: #8b949e;
+  padding: 2px 0 6px;
+  user-select: none;
+  list-style: none;
+}
+
+.debug-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+.debug-section > summary::before {
+  content: '▸ ';
+}
+
+.debug-section[open] > summary::before {
+  content: '▾ ';
 }
 
 #code {
-  flex: 1;
-  min-height: 0;
   white-space: pre;
+}
+
+#vram {
+  display: block;
+  width: 384px;
+  height: 576px;
+  image-rendering: pixelated;
+  background: #081820;
 }
