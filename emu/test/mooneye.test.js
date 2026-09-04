@@ -27,7 +27,9 @@ describe.skipIf(!RUN_MOONEYE)('mooneye acceptance', () => {
       const { result, serial } = runMooneyeRom(loadMooneyeRom(relPath));
       tally[result]++;
       const mark = result === 'pass' ? 'ok' : result;
-      console.log(`${mark.padEnd(8)} ${relPath}${result !== 'pass' ? ' ' + formatSerial(serial) : ''}`);
+      console.log(
+        `${mark.padEnd(8)} ${relPath}${result !== 'pass' ? ' ' + formatSerial(serial) : ''}`,
+      );
     }
     console.log(
       `mooneye: ${tally.pass} pass, ${tally.fail} fail, ${tally.timeout} timeout, ${tally.unknown} unknown (${roms.length} total)`,

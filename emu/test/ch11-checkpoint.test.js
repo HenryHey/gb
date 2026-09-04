@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { createBus } from '../src/bus.js';
+import { createCart } from '../src/cart.js';
 import { createIo } from '../src/io.js';
 import { createPpu, ppuStep } from '../src/ppu.js';
 
@@ -27,10 +28,13 @@ function expectPixel(fb, x, y, colorIndex, palette = 0xfc) {
 }
 
 function makeBus(romBytes = []) {
-  const rom = Uint8Array.from(romBytes);
+  const rom = new Uint8Array(Math.max(0x150, romBytes.length));
+  rom.set(romBytes);
+  rom[0x147] = 0x00;
+  const cart = createCart(rom);
   const io = createIo();
   const ppu = createPpu();
-  return { bus: createBus({ rom, io, ppu }), io, rom, ppu };
+  return { bus: createBus({ cart, io, ppu }), io, rom, ppu };
 }
 
 function stepPpu(ppu, io, t, vram, oam) {

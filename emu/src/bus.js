@@ -1,7 +1,7 @@
 const MODE_HBLANK = 0;
 const MODE_OAM = 2;
 
-export function createBus({ rom, io, ppu }) {
+export function createBus({ cart, io, ppu }) {
   const wram = new Uint8Array(0x2000);
   const hram = new Uint8Array(0x7f);
   const vram = new Uint8Array(0x2000); // PPU will own this later; bus can hold it
@@ -102,7 +102,7 @@ export function createBus({ rom, io, ppu }) {
     src &= 0xff;
     dmaReg = src;
     const base = src << 8;
-    for (let i=0; i < 0xa0; i++) {
+    for (let i = 0; i < 0xa0; i++) {
       oam[i] = read8(base + i);
     }
   }
@@ -126,9 +126,9 @@ export function createBus({ rom, io, ppu }) {
 
   function read8(addr) {
     addr &= 0xffff;
-    if (addr < 0x8000) return rom[addr] ?? 0xff;
+    if (addr < 0x8000) return cart.readRom(addr);
     if (addr < 0xa000) return vram[addr - 0x8000];
-    if (addr < 0xc000) return 0xff; // no SRAM yet
+    if (addr < 0xc000) return cart.readRam(addr);
     if (addr < 0xe000) return wram[addr - 0xc000];
     if (addr < 0xfe00) return wram[addr - 0xe000]; // echo
     if (addr < 0xfea0) return oam[addr - 0xfe00];
@@ -141,12 +141,18 @@ export function createBus({ rom, io, ppu }) {
   function write8(addr, v) {
     addr &= 0xffff;
     v &= 0xff;
-    if (addr < 0x8000) return;
+    if (addr < 0x8000) {
+      cart.writeRom(addr, v);
+      return;
+    }
     if (addr < 0xa000) {
       vram[addr - 0x8000] = v;
       return;
     }
-    if (addr < 0xc000) return;
+    if (addr < 0xc000) {
+      cart.writeRam(addr, v);
+      return;
+    }
     if (addr < 0xe000) {
       wram[addr - 0xc000] = v;
       return;

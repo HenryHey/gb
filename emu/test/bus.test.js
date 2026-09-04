@@ -1,13 +1,17 @@
 import { describe, expect, test } from 'bun:test';
 import { createBus } from '../src/bus.js';
+import { createCart } from '../src/cart.js';
 import { createIo } from '../src/io.js';
 import { createPpu } from '../src/ppu.js';
 
 function makeBus(romBytes = []) {
-  const rom = Uint8Array.from(romBytes);
+  const rom = new Uint8Array(Math.max(0x150, romBytes.length));
+  rom.set(romBytes);
+  rom[0x147] = 0x00; // ROM ONLY
+  const cart = createCart(rom);
   const io = createIo();
   const ppu = createPpu();
-  return { bus: createBus({ rom, io, ppu }), io, rom, ppu };
+  return { bus: createBus({ cart, io, ppu }), io, rom, ppu };
 }
 
 describe('bus memory map', () => {
@@ -108,6 +112,6 @@ describe('bus memory map', () => {
 
   test('out-of-range ROM read returns $FF', () => {
     const { bus } = makeBus([0x01]);
-    expect(bus.read8(0x0001)).toBe(0xff);
+    expect(bus.read8(0x0150)).toBe(0xff);
   });
 });

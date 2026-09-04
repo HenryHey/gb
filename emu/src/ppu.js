@@ -160,23 +160,21 @@ function renderScanline(ppu, vram, oam) {
 
   const sprites = spritesOnLine(ppu, oam, y);
   for (const i of sprites) {
-    const base = i* 4;
+    const base = i * 4;
     const oamY = oam[base];
     const oamX = oam[base + 1];
     const tileIndex = oam[base + 2];
     const flags = oam[base + 3];
-    const h = (ppu.lcdc & 0x04) ? 16 : 8;
+    const h = ppu.lcdc & 0x04 ? 16 : 8;
     const screenX = oamX - 8;
     if (screenX <= -8 || screenX >= 160) continue;
 
     let row = y - (oamY - 16);
     if (flags & 0x40) {
-      row = h -1 -row;
+      row = h - 1 - row;
     }
 
-    const tile = (h === 16)
-      ? (tileIndex & 0xfe) + (row >= 8 ? 1 : 0)
-      : tileIndex;
+    const tile = h === 16 ? (tileIndex & 0xfe) + (row >= 8 ? 1 : 0) : tileIndex;
 
     const rowInTile = row & 7;
     const addr = tile * 16 + rowInTile * 2; // OBJ tiles always $8000-based in vram[]
@@ -195,14 +193,13 @@ function renderScanline(ppu, vram, oam) {
         col = 7 - col;
       }
 
-      const idx = colorIndex(vram[addr], vram[addr+1], col);
+      const idx = colorIndex(vram[addr], vram[addr + 1], col);
       if (idx === 0) continue;
-      if ((flags & 0x80) && bgIdx[x] !== 0) continue;
+      if (flags & 0x80 && bgIdx[x] !== 0) continue;
 
       putPixel(ppu.framebuffer, x, y, shades[idx]);
     }
   }
-
 
   return;
 }
@@ -231,7 +228,7 @@ function updateStatLyEquals(ppu, io) {
 }
 
 function spritesOnLine(ppu, oam, ly) {
-  const h = (ppu.lcdc & 0x04) ? 16 : 8;
+  const h = ppu.lcdc & 0x04 ? 16 : 8;
   const sprites = [];
   for (let i = 0; i < 40; i++) {
     const y = oam[i * 4] - 16;

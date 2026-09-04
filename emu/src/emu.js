@@ -1,4 +1,5 @@
 import { createBus } from './bus.js';
+import { createCart } from './cart.js';
 import { createIo } from './io.js';
 import { createJoypad } from './joypad.js';
 import { skipBoot } from './skipboot.js';
@@ -12,9 +13,12 @@ export const FRAME_T = 70224;
 export function createEmu(rom) {
   const io = createIo();
   const ppu = createPpu();
-  const bus = createBus({ rom, io, ppu });
+  const romBuf =
+    rom.length >= 0x150 ? rom : Uint8Array.from({ length: 0x150 }, (_, i) => rom[i] ?? 0);
+  const cart = createCart(romBuf);
+  const bus = createBus({ cart, io, ppu });
   const cpu = createCpu(bus);
-  return { cpu, bus, io, rom, ppu };
+  return { cpu, bus, io, rom: romBuf, cart, ppu };
 }
 
 export function reset(emu) {

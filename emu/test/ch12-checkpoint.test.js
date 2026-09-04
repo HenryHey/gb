@@ -1,15 +1,19 @@
 import { describe, expect, test } from 'bun:test';
 import { createBus } from '../src/bus.js';
+import { createCart } from '../src/cart.js';
 import { createIo } from '../src/io.js';
 import { createJoypad, readP1, writeP1 } from '../src/joypad.js';
 import { createPpu } from '../src/ppu.js';
 import { createEmu, reset } from '../src/emu.js';
 
 function makeBus(romBytes = []) {
-  const rom = Uint8Array.from(romBytes);
+  const rom = new Uint8Array(Math.max(0x150, romBytes.length));
+  rom.set(romBytes);
+  rom[0x147] = 0x00;
+  const cart = createCart(rom);
   const io = createIo();
   const ppu = createPpu();
-  return { bus: createBus({ rom, io, ppu }), io, rom, ppu };
+  return { bus: createBus({ cart, io, ppu }), io, rom, ppu };
 }
 
 describe('joypad', () => {

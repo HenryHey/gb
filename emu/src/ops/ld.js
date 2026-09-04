@@ -151,7 +151,7 @@ export function registerLdOps(def) {
   // LD [nn], SP instruction
   function ld16SP(cpu) {
     const addr = readImm16(cpu);
-    cpu.bus.write8(addr, cpu.sp & 0xff);           // low byte first
+    cpu.bus.write8(addr, cpu.sp & 0xff); // low byte first
     cpu.bus.write8(addr + 1, (cpu.sp >> 8) & 0xff); // high byte
     return 20;
   }

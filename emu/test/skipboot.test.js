@@ -6,6 +6,7 @@ import { cbOps, ops, step } from '../src/ops/index.js';
 /** Minimal 32 KiB ROM with entry at $0100 and a nonzero header checksum. */
 function gameRom() {
   const rom = new Uint8Array(0x8000).fill(0xff);
+  rom[0x147] = 0x00; // ROM ONLY (fill($FF) would be an unknown mapper)
   rom[0x100] = 0xc3; // JP $0150
   rom[0x101] = 0x50;
   rom[0x102] = 0x01;
