@@ -1,5 +1,5 @@
 import './style.css';
-import { parseHeader } from './cart.js';
+import { loadSram, parseHeader, saveSram } from './cart.js';
 import { log, renderCpu, renderVram, formatOpcode } from './debug.js';
 import { createEmu, reset, runTCycles, tickEmu, FRAME_T } from './emu.js';
 
@@ -13,6 +13,8 @@ const input = document.querySelector('#rom');
 const resetBtn = document.querySelector('#reset');
 const playBtn = document.querySelector('#play');
 const stepBtn = document.querySelector('#step');
+const loadSramBtn = document.querySelector('#load-sram');
+const saveSramBtn = document.querySelector('#save-sram');
 const frameBtn = document.querySelector('#frame');
 const debugUi = document.querySelector('#debug-ui');
 const info = document.querySelector('#info');
@@ -27,22 +29,25 @@ const SHELL_W = 623;
 const SHELL_H = 1024;
 const LCD_TOP = 0.13;
 const LCD_HEIGHT = 0.308;
-const LCD_WIDTH = (LCD_HEIGHT * SCREEN_W) / SCREEN_H / (SHELL_W / SHELL_H);
 const MAX_PLAY_SCALE = 3;
-const VIEWPORT_PAD = 32;
-const CHROME_H = 140;
+const VIEWPORT_PAD = 16;
+const CHROME_H = 96;
+
+function shellSize(scale) {
+  const canvasH = SCREEN_H * scale;
+  const shellH = canvasH / LCD_HEIGHT;
+  const shellW = (shellH * SHELL_W) / SHELL_H;
+  return { canvasH, shellH, shellW };
+}
 
 function playScale(availW, availH) {
-  const shellH = Math.min(availH, (availW * SHELL_H) / SHELL_W);
-  const shellW = (shellH * SHELL_W) / SHELL_H;
-  const lcdH = shellH * LCD_HEIGHT;
-  const lcdW = shellW * LCD_WIDTH;
-  const scale = Math.min(
-    MAX_PLAY_SCALE,
-    Math.floor(lcdH / SCREEN_H),
-    Math.floor(lcdW / SCREEN_W),
-  );
-  return Math.max(1, scale);
+  for (let scale = MAX_PLAY_SCALE; scale >= 1; scale--) {
+    const canvasW = SCREEN_W * scale;
+    const { canvasH, shellH, shellW } = shellSize(scale);
+    const canvasTop = shellH * LCD_TOP;
+    if (shellW <= availW && canvasTop + canvasH <= availH) return scale;
+  }
+  return 1;
 }
 
 function clearPlayLayout() {
@@ -64,9 +69,7 @@ function layoutDisplay() {
   const availH = window.innerHeight - CHROME_H;
   const scale = playScale(availW, availH);
   const canvasW = SCREEN_W * scale;
-  const canvasH = SCREEN_H * scale;
-  const shellH = canvasH / LCD_HEIGHT;
-  const shellW = (shellH * SHELL_W) / SHELL_H;
+  const { canvasH, shellH, shellW } = shellSize(scale);
 
   displayWrap.style.width = `${shellW}px`;
   displayWrap.style.height = `${shellH}px`;
@@ -185,6 +188,44 @@ stepBtn.addEventListener('click', () => {
     info.textContent = err.message;
     log(err.message);
     renderCpu(cpu);
+  }
+});
+
+loadSramBtn.addEventListener('click', () => {
+  try {
+    const header = parseHeader(emu.rom);
+    if (!emu.cart.ram?.length) {
+      info.textContent = 'No battery SRAM on this cart';
+      log('Load SRAM: no SRAM');
+      return;
+    }
+    if (loadSram(emu.cart, header)) {
+      info.textContent = '';
+      log(`Loaded SRAM (${emu.cart.ram.length} bytes) — ${header.title}`);
+    } else {
+      info.textContent = 'No saved SRAM for this ROM';
+      log(`Load SRAM: nothing saved for ${header.title}`);
+    }
+  } catch (err) {
+    info.textContent = err.message;
+    log(err.message);
+  }
+});
+
+saveSramBtn.addEventListener('click', () => {
+  try {
+    const header = parseHeader(emu.rom);
+    if (!emu.cart.ram?.length) {
+      info.textContent = 'No battery SRAM on this cart';
+      log('Save SRAM: no SRAM');
+      return;
+    }
+    saveSram(emu.cart, header);
+    info.textContent = '';
+    log(`Saved SRAM (${emu.cart.ram.length} bytes) — ${header.title}`);
+  } catch (err) {
+    info.textContent = err.message;
+    log(err.message);
   }
 });
 

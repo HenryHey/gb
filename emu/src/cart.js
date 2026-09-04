@@ -136,6 +136,83 @@ function createMbc1(rom, header) {
   };
 }
 
+function createMbc3(rom, header) {
+  const romBanks = header.romBanks; // 64 for Red
+  const ram = new Uint8Array((header.ramKiB || 0) * 1024);
+  let ramEnable = false;
+  let romBank = 1;
+  let ramBank = 0;
+
+  return {
+    ram, // for save/load
+    readRom(addr) {
+      if (addr < 0x4000) {
+        return rom[addr];
+      }
+      const b = (romBank & romBanks -1) || 1;
+      return rom[b * 0x4000 + (addr - 0x4000)];
+      
+    },
+    // Writes to ROM space configure the MBC (data is never stored in ROM).
+    // Register selected by address bits A14/A13 (A15=0 in $0000–$7FFF):
+    //
+    //   addr range     A14 A13   register
+    //   $0000–$1FFF      0   0    RAM enable       (addr < 0x2000)
+    //   $2000–$3FFF      0   1    ROM bank         (addr < 0x4000)
+    //   $4000–$5FFF      1   0    RAM bank         (addr < 0x6000)
+    //   $6000–$7FFF      1   1    RTC latch
+    writeRom(addr, v) {
+      if (addr < 0x2000) {
+        // 0x0f = 0000 1111 — keep low nibble; 0x0A = 0000 1010
+        ramEnable = (v & 0x0f) === 0x0a;
+      } else if (addr < 0x4000) {
+        // 0x7f = 0111 1111 — 7-bit bank index; || 1 when game writes 0
+        romBank = (v & 0x7f) || 1;
+      } else if (addr < 0x6000) {
+        // 0x07 = 0000 0111 — SRAM banks 0–3 (8 KiB each at $A000–$BFFF)
+        ramBank = v & 0x07;
+      } else {
+        // $6000–$7FFF: RTC latch (freeze clock) — no-op without a clock chip
+      }
+    },
+    readRam(addr) {
+      if (!ramEnable) return 0xff;
+      if (ramBank <= 3) {
+        const i = ramBank * 0x2000 + (addr - 0xa000);
+        return ram[i] ?? 0xff;
+      }
+      // RTC $08-$0C (not implemented)
+      return 0;
+    },
+    writeRam(addr, v) {
+      if (!ramEnable) return;
+      if (ramBank <= 3 && ram.length) {
+        ram[ramBank * 0x2000 + (addr - 0xa000)] = v;
+      } 
+    },
+  };
+}
+
+function saveKey(header) {
+  return `gb-sram:${header.title}:${header.headerChecksum.toString(16)}`;
+}
+
+export function loadSram(cart, header) {
+  const raw = localStorage.getItem(saveKey(header));
+  if (!raw || !cart.ram?.length) return false;
+  const bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
+  cart.ram.set(bytes.subarray(0, cart.ram.length));
+  return true;
+}
+
+export function saveSram(cart, header) {
+  if (!cart.ram?.length) return;
+  localStorage.setItem(
+    saveKey(header),
+    btoa(String.fromCharCode(...cart.ram)),
+  );
+}
+
 export function createCart(rom) {
   const header = parseHeader(rom);
 
@@ -145,6 +222,9 @@ export function createCart(rom) {
 
   if ([0x01, 0x02, 0x03].includes(header.type)) {
     return createMbc1(rom, header);
+  }
+  if (header.type === 0x13) {
+    return createMbc3(rom, header);
   }
 
   throw new Error(`Mapper ${header.typeName} not implemented`);
