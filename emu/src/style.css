@@ -97,8 +97,19 @@ body.debug-ui .row {
 }
 
 body:not(.debug-ui) .row {
-  grid-template-columns: 480px;
+  grid-template-columns: 1fr;
   grid-template-areas: 'screen';
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body:not(.debug-ui) {
+  justify-content: center;
+  padding-bottom: 16px;
 }
 
 body:not(.debug-ui) .debug-col,
@@ -138,13 +149,51 @@ body:not(.debug-ui) .controls-debug {
   overflow-y: auto;
 }
 
-#screen {
-  display: block;
+body:not(.debug-ui) .controls {
+  width: auto;
+  max-width: min(623px, calc(100vw - 32px));
+}
+
+body:not(.debug-ui) .screen-col {
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.display-wrap {
+  position: relative;
+  flex: none;
+}
+
+body:not(.debug-ui) .display-wrap {
+  background: url('/gb-shell.png') center / 100% 100% no-repeat;
+  flex: none;
+}
+
+body:not(.debug-ui) #screen {
+  position: absolute;
+  background: transparent;
+}
+
+body.debug-ui .display-wrap {
+  width: auto;
+  height: auto;
+}
+
+body.debug-ui #screen {
+  position: static;
   width: 480px;
   height: 432px;
   flex: none;
   image-rendering: pixelated;
   background: #081820;
+}
+
+#screen {
+  display: block;
+  image-rendering: pixelated;
 }
 
 label {

@@ -12,7 +12,7 @@
       <label for="rom">Load a ROM</label>
       <input type="file" id="rom" accept=".gb,.gbc,.bin" />
       <label class="control-label">
-        <input type="checkbox" id="debug-ui" checked />
+        <input type="checkbox" id="debug-ui" />
         Debugging
       </label>
     </div>
@@ -27,7 +27,9 @@
     </div>
     <div class="row">
       <div class="screen-col">
-        <canvas id="screen" width="160" height="144"></canvas>
+        <div class="display-wrap">
+          <canvas id="screen" width="160" height="144"></canvas>
+        </div>
         <pre id="debug"></pre>
       </div>
       <div class="debug-col">
