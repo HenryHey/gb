@@ -2,7 +2,7 @@
 
 ## Goal
 
-Build a mental model of a Game Boy emulator that you can keep in your head for the next fifteen chapters, and know which documents to trust when something disagrees.
+Build a mental model of a Game Boy emulator that you can keep in your head for the core chapters, and know which documents to trust when something disagrees.
 
 ## What you are building
 
@@ -100,7 +100,7 @@ If a checkpoint fails, do not skip ahead. Later chapters assume the bus, the int
 
 ## What we will not do
 
-Game Boy Color, Super Game Boy, rumble, a pixel-FIFO PPU, a complete APU, cycle-accurate memory accesses, or shipping ROMs. Chapter 15 lists follow-on work; [chapter 16](16-mooneye-polish.md) is an optional Mooneye accuracy pass (MBC5 stub, I/O masks — not full cycle accuracy).
+Game Boy Color, Super Game Boy, rumble, a pixel-FIFO PPU, a complete APU, cycle-accurate memory accesses, or shipping ROMs. Chapter 15 lists follow-on work; [chapter 16](16-save-states.md) covers instant save states (fixed-layout snapshots); [chapter 17](17-mooneye-polish.md) is an optional Mooneye accuracy pass (MBC5 stub, I/O masks — not full cycle accuracy).
 
 ## Checkpoint
 

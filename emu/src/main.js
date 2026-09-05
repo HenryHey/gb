@@ -2,6 +2,7 @@ import './style.css';
 import { loadSram, parseHeader, saveSram } from './cart.js';
 import { log, renderCpu, renderVram, formatOpcode } from './debug.js';
 import { createEmu, reset, runFrame, tickEmu } from './emu.js';
+import { getSavedStateRaw, loadStateSlot, saveStateSlot, savedStateToJson } from './savestate.js';
 
 let emu = createEmu(new Uint8Array());
 reset(emu);
@@ -22,6 +23,7 @@ const stepBtn = document.querySelector('#step');
 const loadSramBtn = document.querySelector('#load-sram');
 const saveSramBtn = document.querySelector('#save-sram');
 const frameBtn = document.querySelector('#frame');
+const copySaveStateBtn = document.querySelector('#copy-save-state');
 const debugUi = document.querySelector('#debug-ui');
 const info = document.querySelector('#info');
 const displayWrap = document.querySelector('.display-wrap');
@@ -88,6 +90,14 @@ function layoutDisplay() {
 function syncDebugUi() {
   document.body.classList.toggle('debug-ui', debugUi.checked);
   layoutDisplay();
+  updateCopySaveStateBtn();
+}
+
+function updateCopySaveStateBtn() {
+  if (!copySaveStateBtn) return;
+  const hasSlot =
+    debugUi.checked && emu.rom.length >= 0x150 && getSavedStateRaw(emu.rom) !== null;
+  copySaveStateBtn.disabled = !hasSlot;
 }
 
 syncDebugUi();
@@ -125,6 +135,7 @@ function loadRom(rom) {
   reset(emu);
   resetClock();
   renderCpu(emu.cpu);
+  updateCopySaveStateBtn();
 }
 
 function advanceOneFrame({ logFrame = false, blitFrame = true } = {}) {
@@ -280,6 +291,73 @@ frameBtn.addEventListener('click', () => {
   }
 });
 
+copySaveStateBtn.addEventListener('click', async () => {
+  try {
+    const payload = savedStateToJson(emu.rom);
+    if (!payload) {
+      info.textContent = 'No saved state for this ROM';
+      log('Copy save state: nothing saved');
+      updateCopySaveStateBtn();
+      return;
+    }
+    await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    info.textContent = '';
+    log(`Copied save state to clipboard (${payload.title})`);
+  } catch (err) {
+    info.textContent = err.message;
+    log(err.message);
+  }
+});
+
+function saveState() {
+  if (emu.rom.length < 0x150) {
+    info.textContent = 'Load a ROM before saving state';
+    log('Save state: no ROM');
+    return;
+  }
+  try {
+    setRunning(false);
+    saveStateSlot(emu);
+    const header = parseHeader(emu.rom);
+    info.textContent = '';
+    log(`Saved state — ${header.title}`);
+    setRunning(true);
+    updateCopySaveStateBtn();
+  } catch (err) {
+    info.textContent = err.message;
+    log(err.message);
+  }
+}
+
+function loadState() {
+  if (emu.rom.length < 0x150) {
+    info.textContent = 'Load a ROM before loading state';
+    log('Load state: no ROM');
+    return;
+  }
+  try {
+    setRunning(false);
+    const loaded = loadStateSlot(emu.rom);
+    if (!loaded) {
+      info.textContent = 'No saved state for this ROM';
+      log(`Load state: nothing saved for ${parseHeader(emu.rom).title}`);
+      return;
+    }
+    emu = loaded;
+    resetClock();
+    blit(emu.ppu.framebuffer);
+    info.textContent = '';
+    renderCpu(emu.cpu);
+    log(`Loaded state — ${parseHeader(emu.rom).title}`);
+    setRunning(true);
+    updateCopySaveStateBtn();
+  } catch (err) {
+    info.textContent = err.message;
+    log(err.message);
+    renderCpu(emu.cpu);
+  }
+}
+
 function blit(fb) {
   screenImageData.data.set(fb);
   screenCtx.putImageData(screenImageData, 0, 0);
@@ -328,6 +406,16 @@ function mapKey(code, down) {
 
 window.addEventListener('keydown', (e) => {
   if (e.repeat) return;
+  if (e.code === 'Digit1') {
+    e.preventDefault();
+    saveState();
+    return;
+  }
+  if (e.code === 'Digit0') {
+    e.preventDefault();
+    loadState();
+    return;
+  }
   if (mapKey(e.code, true)) e.preventDefault();
 });
 window.addEventListener('keyup', (e) => mapKey(e.code, false));

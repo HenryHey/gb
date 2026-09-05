@@ -56,8 +56,11 @@ export function parseHeader(rom) {
   };
 }
 
-function createRomOnly(rom) {
+function createRomOnly(rom, header) {
   return {
+    mapperType: header.type,
+    ram: null,
+    state: null,
     readRom(addr) {
       return rom[addr] ?? 0xff;
     },
@@ -72,19 +75,16 @@ function createRomOnly(rom) {
 function createMbc1(rom, header) {
   const romBanks = header.romBanks; // power of 2
   const ram = new Uint8Array((header.ramKiB || 0) * 1024);
-  let ramEnable = false;
-  let romBank = 1;
-  let ramBank = 0;
-  let mode = 0;
+  const state = { ramEnable: false, romBank: 1, ramBank: 0, mode: 0 };
 
   function mapRom00() {
     // Mode 0: always bank 0. Mode 1: banks 0x00/0x20/0x40/0x60.
-    if (mode === 0) return 0;
+    if (state.mode === 0) return 0;
 
     // Mode 1 — bank index for $0000–$3FFF (low ROM nibble forced to 0):
     //   bit  6 5 4 3 2 1 0
     //        R R 0 0 0 0 0   ramBank<<5 → banks 0x00 / 0x20 / 0x40 / 0x60
-    return ((ramBank & 3) << 5) & (romBanks - 1);
+    return ((state.ramBank & 3) << 5) & (romBanks - 1);
   }
 
   function mapRom40() {
@@ -93,11 +93,11 @@ function createMbc1(rom, header) {
     // Bank index (both modes):
     //   bit  6 5 4 3 2 1 0
     //        R R r r r r r r   ramBank<<5 | romBank (1..31, never 0)
-    return (((ramBank & 3) << 5) | (romBank & 0x1f)) & (romBanks - 1);
+    return (((state.ramBank & 3) << 5) | (state.romBank & 0x1f)) & (romBanks - 1);
   }
 
   function ramOffset() {
-    return (mode === 1 ? ramBank : 0) * 0x2000;
+    return (state.mode === 1 ? state.ramBank : 0) * 0x2000;
   }
 
   function sramIndex(addr) {
@@ -107,6 +107,9 @@ function createMbc1(rom, header) {
   }
 
   return {
+    mapperType: header.type,
+    ram,
+    state,
     readRom(addr) {
       if (addr < 0x4000) {
         const b = mapRom00();
@@ -117,21 +120,21 @@ function createMbc1(rom, header) {
     },
     writeRom(addr, v) {
       if (addr < 0x2000) {
-        ramEnable = (v & 0x0f) === 0x0a;
+        state.ramEnable = (v & 0x0f) === 0x0a;
       } else if (addr < 0x4000) {
-        romBank = v & 0x1f || 1;
+        state.romBank = v & 0x1f || 1;
       } else if (addr < 0x6000) {
-        ramBank = v & 0x03;
+        state.ramBank = v & 0x03;
       } else {
-        mode = v & 0x01;
+        state.mode = v & 0x01;
       }
     },
     readRam(addr) {
-      if (!ramEnable || ram.length === 0) return 0xff;
+      if (!state.ramEnable || ram.length === 0) return 0xff;
       return ram[sramIndex(addr)] ?? 0xff;
     },
     writeRam(addr, v) {
-      if (!ramEnable || ram.length === 0) return;
+      if (!state.ramEnable || ram.length === 0) return;
       ram[sramIndex(addr)] = v;
     },
   };
@@ -140,17 +143,17 @@ function createMbc1(rom, header) {
 function createMbc3(rom, header) {
   const romBanks = header.romBanks; // 64 for Red
   const ram = new Uint8Array((header.ramKiB || 0) * 1024);
-  let ramEnable = false;
-  let romBank = 1;
-  let ramBank = 0;
+  const state = { ramEnable: false, romBank: 1, ramBank: 0 };
 
   return {
+    mapperType: header.type,
     ram, // for save/load
+    state,
     readRom(addr) {
       if (addr < 0x4000) {
         return rom[addr];
       }
-      const b = (romBank & romBanks -1) || 1;
+      const b = (state.romBank & romBanks -1) || 1;
       return rom[b * 0x4000 + (addr - 0x4000)];
       
     },
@@ -165,30 +168,30 @@ function createMbc3(rom, header) {
     writeRom(addr, v) {
       if (addr < 0x2000) {
         // 0x0f = 0000 1111 — keep low nibble; 0x0A = 0000 1010
-        ramEnable = (v & 0x0f) === 0x0a;
+        state.ramEnable = (v & 0x0f) === 0x0a;
       } else if (addr < 0x4000) {
         // 0x7f = 0111 1111 — 7-bit bank index; || 1 when game writes 0
-        romBank = (v & 0x7f) || 1;
+        state.romBank = (v & 0x7f) || 1;
       } else if (addr < 0x6000) {
         // 0x07 = 0000 0111 — SRAM banks 0–3 (8 KiB each at $A000–$BFFF)
-        ramBank = v & 0x07;
+        state.ramBank = v & 0x07;
       } else {
         // $6000–$7FFF: RTC latch (freeze clock) — no-op without a clock chip
       }
     },
     readRam(addr) {
-      if (!ramEnable) return 0xff;
-      if (ramBank <= 3) {
-        const i = ramBank * 0x2000 + (addr - 0xa000);
+      if (!state.ramEnable) return 0xff;
+      if (state.ramBank <= 3) {
+        const i = state.ramBank * 0x2000 + (addr - 0xa000);
         return ram[i] ?? 0xff;
       }
       // RTC $08-$0C (not implemented)
       return 0;
     },
     writeRam(addr, v) {
-      if (!ramEnable) return;
-      if (ramBank <= 3 && ram.length) {
-        ram[ramBank * 0x2000 + (addr - 0xa000)] = v;
+      if (!state.ramEnable) return;
+      if (state.ramBank <= 3 && ram.length) {
+        ram[state.ramBank * 0x2000 + (addr - 0xa000)] = v;
       } 
     },
   };
@@ -218,7 +221,7 @@ export function createCart(rom) {
   const header = parseHeader(rom);
 
   if (header.type === 0x00) {
-    return createRomOnly(rom);
+    return createRomOnly(rom, header);
   }
 
   if ([0x01, 0x02, 0x03].includes(header.type)) {
@@ -237,16 +240,16 @@ export function createCart(rom) {
 function createMbc5(rom, header) {
   const romBanks = header.romBanks ?? Math.max(2, rom.length >> 14);
   const ram = new Uint8Array((header.ramKiB || 0) * 1024);
-  let ramEnable = false;
-  let romBankLow = 0;
-  let romBankHigh = 0;
-  let ramBank = 0;
+  const state = { ramEnable: false, romBankLow: 0, romBankHigh: 0, ramBank: 0 };
 
   function romBankIndex() {
-    return ((romBankHigh << 8) | romBankLow) & (romBanks - 1);
+    return ((state.romBankHigh << 8) | state.romBankLow) & (romBanks - 1);
   }
 
   return {
+    mapperType: header.type,
+    ram,
+    state,
     readRom(addr) {
       if (addr < 0x4000) return rom[addr];
       const bank = romBankIndex();
@@ -254,22 +257,22 @@ function createMbc5(rom, header) {
     },
     writeRom(addr, v) {
       if (addr < 0x2000) {
-        ramEnable = (v & 0x0f) === 0x0a;
+        state.ramEnable = (v & 0x0f) === 0x0a;
       } else if (addr < 0x3000) {
-        romBankLow = v;
+        state.romBankLow = v;
       } else if (addr < 0x4000) {
-        romBankHigh = v & 0x01;
+        state.romBankHigh = v & 0x01;
       } else if (addr < 0x6000) {
-        ramBank = v & 0x0f;
+        state.ramBank = v & 0x0f;
       }
     },
     readRam(addr) {
-      if (!ramEnable || ram.length === 0) return 0xff;
-      return ram[ramBank * 0x2000 + (addr - 0xa000)] ?? 0xff;
+      if (!state.ramEnable || ram.length === 0) return 0xff;
+      return ram[state.ramBank * 0x2000 + (addr - 0xa000)] ?? 0xff;
     },
     writeRam(addr, v) {
-      if (!ramEnable || ram.length === 0) return;
-      ram[ramBank * 0x2000 + (addr - 0xa000)] = v;
+      if (!state.ramEnable || ram.length === 0) return;
+      ram[state.ramBank * 0x2000 + (addr - 0xa000)] = v;
     },
   };
 }

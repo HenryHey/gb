@@ -1,4 +1,4 @@
-# 16 — Mooneye polish (optional)
+# 17 — Mooneye polish (optional)
 
 ## Goal
 
@@ -6,7 +6,7 @@ Run the [Mooneye Test Suite](https://github.com/Gekkio/mooneye-test-suite) again
 
 When you finish this chapter you should have a working harness (`bun run test:mooneye`), roughly **30** passing acceptance ROMs (out of ~62 DMG-filtered), and a clear map of what still fails and why.
 
-This is **optional**. Chapter 15 already delivered a playable DMG emulator. Mooneye is the next accuracy tier.
+This is **optional**. Chapter 15 already delivered a playable DMG emulator; [chapter 16](16-save-states.md) adds instant save states. Mooneye is the next accuracy tier.
 
 ## Why bother?
 
@@ -14,11 +14,13 @@ Commercial games (Tetris, Pokémon) are the course bar. Mooneye ROMs are small, 
 
 Most Mooneye tests will still fail at this chapter’s bar. That is expected. The wins here are deliberately low-hanging:
 
-| Fix | Mooneye ROM | What it proves |
-| --- | --- | --- |
-| Unused I/O bits read as 1 | `bits/unused_hwio-GS.gb` | Open-bus / stub register behavior |
-| Consecutive `EI` does not restart delay | `ei_sequence.gb` | IME scheduling matches real silicon |
-| Basic MBC5 ROM banking | `oam_dma/sources-GS.gb` loads (may still timeout) | Mapper `$1B` no longer crashes |
+
+| Fix                                     | Mooneye ROM                                       | What it proves                      |
+| --------------------------------------- | ------------------------------------------------- | ----------------------------------- |
+| Unused I/O bits read as 1               | `bits/unused_hwio-GS.gb`                          | Open-bus / stub register behavior   |
+| Consecutive `EI` does not restart delay | `ei_sequence.gb`                                  | IME scheduling matches real silicon |
+| Basic MBC5 ROM banking                  | `oam_dma/sources-GS.gb` loads (may still timeout) | Mapper `$1B` no longer crashes      |
+
 
 Everything else in the failure list needs **instruction-cycle timing**, **cycle-accurate DMA**, or **PPU mode-3 stretch** — out of scope until you decide to go deeper.
 
@@ -42,33 +44,39 @@ The summary test prints a tally; individual ROM names appear as pass/fail in the
 
 ### Pass / fail / timeout
 
-| Serial bytes | Meaning |
-| --- | --- |
-| `03 05 08 0D 15 22` (Fibonacci) | Pass |
-| `42 42 42 42 42 42` | Fail |
+
+| Serial bytes                         | Meaning                                |
+| ------------------------------------ | -------------------------------------- |
+| `03 05 08 0D 15 22` (Fibonacci)      | Pass                                   |
+| `42 42 42 42 42 42`                  | Fail                                   |
 | fewer than 6 bytes after ~120 frames | Timeout — ROM never finished reporting |
+
 
 `includeMooneyeRom()` filters out boot-ROM tests and non-DMG variants (`-sgb`, `-mgb`, `-dmg0`, etc.). You only run DMG-relevant acceptance ROMs.
 
 ## Fix 1 — Unused I/O bits (`bits/unused_hwio-GS`)
 
+
+
 ### Hardware
 
-On DMG, **unused bits in implemented registers read as 1**, and **unmapped `$FFxx` addresses read `$FF` and ignore writes**. Returning `0` from a stub makes games think hardware is in impossible states and is a common hang source.
+On DMG, **unused bits in implemented registers read as 1**, and **unmapped** `$FFxx` **addresses read** `$FF` **and ignore writes**. Returning `0` from a stub makes games think hardware is in impossible states and is a common hang source.
 
 Pan Docs and Mooneye agree on the pattern: write any value, read back, mask to the “live” bits — unused bits should still be 1.
 
 Examples the test checks:
 
-| Register | Unused bits (read as 1) |
-| --- | --- |
-| `SC` (`$FF02`) | bits 1–6 |
-| `TAC` (`$FF07`) | bits 7–3 (you may already `\| 0xF8`) |
-| `IF` (`$FF0F`) | bits 7–5 (you may already `\| 0xE0`) |
-| `STAT` (`$FF41`) | bit 7 |
-| `NR10`, `NR30`, `NR32`, `NR41`, `NR44` | per-register masks |
-| `NR52` (`$FF26`) | bits 6–4 read 1; bit 7 reads 0 on DMG |
-| `$FF03`, `$FF08–$FF0E`, holes in APU range, `$FF4D–$FF7F` | whole byte reads `$FF` |
+
+| Register                                                  | Unused bits (read as 1)               |
+| --------------------------------------------------------- | ------------------------------------- |
+| `SC` (`$FF02`)                                            | bits 1–6                              |
+| `TAC` (`$FF07`)                                           | bits 7–3 (you may already `| 0xF8`)   |
+| `IF` (`$FF0F`)                                            | bits 7–5 (you may already `| 0xE0`)   |
+| `STAT` (`$FF41`)                                          | bit 7                                 |
+| `NR10`, `NR30`, `NR32`, `NR41`, `NR44`                    | per-register masks                    |
+| `NR52` (`$FF26`)                                          | bits 6–4 read 1; bit 7 reads 0 on DMG |
+| `$FF03`, `$FF08–$FF0E`, holes in APU range, `$FF4D–$FF7F` | whole byte reads `$FF`                |
+
 
 `IE` at `$FFFF` is the exception: bits 7–5 are **not** stuck high — they read what you wrote.
 
@@ -80,6 +88,8 @@ Chapter 5 said “read `$FF` for unimplemented I/O.” This chapter makes that p
 src/io.js     UNMAPPED set, READ_HI masks, readStored()
 src/bus.js    STAT read ORs bit 7
 ```
+
+
 
 ### Implementation
 
@@ -130,6 +140,8 @@ Bit 7 must always read 1; bits 1–0 come from the current mode; bit 2 is the LY
 - Treating `$FFFF` (`IE`) like other registers — upper bits are writable, not stuck.
 - Forgetting `$FF4D–$FF7F` — Mooneye loops all 52 addresses.
 
+
+
 ### Verify
 
 ```bash
@@ -139,6 +151,8 @@ cd emu && MOONEYE=1 bun test mooneye.test.js -t "bits/unused_hwio"
 Also run `bun test` — `serial.test.js` checks that `SC=0` still reads sensibly with the new mask.
 
 ## Fix 2 — Consecutive `EI` (`ei_sequence`)
+
+
 
 ### Hardware
 
@@ -151,11 +165,11 @@ cpu.imeEnableCountdown = 2;
 
 That passes `ei_timing.gb` (single `EI`, then `INC B`, interrupt fires once).
 
-`ei_sequence.gb` runs **18 back-to-back `EI` opcodes**, then `DI`. It expects an interrupt to fire **during** the `EI` block — specifically with return address `$01A2` (after the second `EI`, before the third).
+`ei_sequence.gb` runs **18 back-to-back** `EI` **opcodes**, then `DI`. It expects an interrupt to fire **during** the `EI` block — specifically with return address `$01A2` (after the second `EI`, before the third).
 
 If every `EI` resets the countdown to 2, consecutive `EI`s never finish the delay: countdown stays at 1 forever until a non-`EI` instruction runs — but the next instruction is `DI`, which clears the countdown. Interrupt never fires → `$42` fail bytes.
 
-Real hardware: **only the first `EI` in a run starts the delay**. Further `EI`s before IME enables do not restart it.
+Real hardware: **only the first** `EI` **in a run starts the delay**. Further `EI`s before IME enables do not restart it.
 
 ### Implementation
 
@@ -174,6 +188,8 @@ def(0xfb, 'EI', (cpu) => {
 cpu.ime = false;
 cpu.imeEnableCountdown = 0;
 ```
+
+
 
 ### How to reason about it
 
@@ -198,18 +214,22 @@ All four should pass.
 
 ## Fix 3 — MBC5 stub (`oam_dma/sources-GS`)
 
+
+
 ### Hardware
 
 Some Mooneye ROMs use mapper type `$1B` (MBC5 + RAM + battery). Without it, `createCart()` throws and the harness crashes mid-run.
 
 MBC5 ROM banking (minimal subset):
 
-| Address range | Effect |
-| --- | --- |
+
+| Address range | Effect                           |
+| ------------- | -------------------------------- |
 | `$0000–$1FFF` | RAM enable (`$0A` in low nibble) |
-| `$2000–$2FFF` | ROM bank low 8 bits |
-| `$3000–$3FFF` | ROM bank high bit (bit 8) |
-| `$4000–$5FFF` | RAM bank (ignore if no RAM) |
+| `$2000–$2FFF` | ROM bank low 8 bits              |
+| `$3000–$3FFF` | ROM bank high bit (bit 8)        |
+| `$4000–$5FFF` | RAM bank (ignore if no RAM)      |
+
 
 Bank 0 is valid on MBC5 (unlike MBC1/MBC3 where bank 0 at `$4000–$7FFF` maps to bank 1).
 
@@ -239,7 +259,7 @@ This is enough for Mooneye’s small test ROMs. Rumble (`$6000–$7FFF` on some 
 MOONEYE=1 bun test mooneye.test.js -t "oam_dma/sources"
 ```
 
-The ROM should **load** without throwing. It may still **timeout** — that test expects cycle-accurate OAM DMA from multiple source regions. Fixing the timeout is a later project (chapter 16 does not require it).
+The ROM should **load** without throwing. It may still **timeout** — that test expects cycle-accurate OAM DMA from multiple source regions. Fixing the timeout is a later project (chapter 17 does not require it).
 
 Update `ch13-checkpoint.test.js`: the “unimplemented mapper” test should use a type you still do not support (e.g. `$20`), not `$13` (MBC3) or `$1B` (MBC5).
 
@@ -247,22 +267,26 @@ Update `ch13-checkpoint.test.js`: the “unimplemented mapper” test should use
 
 After these three fixes, expect roughly **30 pass / 36 fail / 1 timeout** on the filtered suite. Group the remainder:
 
-| Category | Example ROMs | Blocker |
-| --- | --- | --- |
-| Instruction timing | `call_timing`, `jp_timing`, `push_timing`, `pop_timing`, `ret_timing`, `rst_timing`, `add_sp_e_timing` | Per-opcode cycle counts must match hardware exactly |
-| OAM DMA timing | `oam_dma_start`, `oam_dma_timing`, `oam_dma_restart`, `oam_dma/sources-GS` | DMA must steal bus cycles over ~160 µs |
-| Timer edge cases | `timer/tim00_div_trigger`, `timer/tima_reload`, `timer/rapid_toggle` | DIV-to-TIMA phase, reload quirks |
-| PPU timing | `ppu/lcdon_timing-GS`, `ppu/stat_irq_blocking`, `ppu/intr_2_mode3_timing` | Mode 3 stretch, STAT blocking, LCD-on delay |
-| Interrupt dispatch quirks | `interrupts/ie_push` | Writing `$FFFF` during interrupt push can cancel dispatch |
+
+| Category                  | Example ROMs                                                                                           | Blocker                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| Instruction timing        | `call_timing`, `jp_timing`, `push_timing`, `pop_timing`, `ret_timing`, `rst_timing`, `add_sp_e_timing` | Per-opcode cycle counts must match hardware exactly       |
+| OAM DMA timing            | `oam_dma_start`, `oam_dma_timing`, `oam_dma_restart`, `oam_dma/sources-GS`                             | DMA must steal bus cycles over ~160 µs                    |
+| Timer edge cases          | `timer/tim00_div_trigger`, `timer/tima_reload`, `timer/rapid_toggle`                                   | DIV-to-TIMA phase, reload quirks                          |
+| PPU timing                | `ppu/lcdon_timing-GS`, `ppu/stat_irq_blocking`, `ppu/intr_2_mode3_timing`                              | Mode 3 stretch, STAT blocking, LCD-on delay               |
+| Interrupt dispatch quirks | `interrupts/ie_push`                                                                                   | Writing `$FFFF` during interrupt push can cancel dispatch |
+
 
 Do not try to fix all of these in one sitting. Pick **one ROM**, read the `.s` source in the Mooneye repo, reproduce the failure, fix the smallest thing that makes that ROM pass, regression-test the suite.
 
 ## Suggested order for the next passes
 
-1. **`interrupts/ie_push.gb`** — behavioral, no cycle counting; teaches interrupt dispatch internals.
-2. **`oam_dma_timing.gb`** — stretch goal: DMA as a 160-cycle bus lockout instead of instant copy.
-3. **One `*_timing.gb` from the CPU set** — forces you to audit opcode durations in `gb-opcodes.json`.
+1. `interrupts/ie_push.gb` — behavioral, no cycle counting; teaches interrupt dispatch internals.
+2. `oam_dma_timing.gb` — stretch goal: DMA as a 160-cycle bus lockout instead of instant copy.
+3. **One** `*_timing.gb` **from the CPU set** — forces you to audit opcode durations in `gb-opcodes.json`.
 4. **PPU tests** — only after you accept mode-3 variable length or fixed-172 limitations.
+
+
 
 ## Checkpoint
 
@@ -272,6 +296,8 @@ Do not try to fix all of these in one sitting. Pick **one ROM**, read the `.s` s
 - `bun test` still green (662+ unit tests).
 - You can explain why consecutive `EI` must not reset `imeEnableCountdown`.
 
+
+
 ## Further reading
 
 - [Mooneye Test Suite](https://github.com/Gekkio/mooneye-test-suite) — `.s` sources next to each `.gb`
@@ -279,3 +305,4 @@ Do not try to fix all of these in one sitting. Pick **one ROM**, read the `.s` s
 - [docs/reference/test-roms.md](../docs/reference/test-roms.md) — Blargg vs Mooneye vs commercial games
 - [docs/reference/cpu-quirks.md](../docs/reference/cpu-quirks.md) — when instruction-level timing is not enough
 - [Pan Docs — MBC5](https://gbdev.io/pandocs/MBC5.html)
+

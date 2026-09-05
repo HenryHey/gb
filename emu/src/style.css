@@ -216,6 +216,15 @@ button:hover {
   background: #30363d;
 }
 
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  background: #21262d;
+}
+
 #regs,
 #debug,
 #code {
