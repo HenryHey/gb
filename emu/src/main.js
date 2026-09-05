@@ -35,7 +35,7 @@ const SHELL_W = 623;
 const SHELL_H = 1024;
 const LCD_TOP = 0.13;
 const LCD_HEIGHT = 0.308;
-const MAX_PLAY_SCALE = 3;
+const MAX_PLAY_SCALE = 4;
 const VIEWPORT_PAD = 16;
 const CHROME_H = 96;
 
