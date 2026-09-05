@@ -1,13 +1,19 @@
 import './style.css';
 import { loadSram, parseHeader, saveSram } from './cart.js';
 import { log, renderCpu, renderVram, formatOpcode } from './debug.js';
-import { createEmu, reset, runTCycles, tickEmu, FRAME_T } from './emu.js';
+import { createEmu, reset, runFrame, tickEmu } from './emu.js';
 
 let emu = createEmu(new Uint8Array());
 reset(emu);
 renderCpu(emu.cpu);
 
 let running = false;
+let clockOrigin = 0;
+let framesDone = 0;
+let pauseStarted = 0;
+let pausedTotal = 0;
+const FRAME_MS = 1000 / 59.7275;
+const MAX_CATCHUP = 5;
 
 const input = document.querySelector('#rom');
 const resetBtn = document.querySelector('#reset');
@@ -87,8 +93,28 @@ function syncDebugUi() {
 syncDebugUi();
 debugUi.addEventListener('change', syncDebugUi);
 window.addEventListener('resize', layoutDisplay);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && running) setRunning(false);
+});
+
+function resetClock(now = performance.now()) {
+  clockOrigin = 0;
+  framesDone = 0;
+  pauseStarted = 0;
+  pausedTotal = 0;
+}
 
 function setRunning(on) {
+  const now = performance.now();
+  if (on && !running) {
+    if (clockOrigin === 0) clockOrigin = now;
+    if (pauseStarted) {
+      pausedTotal += now - pauseStarted;
+      pauseStarted = 0;
+    }
+  } else if (!on && running) {
+    pauseStarted = now;
+  }
   running = on;
   playBtn.textContent = on ? 'Pause' : 'Play';
 }
@@ -97,14 +123,16 @@ function loadRom(rom) {
   setRunning(false);
   emu = createEmu(rom);
   reset(emu);
+  resetClock();
   renderCpu(emu.cpu);
 }
 
-function advanceOneFrame({ logFrame = false } = {}) {
+function advanceOneFrame({ logFrame = false, blitFrame = true } = {}) {
   const { cpu } = emu;
   const pcBefore = cpu.pc;
-  const t = runTCycles(emu, FRAME_T);
-  blit(emu.ppu.framebuffer);
+  const t = runFrame(emu);
+  framesDone++;
+  if (blitFrame) blit(emu.ppu.framebuffer);
   info.textContent = '';
   if (logFrame) {
     const haltNote = cpu.halted ? ' (HALT spin)' : '';
@@ -114,17 +142,27 @@ function advanceOneFrame({ logFrame = false } = {}) {
   }
 }
 
-function hostTick() {
-  if (running) {
-    try {
-      advanceOneFrame();
-    } catch (err) {
-      setRunning(false);
-      info.textContent = err.message;
-      log(err.message);
-      renderCpu(emu.cpu);
+function hostTick(now) {
+  try {
+    if (running && clockOrigin !== 0) {
+      const pausedNow = pauseStarted ? now - pauseStarted : 0;
+      const elapsed = now - clockOrigin - pausedTotal - pausedNow;
+      const target = Math.floor(elapsed / FRAME_MS);
+      let catchup = 0;
+      while (framesDone < target && catchup < MAX_CATCHUP) {
+        runFrame(emu);
+        framesDone++;
+        catchup++;
+      }
     }
+  } catch (err) {
+    setRunning(false);
+    info.textContent = err.message;
+    log(err.message);
+    renderCpu(emu.cpu);
   }
+
+  if (running) blit(emu.ppu.framebuffer);
   requestAnimationFrame(hostTick);
 }
 
@@ -153,6 +191,7 @@ resetBtn.addEventListener('click', () => {
   try {
     setRunning(false);
     reset(emu);
+    resetClock();
     blit(emu.ppu.framebuffer);
     info.textContent = '';
     renderCpu(emu.cpu);
