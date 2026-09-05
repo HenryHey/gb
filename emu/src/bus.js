@@ -53,11 +53,15 @@ export function createBus({ cart, io, ppu }) {
       ppu.ly = 0;
       ppu.mode = MODE_HBLANK;
       ppu.lineCycles = 0;
+      ppu.windowLine = 0;
+      ppu.wyTriggered = false;
       ppu.framebuffer.fill(255);
     } else if (!wasOn && nowOn) {
       ppu.ly = 0;
       ppu.mode = MODE_OAM;
       ppu.lineCycles = 0;
+      ppu.windowLine = 0;
+      ppu.wyTriggered = false;
     }
   }
 

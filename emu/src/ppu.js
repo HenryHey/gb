@@ -27,8 +27,15 @@ export function createPpu() {
     obp1: 0xff, // sprite palette 1 ($FF49); index 0 is transparent
     framebuffer: new Uint8ClampedArray(160 * 144 * 4), // RGBA pixels; host blits once per frame
     frameReady: false, // set at LY 144 (VBlank start); cleared after presenting the framebuffer
-    windowLine: 0, // nternal counter, when LCD turns on or off, reset windowline to 0
+    windowLine: 0, // internal window map row counter; resets each frame
+    wyTriggered: false, // latched when WY === LY; cleared at frame start (Pan Docs Y condition)
   };
+}
+
+/** Recompute window latch/counter after loading mid-frame state. */
+export function syncWindowState(ppu) {
+  ppu.wyTriggered = ppu.ly >= ppu.wy && ppu.ly < 144;
+  ppu.windowLine = ppu.wyTriggered ? ppu.ly - ppu.wy : 0;
 }
 
 export function ppuStep(ppu, io, t, vram, oam) {
@@ -37,6 +44,8 @@ export function ppuStep(ppu, io, t, vram, oam) {
     ppu.ly = 0;
     ppu.mode = MODE_HBLANK;
     ppu.lineCycles = 0;
+    ppu.windowLine = 0;
+    ppu.wyTriggered = false;
     return;
   }
 
@@ -72,6 +81,8 @@ function advanceMode(ppu, io, vram, oam) {
       if (ppu.ly === 154) {
         ppu.ly = 0;
         ppu.mode = MODE_OAM;
+        ppu.windowLine = 0;
+        ppu.wyTriggered = false;
         if (ppu.stat & STAT_OAM_IE) io.requestIf(1);
       }
       break;
@@ -132,7 +143,10 @@ function renderScanline(ppu, vram, oam) {
 
   const bgIdx = new Uint8Array(160);
 
-  const winOn = ppu.lcdc & 0x20 && ppu.lcdc & 0x01 && y >= ppu.wy && ppu.wx <= 166;
+  if (ppu.lcdc & 0x20 && ppu.lcdc & 0x01 && y === ppu.wy) {
+    ppu.wyTriggered = true;
+  }
+  const winOn = ppu.lcdc & 0x20 && ppu.lcdc & 0x01 && ppu.wyTriggered && ppu.wx <= 166;
   let usedWindow = false;
 
   for (let x = 0; x < 160; x++) {
@@ -154,7 +168,7 @@ function renderScanline(ppu, vram, oam) {
     bgIdx[x] = idx;
     putPixel(ppu.framebuffer, x, y, paletteShades(ppu.bgp, GREEN)[idx]);
   }
-  if (usedWindow) ppu.windowLine++;
+  if (usedWindow) ppu.windowLine = (ppu.windowLine + 1) & 0xff;
 
   if (!oam || !(ppu.lcdc & 0x02)) return;
 

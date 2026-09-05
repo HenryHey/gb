@@ -1,5 +1,6 @@
 import { parseHeader } from './cart.js';
 import { createEmu } from './emu.js';
+import { syncWindowState } from './ppu.js';
 
 export const GBSS_MAGIC = 0x53534247; // 'GBSS' LE
 export const GBSS_VERSION = 1;
@@ -60,7 +61,7 @@ function writePpu(out, view, ppu) {
   out[0x4b] = ppu.bgp;
   out[0x4c] = ppu.obp0;
   out[0x4d] = ppu.obp1;
-  view.setUint16(0x4e, ppu.windowLine, true);
+  out[0x4e] = ppu.windowLine & 0xff;
 }
 
 function readPpu(ppu, view) {
@@ -77,7 +78,7 @@ function readPpu(ppu, view) {
   ppu.bgp = view.getUint8(0x4b);
   ppu.obp0 = view.getUint8(0x4c);
   ppu.obp1 = view.getUint8(0x4d);
-  ppu.windowLine = view.getUint16(0x4e, true);
+  ppu.windowLine = view.getUint8(0x4e);
 }
 
 function writeTimer(out, view, io) {
@@ -220,6 +221,7 @@ export function deserializeEmu(bytes, rom) {
   cpu.halted = view.getUint8(0x35) !== 0;
 
   readPpu(emu.ppu, view);
+  syncWindowState(emu.ppu);
   readTimer(emu.io, view);
   readJoypad(emu.io.joypad, view);
   readCart(emu.cart, view);

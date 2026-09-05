@@ -129,6 +129,44 @@ describe('chapter 10 checkpoint', () => {
     expectPixel(ppu.framebuffer, 0, 0, 0);
   });
 
+  test('windowLine resets at the start of each frame', () => {
+    const ppu = createPpu();
+    const io = createIo();
+    const vram = new Uint8Array(0x2000);
+
+    ppu.lcdc = windowLcdc();
+    ppu.wy = 0;
+    ppu.wx = 7;
+
+    vram[0x9c00 - 0x8000] = 0x01;
+    vram[0x8010 - 0x8000] = 0xff;
+    vram[0x8010 - 0x8000 + 1] = 0xff;
+
+    // One full DMG frame: 154 scanlines × 456 T = 70224
+    stepPpu(ppu, io, 70224, vram);
+    expect(ppu.windowLine).toBe(0);
+    expect(ppu.wyTriggered).toBe(false);
+  });
+
+  test('windowLine wraps at 256', () => {
+    const ppu = createPpu();
+    const io = createIo();
+    const vram = new Uint8Array(0x2000);
+
+    ppu.lcdc = windowLcdc();
+    ppu.wy = 0;
+    ppu.wx = 7;
+    ppu.windowLine = 255;
+
+    vram[0x9c00 - 0x8000] = 0x01;
+    vram[0x8010 - 0x8000] = 0xff;
+    vram[0x8010 - 0x8000 + 1] = 0xff;
+
+    stepPpu(ppu, io, FIRST_SCANLINE_T, vram);
+
+    expect(ppu.windowLine).toBe(0);
+  });
+
   test('windowLine advances only on lines that draw window pixels', () => {
     const ppu = createPpu();
     const io = createIo();
