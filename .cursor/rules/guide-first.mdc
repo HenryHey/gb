@@ -42,7 +42,7 @@ Only update guide files when the user agrees to the proposed addition.
 
 **User:** "How should I implement the bus?"
 
-**Do:** Point to `course/05-memory-and-skip-boot.md`, summarize the address map and `read8`/`write8` structure, list files (`emu/src/bus.js`, `emu/test/bus.test.js`), mention `npm test` / checkpoint tests.
+**Do:** Point to `course/05-memory-and-skip-boot.md`, summarize the address map and `read8`/`write8` structure, list files (`emu/src/bus.js`, `emu/test/bus.test.js`), mention `bun test` / checkpoint tests.
 
 **Don't:** Create or rewrite `bus.js` without being asked.
 

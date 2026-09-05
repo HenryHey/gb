@@ -18,7 +18,7 @@ export function registerControlOps(def) {
   });
 
   def(0xfb, 'EI', (cpu) => {
-    cpu.imeEnableCountdown = 2;
+    if (!cpu.imeEnableCountdown) cpu.imeEnableCountdown = 2;
     return 4;
   });
 }

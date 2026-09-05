@@ -20,7 +20,7 @@ export function createBus({ cart, io, ppu }) {
       case 0xff40:
         return ppu.lcdc;
       case 0xff41:
-        return (ppu.stat & 0xf8) | ppu.mode | (ppu.ly === ppu.lyc ? 4 : 0);
+        return 0x80 | (ppu.stat & 0x78) | ppu.mode | (ppu.ly === ppu.lyc ? 4 : 0);
       case 0xff42:
         return ppu.scy;
       case 0xff43:

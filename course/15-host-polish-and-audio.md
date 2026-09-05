@@ -137,7 +137,7 @@ That is a **playable** emulator.
 | Cycle-accurate PPU (pixel FIFO, mode 3 stretch) | Mooneye / dmg-acid2 perfection |
 | HALT bug, OAM corruption, STAT IRQ blocking | Obscure; few commercial DMG titles |
 | CGB (double speed, palettes, VRAM banks) | Different machine |
-| MBC5, rumble, camera, printer | Different carts |
+| MBC5, rumble, camera, printer | Optional [chapter 16](../../course/16-mooneye-polish.md); full cart features can wait |
 | Real APU | Large project of its own |
 | Serial link | Two emulators |
 | Boot ROM / Nintendo logo | Cosmetic; legal dump required |
@@ -159,7 +159,9 @@ When a **specific game** glitches, debug that glitch (often `EI`/`HALT`, window 
 - Pokémon still saves.
 - You can explain, out loud, the `stepInstruction` → `timer.step` → `ppu.step` loop from chapter 0.
 
-That is the end of the course. Go play something.
+That is the end of the core course. Go play something.
+
+**Optional:** [16 — Mooneye polish](16-mooneye-polish.md) — run the Mooneye harness and fix I/O open-bus, consecutive `EI`, and MBC5 without chasing cycle-accurate PPU yet.
 
 ## Further reading
 

@@ -4,6 +4,7 @@ const CART_TYPES = {
   0x02: 'MBC1+RAM',
   0x03: 'MBC1+RAM+BATTERY',
   0x13: 'MBC3+RAM+BATTERY',
+  0x1b: 'MBC5+RAM+BATTERY',
   // add others as you meet them; full table in Pan Docs
 };
 
@@ -226,6 +227,49 @@ export function createCart(rom) {
   if (header.type === 0x13) {
     return createMbc3(rom, header);
   }
+  if (header.type === 0x1b) {
+    return createMbc5(rom, header);
+  }
 
   throw new Error(`Mapper ${header.typeName} not implemented`);
+}
+
+function createMbc5(rom, header) {
+  const romBanks = header.romBanks ?? Math.max(2, rom.length >> 14);
+  const ram = new Uint8Array((header.ramKiB || 0) * 1024);
+  let ramEnable = false;
+  let romBankLow = 0;
+  let romBankHigh = 0;
+  let ramBank = 0;
+
+  function romBankIndex() {
+    return ((romBankHigh << 8) | romBankLow) & (romBanks - 1);
+  }
+
+  return {
+    readRom(addr) {
+      if (addr < 0x4000) return rom[addr];
+      const bank = romBankIndex();
+      return rom[bank * 0x4000 + (addr - 0x4000)];
+    },
+    writeRom(addr, v) {
+      if (addr < 0x2000) {
+        ramEnable = (v & 0x0f) === 0x0a;
+      } else if (addr < 0x3000) {
+        romBankLow = v;
+      } else if (addr < 0x4000) {
+        romBankHigh = v & 0x01;
+      } else if (addr < 0x6000) {
+        ramBank = v & 0x0f;
+      }
+    },
+    readRam(addr) {
+      if (!ramEnable || ram.length === 0) return 0xff;
+      return ram[ramBank * 0x2000 + (addr - 0xa000)] ?? 0xff;
+    },
+    writeRam(addr, v) {
+      if (!ramEnable || ram.length === 0) return;
+      ram[ramBank * 0x2000 + (addr - 0xa000)] = v;
+    },
+  };
 }

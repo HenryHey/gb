@@ -33,6 +33,17 @@ Homebrew that is nice as “does anything show up?”:
 | 13 MBC1 | Super Mario Land | Pass |
 | 14 MBC3 | Pokémon Red | Pass |
 | 15 | Blargg `cpu_instrs` with a framebuffer | Aim to pass; do not spiral |
+| 16 (optional) | Mooneye acceptance (`bun run test:mooneye`) | ~30 pass; I/O + `EI` + MBC5 stub |
+
+## Mooneye harness (chapter 16)
+
+ROMs under `test_carts/mooneye/acceptance/`. Run:
+
+```bash
+cd emu && bun run test:mooneye
+```
+
+Pass = six serial bytes `03 05 08 0D 15 22`. Fail = `42` repeated. See [course/16-mooneye-polish.md](../../course/16-mooneye-polish.md).
 
 ## Reading Blargg results without serial
 

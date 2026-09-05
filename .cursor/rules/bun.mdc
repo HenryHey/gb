@@ -1,0 +1,28 @@
+---
+description: Use Bun for package management, scripts, and tests in this project
+alwaysApply: true
+---
+
+# Use Bun, not npm
+
+This project uses [Bun](https://bun.sh) as its JavaScript runtime and package manager. Do **not** use npm, npx, yarn, or pnpm in docs, rules, scripts, or agent responses.
+
+## Commands
+
+Run everything from `emu/`:
+
+| Task | Command |
+| --- | --- |
+| Install deps | `bun install` |
+| Dev server | `bun dev` |
+| Unit tests | `bun test` |
+| Mooneye suite | `bun run test:mooneye` |
+| Lint | `bun run lint` |
+| Format | `bun run format` |
+
+`package.json` scripts already invoke `bun test` internally. Prefer `bun test path/to/file.test.js` for a single file, or `bun run <script>` when a script sets env vars (e.g. `test:mooneye` sets `MOONEYE=1`).
+
+## When writing docs or examples
+
+- ✅ `bun test`, `bun install`, `bun run test:mooneye`
+- ❌ `npm test`, `npm install`, `npm run test:mooneye`, `npx`

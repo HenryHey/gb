@@ -1,5 +1,32 @@
 import { createJoypad, readP1, writeP1 } from './joypad.js';
 
+/** Offsets ($FF00 + n) with no hardware behind them — read $FF, ignore writes. */
+const UNMAPPED = new Set([
+  0x03, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x15, 0x1f, 0x27, 0x28, 0x29,
+]);
+for (let i = 0x4d; i <= 0x7f; i++) UNMAPPED.add(i);
+
+/** Unused bits that read as 1 on DMG (Mooneye `bits/unused_hwio-GS`). */
+const READ_HI = {
+  0x02: 0x7e, // SC
+  0x10: 0x80, // NR10
+  0x1a: 0x7f, // NR30
+  0x1c: 0x9f, // NR32
+  0x20: 0xc0, // NR41
+  0x23: 0x3f, // NR44
+};
+
+function isUnmapped(offset) {
+  return UNMAPPED.has(offset);
+}
+
+function readStored(regs, offset) {
+  const hi = READ_HI[offset];
+  if (hi !== undefined) return regs[offset] | hi;
+  if (offset === 0x26) return (regs[offset] & 0x0f) | 0x70; // NR52
+  return regs[offset];
+}
+
 export function createIo() {
   const regs = new Uint8Array(0x80).fill(0xff);
   const serialOut = [];
@@ -12,6 +39,9 @@ export function createIo() {
 
   return {
     read(addr) {
+      const offset = addr - 0xff00;
+      if (isUnmapped(offset)) return 0xff;
+
       // IF ($FF0F): lower 5 bits are flags; bits 7-5 read as 1 on real hardware.
       //
       //   bit:  7 6 5 4 3 2 1 0
@@ -23,9 +53,12 @@ export function createIo() {
       if (addr === 0xff06) return this.tma;
       if (addr === 0xff07) return this.tac | 0xf8;
       if (addr === 0xff00) return readP1(joypad);
-      return regs[addr - 0xff00];
+      return readStored(regs, offset);
     },
     write(addr, v) {
+      const offset = addr - 0xff00;
+      if (isUnmapped(offset)) return;
+
       if (addr === 0xff0f) {
         // Store only the 5 flag bits; force upper bits to 1 in our copy.
         // (v & 0x1f) keeps bits 4-0; | 0xe0 sets bits 7-5 to 1.
@@ -57,7 +90,7 @@ export function createIo() {
         writeP1(joypad, v);
         return;
       }
-      regs[addr - 0xff00] = v;
+      regs[offset] = v;
     },
     ifBits() {
       return regs[0x0f] & 0x1f;

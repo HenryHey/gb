@@ -176,7 +176,7 @@ describe('MBC1 SRAM', () => {
 
 describe('createCart', () => {
   test('throws for unimplemented mappers', () => {
-    const rom = makeRom({ banks: 4, type: 0x13, ramId: 0x03 });
+    const rom = makeRom({ banks: 4, type: 0x20, ramId: 0x03 });
     expect(() => createCart(rom)).toThrow(/not implemented/i);
   });
 });
