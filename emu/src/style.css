@@ -31,9 +31,20 @@ a {
   flex: none;
 }
 
-.rom-bar > label[for='rom'] {
+.rom-bar > label[for='rom'],
+.rom-bar > label[for='rom-choice'] {
   display: inline;
   margin: 0;
+}
+
+#rom-choice {
+  font: inherit;
+  color: #c9d1d9;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 4px 8px;
+  max-width: min(320px, 50vw);
 }
 
 .footer {

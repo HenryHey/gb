@@ -10,7 +10,9 @@
   <body>
     <div class="rom-bar">
       <label for="rom">Load a ROM</label>
-      <input type="file" id="rom" accept=".gb,.gbc,.bin" />
+      <input type="file" id="rom" accept=".gb,.gbc,.bin,.7z" />
+      <label id="rom-choice-label" for="rom-choice" hidden>ROM in archive</label>
+      <select id="rom-choice" hidden></select>
       <label class="control-label">
         <input type="checkbox" id="debug-ui" />
         Debugging

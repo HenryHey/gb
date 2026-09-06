@@ -1,4 +1,5 @@
 import './style.css';
+import { extractRomsFrom7z } from './archive7z.js';
 import { loadSram, parseHeader, saveSram } from './cart.js';
 import { log, renderCpu, renderVram, formatOpcode } from './debug.js';
 import { createEmu, reset, runFrame, tickEmu } from './emu.js';
@@ -17,6 +18,8 @@ const FRAME_MS = 1000 / 59.7275;
 const MAX_CATCHUP = 5;
 
 const input = document.querySelector('#rom');
+const romChoiceLabel = document.querySelector('#rom-choice-label');
+const romChoice = document.querySelector('#rom-choice');
 const resetBtn = document.querySelector('#reset');
 const playBtn = document.querySelector('#play');
 const stepBtn = document.querySelector('#step');
@@ -95,8 +98,7 @@ function syncDebugUi() {
 
 function updateCopySaveStateBtn() {
   if (!copySaveStateBtn) return;
-  const hasSlot =
-    debugUi.checked && emu.rom.length >= 0x150 && getSavedStateRaw(emu.rom) !== null;
+  const hasSlot = debugUi.checked && emu.rom.length >= 0x150 && getSavedStateRaw(emu.rom) !== null;
   copySaveStateBtn.disabled = !hasSlot;
 }
 
@@ -127,6 +129,43 @@ function setRunning(on) {
   }
   running = on;
   playBtn.textContent = on ? 'Pause' : 'Play';
+}
+
+/** @type {Array<{ path: string, name: string, data: Uint8Array }>} */
+let archiveRoms = [];
+
+function setRomChoiceVisible(visible) {
+  romChoiceLabel.hidden = !visible;
+  romChoice.hidden = !visible;
+}
+
+function clearRomChoice() {
+  archiveRoms = [];
+  romChoice.replaceChildren();
+  setRomChoiceVisible(false);
+}
+
+function populateRomChoice(roms) {
+  archiveRoms = roms;
+  romChoice.replaceChildren(
+    ...roms.map((entry, i) => {
+      const opt = document.createElement('option');
+      opt.value = String(i);
+      opt.textContent = roms.length > 1 && entry.path !== entry.name ? entry.path : entry.name;
+      return opt;
+    }),
+  );
+  setRomChoiceVisible(roms.length > 1);
+}
+
+function loadRomBytes(rom, { logHeader = true } = {}) {
+  if (rom.length === 0) throw new Error('ROM file is empty');
+
+  const header = parseHeader(rom);
+  info.textContent = '';
+  loadRom(rom);
+  if (logHeader) log(header);
+  return header;
 }
 
 function loadRom(rom) {
@@ -184,14 +223,31 @@ input.addEventListener('change', async () => {
   if (!file) return;
 
   try {
+    clearRomChoice();
     const buf = await file.arrayBuffer();
-    const rom = new Uint8Array(buf);
-    if (rom.length === 0) throw new Error('ROM file is empty');
 
-    const header = parseHeader(rom);
-    info.textContent = '';
-    loadRom(rom);
-    log(header);
+    if (file.name.toLowerCase().endsWith('.7z')) {
+      info.textContent = 'Extracting archive…';
+      const roms = await extractRomsFrom7z(buf);
+      populateRomChoice(roms);
+      loadRomBytes(roms[0].data);
+      return;
+    }
+
+    loadRomBytes(new Uint8Array(buf));
+  } catch (err) {
+    clearRomChoice();
+    info.textContent = err.message;
+    log(err.message);
+  }
+});
+
+romChoice.addEventListener('change', () => {
+  const entry = archiveRoms[Number(romChoice.value)];
+  if (!entry) return;
+
+  try {
+    loadRomBytes(entry.data);
   } catch (err) {
     info.textContent = err.message;
     log(err.message);
