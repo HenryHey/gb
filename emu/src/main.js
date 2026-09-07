@@ -53,7 +53,6 @@ function shellSize(scale) {
 
 function playScale(availW, availH) {
   for (let scale = MAX_PLAY_SCALE; scale >= 1; scale--) {
-    const canvasW = SCREEN_W * scale;
     const { canvasH, shellH, shellW } = shellSize(scale);
     const canvasTop = shellH * LCD_TOP;
     if (shellW <= availW && canvasTop + canvasH <= availH) return scale;
@@ -109,7 +108,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden && running) setRunning(false);
 });
 
-function resetClock(now = performance.now()) {
+function resetClock(_now = performance.now()) {
   clockOrigin = 0;
   framesDone = 0;
   pauseStarted = 0;

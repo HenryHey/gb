@@ -140,6 +140,10 @@ function createMbc1(rom, header) {
   };
 }
 
+function createMbc2(rom, header) {
+  throw new Error(`Mapper ${header.typeName} not implemented`);
+}
+
 function createMbc3(rom, header) {
   const romBanks = header.romBanks; // 64 for Red
   const ram = new Uint8Array((header.ramKiB || 0) * 1024);
@@ -223,7 +227,7 @@ export function createCart(rom) {
 
   if (t === 0x00) return createRomOnly(rom, header);
   if (MBC1_TYPES.has(t)) return createMbc1(rom, header);
-  // if (MBC2_TYPES.has(t)) return createMbc2(rom, header);
+  if (MBC2_TYPES.has(t)) return createMbc2(rom, header);
   if (MBC3_TYPES.has(t)) return createMbc3(rom, header);
   if (MBC5_TYPES.has(t)) return createMbc5(rom, header);
 
