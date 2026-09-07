@@ -153,9 +153,8 @@ function createMbc3(rom, header) {
       if (addr < 0x4000) {
         return rom[addr];
       }
-      const b = (state.romBank & romBanks -1) || 1;
+      const b = state.romBank & (romBanks - 1) || 1;
       return rom[b * 0x4000 + (addr - 0x4000)];
-      
     },
     // Writes to ROM space configure the MBC (data is never stored in ROM).
     // Register selected by address bits A14/A13 (A15=0 in $0000–$7FFF):
@@ -171,7 +170,7 @@ function createMbc3(rom, header) {
         state.ramEnable = (v & 0x0f) === 0x0a;
       } else if (addr < 0x4000) {
         // 0x7f = 0111 1111 — 7-bit bank index; || 1 when game writes 0
-        state.romBank = (v & 0x7f) || 1;
+        state.romBank = v & 0x7f || 1;
       } else if (addr < 0x6000) {
         // 0x07 = 0000 0111 — SRAM banks 0–3 (8 KiB each at $A000–$BFFF)
         state.ramBank = v & 0x07;
@@ -192,7 +191,7 @@ function createMbc3(rom, header) {
       if (!state.ramEnable) return;
       if (state.ramBank <= 3 && ram.length) {
         ram[state.ramBank * 0x2000 + (addr - 0xa000)] = v;
-      } 
+      }
     },
   };
 }
@@ -211,28 +210,22 @@ export function loadSram(cart, header) {
 
 export function saveSram(cart, header) {
   if (!cart.ram?.length) return;
-  localStorage.setItem(
-    saveKey(header),
-    btoa(String.fromCharCode(...cart.ram)),
-  );
+  localStorage.setItem(saveKey(header), btoa(String.fromCharCode(...cart.ram)));
 }
 
 export function createCart(rom) {
+  const MBC1_TYPES = new Set([0x01, 0x02, 0x03]);
+  const MBC2_TYPES = new Set([0x05, 0x06]);
+  const MBC3_TYPES = new Set([0x0f, 0x10, 0x11, 0x12, 0x13]);
+  const MBC5_TYPES = new Set([0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e]);
   const header = parseHeader(rom);
+  const t = header.type;
 
-  if (header.type === 0x00) {
-    return createRomOnly(rom, header);
-  }
-
-  if ([0x01, 0x02, 0x03].includes(header.type)) {
-    return createMbc1(rom, header);
-  }
-  if (header.type === 0x13) {
-    return createMbc3(rom, header);
-  }
-  if (header.type === 0x1b) {
-    return createMbc5(rom, header);
-  }
+  if (t === 0x00) return createRomOnly(rom, header);
+  if (MBC1_TYPES.has(t)) return createMbc1(rom, header);
+  // if (MBC2_TYPES.has(t)) return createMbc2(rom, header);
+  if (MBC3_TYPES.has(t)) return createMbc3(rom, header);
+  if (MBC5_TYPES.has(t)) return createMbc5(rom, header);
 
   throw new Error(`Mapper ${header.typeName} not implemented`);
 }
