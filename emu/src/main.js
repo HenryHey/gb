@@ -133,6 +133,10 @@ function setRunning(on) {
 
 /** @type {Array<{ path: string, name: string, data: Uint8Array }>} */
 let archiveRoms = [];
+/** @type {string | null} */
+let currentRomFileName = null;
+/** @type {string | null} */
+let currentArchiveFileName = null;
 
 function setRomChoiceVisible(visible) {
   romChoiceLabel.hidden = !visible;
@@ -141,8 +145,15 @@ function setRomChoiceVisible(visible) {
 
 function clearRomChoice() {
   archiveRoms = [];
+  currentRomFileName = null;
+  currentArchiveFileName = null;
   romChoice.replaceChildren();
   setRomChoiceVisible(false);
+}
+
+function setRomSource({ romFileName, archiveFileName = null }) {
+  currentRomFileName = romFileName;
+  currentArchiveFileName = archiveFileName;
 }
 
 function populateRomChoice(roms) {
@@ -230,10 +241,12 @@ input.addEventListener('change', async () => {
       info.textContent = 'Extracting archive…';
       const roms = await extractRomsFrom7z(buf);
       populateRomChoice(roms);
+      setRomSource({ romFileName: roms[0].name, archiveFileName: file.name });
       loadRomBytes(roms[0].data);
       return;
     }
 
+    setRomSource({ romFileName: file.name });
     loadRomBytes(new Uint8Array(buf));
   } catch (err) {
     clearRomChoice();
@@ -247,6 +260,7 @@ romChoice.addEventListener('change', () => {
   if (!entry) return;
 
   try {
+    currentRomFileName = entry.name;
     loadRomBytes(entry.data);
   } catch (err) {
     info.textContent = err.message;
@@ -349,7 +363,10 @@ frameBtn.addEventListener('click', () => {
 
 copySaveStateBtn.addEventListener('click', async () => {
   try {
-    const payload = savedStateToJson(emu.rom);
+    const payload = savedStateToJson(emu.rom, {
+      romFileName: currentRomFileName ?? undefined,
+      archiveFileName: currentArchiveFileName ?? undefined,
+    });
     if (!payload) {
       info.textContent = 'No saved state for this ROM';
       log('Copy save state: nothing saved');

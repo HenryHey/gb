@@ -9,6 +9,7 @@ import {
   deserializeEmu,
   loadStateSlot,
   saveStateSlot,
+  savedStateToJson,
   serializeEmu,
   stateKey,
 } from '../src/savestate.js';
@@ -241,6 +242,35 @@ describe('localStorage slot', () => {
   test('base64 helpers round-trip bytes', () => {
     const bytes = new Uint8Array([0, 1, 2, 255, 0x42]);
     expect(base64ToBytes(bytesToBase64(bytes))).toEqual(bytes);
+  });
+
+  test('savedStateToJson includes ROM and archive file names when provided', () => {
+    const rom = makeRom({ title: 'TETRIS' });
+    const emu = freshEmu(rom);
+    saveStateSlot(emu);
+
+    const payload = savedStateToJson(rom, {
+      romFileName: 'tetris.gb',
+      archiveFileName: 'games.7z',
+    });
+
+    expect(payload).toMatchObject({
+      format: 'GBSS',
+      title: 'TETRIS',
+      romFileName: 'tetris.gb',
+      archiveFileName: 'games.7z',
+    });
+  });
+
+  test('savedStateToJson omits archive file name for a direct ROM load', () => {
+    const rom = makeRom({ title: 'TETRIS' });
+    const emu = freshEmu(rom);
+    saveStateSlot(emu);
+
+    const payload = savedStateToJson(rom, { romFileName: 'tetris.gb' });
+
+    expect(payload?.romFileName).toBe('tetris.gb');
+    expect(payload).not.toHaveProperty('archiveFileName');
   });
 });
 

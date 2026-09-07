@@ -261,11 +261,11 @@ export function getSavedStateRaw(rom) {
 }
 
 /** JSON-serializable export of the stored slot (for clipboard / sharing). */
-export function savedStateToJson(rom) {
+export function savedStateToJson(rom, { romFileName, archiveFileName } = {}) {
   const raw = getSavedStateRaw(rom);
   if (!raw) return null;
   const header = parseHeader(rom);
-  return {
+  const payload = {
     format: 'GBSS',
     version: GBSS_VERSION,
     key: raw.key,
@@ -273,4 +273,7 @@ export function savedStateToJson(rom) {
     romCrc32: crc32(rom),
     base64: raw.base64,
   };
+  if (romFileName) payload.romFileName = romFileName;
+  if (archiveFileName) payload.archiveFileName = archiveFileName;
+  return payload;
 }
