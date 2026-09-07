@@ -29,13 +29,14 @@ export function createPpu() {
     frameReady: false, // set at LY 144 (VBlank start); cleared after presenting the framebuffer
     windowLine: 0, // internal window map row counter; resets each frame
     wyTriggered: false, // latched when WY === LY; cleared at frame start (Pan Docs Y condition)
+    lycMatchPrev: false, // suppress level-triggered LYC STAT IRQ (fire once per coincidence)
   };
 }
 
-/** Recompute window latch/counter after loading mid-frame state. */
+/** Recompute latched PPU state after loading mid-frame. */
 export function syncWindowState(ppu) {
   ppu.wyTriggered = ppu.ly >= ppu.wy && ppu.ly < 144;
-  ppu.windowLine = ppu.wyTriggered ? ppu.ly - ppu.wy : 0;
+  ppu.lycMatchPrev = ppu.ly === ppu.lyc;
 }
 
 export function ppuStep(ppu, io, t, vram, oam) {
@@ -46,6 +47,7 @@ export function ppuStep(ppu, io, t, vram, oam) {
     ppu.lineCycles = 0;
     ppu.windowLine = 0;
     ppu.wyTriggered = false;
+    ppu.lycMatchPrev = false;
     return;
   }
 
@@ -53,9 +55,8 @@ export function ppuStep(ppu, io, t, vram, oam) {
   while (ppu.lineCycles >= modeLength(ppu.mode)) {
     ppu.lineCycles -= modeLength(ppu.mode);
     advanceMode(ppu, io, vram, oam);
+    updateStatLyEquals(ppu, io);
   }
-
-  updateStatLyEquals(ppu, io);
 }
 
 function modeLength(mode) {
@@ -83,6 +84,7 @@ function advanceMode(ppu, io, vram, oam) {
         ppu.mode = MODE_OAM;
         ppu.windowLine = 0;
         ppu.wyTriggered = false;
+        ppu.lycMatchPrev = false;
         if (ppu.stat & STAT_OAM_IE) io.requestIf(1);
       }
       break;
@@ -236,9 +238,11 @@ function paletteShades(reg, colors = GREEN) {
 }
 
 function updateStatLyEquals(ppu, io) {
-  if (ppu.ly === ppu.lyc && ppu.stat & STAT_LYC_IE) {
+  const match = ppu.ly === ppu.lyc;
+  if (match && !ppu.lycMatchPrev && ppu.stat & STAT_LYC_IE) {
     io.requestIf(1);
   }
+  ppu.lycMatchPrev = match;
 }
 
 function spritesOnLine(ppu, oam, ly) {

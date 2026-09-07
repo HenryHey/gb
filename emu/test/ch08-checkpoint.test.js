@@ -129,4 +129,24 @@ describe('chapter 8 checkpoint', () => {
     expect(emu.ppu.ly).toBe(0);
     expect(emu.ppu.mode).toBe(0);
   });
+
+  test('LYC STAT IRQ fires once per scanline, not every T-cycle', () => {
+    const ppu = createPpu();
+    const io = createIo();
+    ppu.lyc = 0;
+    ppu.stat = 0xc0; // LYC interrupt enable
+
+    let statIrq = 0;
+    const orig = io.requestIf.bind(io);
+    io.requestIf = (bit) => {
+      if (bit === 1) statIrq++;
+      orig(bit);
+    };
+
+    stepPpu(ppu, io, 456);
+    expect(statIrq).toBe(1);
+
+    stepPpu(ppu, io, 456);
+    expect(statIrq).toBe(1);
+  });
 });

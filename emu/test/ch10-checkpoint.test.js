@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { createIo } from '../src/io.js';
-import { createPpu, ppuStep } from '../src/ppu.js';
+import { createPpu, ppuStep, syncWindowState } from '../src/ppu.js';
 import { createEmu, reset, runTCycles } from '../src/emu.js';
 
 const GREEN = [0xe0f8d0, 0x88c070, 0x346856, 0x081820];
@@ -187,6 +187,21 @@ describe('chapter 10 checkpoint', () => {
     expect(ppu.windowLine).toBe(2);
     expectPixel(ppu.framebuffer, 0, 0, 0);
     expectPixel(ppu.framebuffer, 0, 1, 3);
+  });
+
+  test('syncWindowState preserves saved windowLine when WX was off-screen', () => {
+    const ppu = createPpu();
+    ppu.lcdc = windowLcdc();
+    ppu.wy = 128;
+    ppu.wx = 192;
+    ppu.ly = 131;
+    ppu.windowLine = 0;
+
+    syncWindowState(ppu);
+
+    expect(ppu.wyTriggered).toBe(true);
+    expect(ppu.windowLine).toBe(0);
+    expect(ppu.lycMatchPrev).toBe(false);
   });
 
   test('LCD off clears framebuffer to white', () => {
