@@ -15,13 +15,7 @@ function stampBankMarkers(rom, banks) {
   }
 }
 
-function makeRom({
-  banks = 4,
-  type = 0x00,
-  ramId = 0x00,
-  title = 'MBC1 TEST',
-  sizeBytes,
-} = {}) {
+function makeRom({ banks = 4, type = 0x00, ramId = 0x00, title = 'MBC1 TEST', sizeBytes } = {}) {
   const rom = new Uint8Array(sizeBytes ?? banks * 0x4000);
   stampBankMarkers(rom, banks);
   for (let i = 0; i < title.length && i < 16; i++) {

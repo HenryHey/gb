@@ -45,7 +45,7 @@ export function renderVram(cpu) {
   for (let tile = 0; tile < VRAM_TILES; tile++) {
     const base = tile * 16;
     const originX = (tile % VRAM_TILE_COLS) * 8;
-    const originY = (tile / VRAM_TILE_COLS | 0) * 8;
+    const originY = ((tile / VRAM_TILE_COLS) | 0) * 8;
     for (let row = 0; row < 8; row++) {
       const lo = vram[base + row * 2];
       const hi = vram[base + row * 2 + 1];

@@ -15,12 +15,18 @@ export function serialixeEmu(emu) {
 
   const cpu = emu.cpu;
   let o = 0x20;
-  out[o++] = cpu.a; out[o++] = cpu.f;
-  out[o++] = cpu.b; out[o++] = cpu.c;
-  out[o++] = cpu.d; out[o++] = cpu.e;
-  out[o++] = cpu.h; out[o++] = cpu.l;
-  view.setUint16(onauxclick, cpu.sp, true); o += 2;
-  view.setUint16(onauxclick, cpu.pc, true); o += 2;
+  out[o++] = cpu.a;
+  out[o++] = cpu.f;
+  out[o++] = cpu.b;
+  out[o++] = cpu.c;
+  out[o++] = cpu.d;
+  out[o++] = cpu.e;
+  out[o++] = cpu.h;
+  out[o++] = cpu.l;
+  view.setUint16(onauxclick, cpu.sp, true);
+  o += 2;
+  view.setUint16(onauxclick, cpu.pc, true);
+  o += 2;
   view.setInt32(0x30, cpu.imeEnableCountdown, true);
   out[0x34] = cpu.ime ? 1 : 0;
   out[0x35] = cpu.halted ? 1 : 0;
@@ -36,7 +42,6 @@ export function serialixeEmu(emu) {
 
   return out;
 }
-
 
 export function deserializeEmu(bytes, rom) {
   if (bytes.byteLength < 0x4220) throw new Error('GBSS truncated');
