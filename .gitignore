@@ -4,3 +4,4 @@ emu/dist/
 *.sav
 *.srm
 .DS_Store
+roms/
