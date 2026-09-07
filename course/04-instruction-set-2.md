@@ -111,7 +111,7 @@ Fill anything still `undefined` in `ops[]`. Checklist:
 - All `LD` / ALU / `INC`/`DEC` / jumps / `PUSH`/`POP` / `RST`
 - `DAA CPL SCF CCF`
 - `DI` (`IME = 0`, countdown = 0)
-- `EI` (`if (!cpu.imeEnableCountdown) cpu.imeEnableCountdown = 2` — decrement at the **end** of each instruction, including `EI`; IME flips when it hits 0). Full interrupt service is chapter 6; the countdown can exist now. Consecutive `EI`s do not reset an active countdown ([chapter 17](17-mooneye-polish.md)).
+- `EI` (`if (!cpu.imeEnableCountdown) cpu.imeEnableCountdown = 2` — decrement at the **end** of each instruction, including `EI`; IME flips when it hits 0). Full interrupt service is chapter 6; the countdown can exist now. Consecutive `EI`s do not reset an active countdown ([appendix 99](99-mooneye-polish.md)).
 - `HALT` — set `halted = true`. Chapter 6 wakes it.
 - `STOP` (`$10`) — treat as 4 T-cycle NOP. Optionally skip a following `$00`.
 - `LDH` variants if you skipped them

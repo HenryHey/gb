@@ -329,4 +329,4 @@ When you add a feature, add its block to GBSS and bump the version.
 
 ## Next
 
-**Optional:** [17 — Mooneye polish](17-mooneye-polish.md) — run the Mooneye harness and fix I/O open-bus, consecutive `EI`, and MBC5.
+**Optional:** [99 — Mooneye polish](99-mooneye-polish.md) — run the Mooneye harness and fix accuracy gaps one ROM at a time.

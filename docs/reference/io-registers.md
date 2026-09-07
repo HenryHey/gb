@@ -39,7 +39,7 @@ Pan Docs: [Hardware Registers](https://gbdev.io/pandocs/Hardware_Reg_List.html).
 | `$FF03`, `$FF08–$FF0E`, unused holes | — | Read `$FF` |
 | `$FF4C–$FF4F`, `$FF51–$FF7F` | CGB | Read `$FF` (DMG) |
 
-For unused-bit read masks on implemented registers (SC, NRxx, STAT bit 7), see [course chapter 17](../../course/17-mooneye-polish.md).
+For unused-bit read masks on implemented registers (SC, NRxx, STAT bit 7), see [appendix 99](../../course/99-mooneye-polish.md).
 
 ## Bit layouts you will type often
 

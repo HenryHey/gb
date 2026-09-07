@@ -72,10 +72,12 @@ function timerStep(io, tCycles) {
 /** Advance CPU, timer, and PPU by one instruction (or HALT spin). */
 export function tickEmu(emu) {
   const dt = cpuStep(emu);
+  emu.bus.dmaStep(dt);
   timerStep(emu.io, dt);
   ppuStep(emu.ppu, emu.io, dt, emu.bus.vram, emu.bus.oam);
   const extra = serviceIfNeeded(emu);
   if (extra) {
+    emu.bus.dmaStep(extra);
     timerStep(emu.io, extra);
     ppuStep(emu.ppu, emu.io, extra, emu.bus.vram, emu.bus.oam);
   }

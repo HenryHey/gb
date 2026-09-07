@@ -67,6 +67,7 @@ describe('chapter 11 checkpoint', () => {
       bus.write8(0xc000 + i, (0x10 + i) & 0xff);
     }
     bus.write8(0xff46, 0xc0);
+    bus.finishDma();
     for (let i = 0; i < 0xa0; i++) {
       expect(bus.read8(0xfe00 + i)).toBe((0x10 + i) & 0xff);
     }

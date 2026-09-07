@@ -1,4 +1,3 @@
-import { push16 } from './ops/ld.js';
 
 export function handleHalt(emu) {
   // Stay halted; still return a chunk of T-cycles so PPU/timer advance.
@@ -11,24 +10,49 @@ export function handleHalt(emu) {
   return 4;
 }
 
+function lowestPendingBit(emu) {
+  const pending = emu.bus.ie & emu.io.ifBits() & 0x1f;
+  if (!pending) return -1;
+  for (let bit = 0; bit < 5; bit++) {
+    if (pending & (1 << bit)) return bit;
+  }
+  return -1;
+}
+
+
 export function serviceIfNeeded(emu) {
   const pending = emu.bus.ie & emu.io.ifBits() & 0x1f;
   if (!pending) return 0;
 
-  emu.cpu.halted = false; // wake even if IME is 0
+  emu.cpu.halted = false;
 
   if (!emu.cpu.ime) return 0;
 
-  emu.cpu.ime = false;
-  for (let bit = 0; bit < 5; bit++) {
-    if (pending & (1 << bit)) {
-      emu.io.ackIf(bit); // clear that IF bit
-      push16(emu.cpu, emu.cpu.pc);
-      emu.cpu.pc = 0x0040 + bit * 8;
-      return 20; // 5 M-cycles, common convention
-    }
+  const { cpu } = emu;
+  const returnPc = cpu.pc;
+
+  cpu.ime = false; 
+
+  // M1 - high byte (real bus write; may hit $FFFF / IE)
+  cpu.sp = (cpu.sp -1 ) & 0xffff;
+  cpu.bus.write8(cpu.sp, (returnPc >> 8) & 0xff);
+
+  let bit = lowestPendingBit(emu);
+  if (bit < 0) {
+    cpu.pc = 0x0000;
+    return 20;
   }
-  return 0;
+
+  // M2 - low byte (cancellation no longer possible)
+  cpu.sp = (cpu.sp -1 ) & 0xffff;
+  cpu.bus.write8(cpu.sp, returnPc & 0xff);
+
+  const updated = lowestPendingBit(emu);
+  if (updated >= 0) bit = updated;  // round 4: priority can change after M1
+
+  emu.io.ackIf(bit);
+  cpu.pc = 0x0040 + bit * 8;
+  return 20;
 }
 
 export function tickImeCountdown(cpu) {
