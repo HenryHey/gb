@@ -300,16 +300,16 @@ Manual: play Pokémon, save state on overworld, reload page, load state — part
 
 ## What you can omit for now
 
+These fields are deferred to future chapters ([ToDo.md](../ToDo.md)).
 
-| Field (in a full emulator)  | Why skip for now       |
-| --------------------------- | ---------------------- |
-| Audio PSG / frame sequencer | APU is a stub          |
-| Global cycle counters       | No event scheduler     |
-| CGB VRAM bank / palettes    | DMG only               |
-| SGB border RAM              | Not emulated           |
-| HDMA / DMA in progress      | Instant DMA            |
-| RTC latched state           | Red/Blue have no clock |
-
+| Field (in a full emulator)  | Future chapter        |
+| --------------------------- | --------------------- |
+| Audio PSG / frame sequencer | Complete APU          |
+| Global cycle counters       | Event scheduler       |
+| CGB VRAM bank / palettes    | Game Boy Color        |
+| SGB border RAM              | Super Game Boy        |
+| HDMA / DMA in progress      | Timed OAM DMA         |
+| RTC latched state           | MBC3 RTC              |
 
 When you add a feature, add its block to GBSS and bump the version.
 
@@ -317,7 +317,7 @@ When you add a feature, add its block to GBSS and bump the version.
 
 - **`1` / `0` keys** save and load the single state slot (pause first).
 - `bun test test/ch16-checkpoint.test.js` passes.
-- Tetris: save mid-game, load, gameplay continues.
+- Any ROM ONLY game: save mid-game, load, gameplay continues.
 - Pokémon: save state restores party/position; distinct from SRAM CONTINUE (both can coexist).
 - You can explain GBSS layout (header → blocks → memory) and why ROM CRC32 is in the header — without referencing mGBA offsets.
 

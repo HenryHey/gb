@@ -49,7 +49,7 @@ Unused bits of `IF` read as 1 (open-bus leftover). Store the lower 5 bits; on re
 
 `HALT`**:** stop fetching to save power. Wake when `IE & IF !== 0`, *even if IME is 0*. If IME is 1, `serviceIfNeeded` then jumps to the vector. If IME is 0, execution continues at the next opcode so the game can `DI` around a critical section and still sleep. While halted you **must still tick PPU and timer** or IF never sets and you deadlock.
 
-The HALT bug (`IME === 0` and something already pending when HALT runs: PC fails to increment) is optional. Tetris/Pokémon are fine without it. If a game misbehaves on HALT, revisit [cpu-quirks.md](../docs/reference/cpu-quirks.md).
+The HALT bug (`IME === 0` and something already pending when HALT runs: PC fails to increment) is deferred to a future chapter ([ToDo.md](../ToDo.md)). If a game misbehaves on HALT, revisit [cpu-quirks.md](../docs/reference/cpu-quirks.md).
 
 ## Design
 
@@ -200,7 +200,7 @@ Once you can manually set IF and see `PC → $0040`, the interrupt path is wired
 ## Pitfalls
 
 - Servicing interrupts **before** `EI`’s following instruction. `EI; HALT` is a standard pair: if IME turns on too soon, you can fire, return, and HALT with IME on but IF already cleared — or the opposite desync. Use the countdown.
-- Assuming the VBlank handler **must** run during LY 144–153. IF is **requested** at LY=144; **service** happens on the first enabled instruction after that. Long init with `DI` can defer it to LY=0 — Tetris does this routinely. See [09 — Background](09-background.md#tetris-and-other-rabbit-holes-read-this-before-debugging).
+- Assuming the VBlank handler **must** run during LY 144–153. IF is **requested** at LY=144; **service** happens on the first enabled instruction after that. Long init with `DI` can defer it to LY=0 — many games do this routinely. See [09 — Background](09-background.md#commercial-rom-rabbit-holes-read-this-before-debugging).
 - Clearing **all** of IF when servicing one source.
 - Not waking HALT when `IME === 0` but `IE & IF !== 0`. The CPU must continue so the game can `DI`/`EI` around critical sections.
 - Pushing the wrong PC (already incremented vs not). Push the PC of the **next** instruction that would have run — which is the current `cpu.pc` after the last execute.

@@ -8,7 +8,7 @@ When you finish the baseline fixes you should have a working harness (`bun run t
 
 ## Why bother?
 
-Commercial games (Tetris, Pokémon) are the course bar. Mooneye ROMs are small, deterministic programs that test **one hardware quirk each**. They tell you *which* subsystem is wrong when a game misbehaves in a subtle way.
+Commercial games are the checkpoint bar. Mooneye ROMs are small, deterministic programs that test **one hardware quirk each**. They tell you *which* subsystem is wrong when a game misbehaves in a subtle way.
 
 ## Progress tracker
 
@@ -430,7 +430,7 @@ Lock turns on when the **first byte** copies (after the 8 T-cycle startup), or *
 - **Locking on `dmaActive` alone** — OAM reads go `$FF` during the M1 startup window; `oam_dma_start.gb` cannot execute `INC B` at `$FE00`.
 - **Clearing `dmaLock` on restart** — a second `$FF46` write while DMA runs must keep OAM locked through M1; `oam_dma_start.gb` round 2 expects `B = 0`.
 - **Locking all memory** — Mooneye timing ROMs only need OAM reads to return `$FF`. Returning `$FF` for ROM/WRAM everywhere is a myth and breaks less, but `oam_dma/sources-GS.gb` needs real source reads through `read8`.
-- **`sources-GS` address decoding** — when the DMA unit reads `$FE00–$FE9F`, that address is driven on the **external** bus, not OAM. An emulator that “copies OAM to OAM” or skips the transfer fails the `$FE00` source page trap. Full bus-conflict modeling (CPU vs DMA on the same bus) is out of scope unless you chase that ROM specifically.
+- **`sources-GS` address decoding** — when the DMA unit reads `$FE00–$FE9F`, that address is driven on the **external** bus, not OAM. An emulator that “copies OAM to OAM” or skips the transfer fails the `$FE00` source page trap. Full bus-conflict modeling (CPU vs DMA on the same bus) will be implemented in the future ([ToDo.md](../ToDo.md)).
 - **Forgetting to step DMA on interrupt prologue cycles** — if `serviceIfNeeded` returns extra T-cycles, those cycles should advance DMA too (same as PPU/timer).
 - **Breaking chapter 11** — after DMA completes, all 160 bytes must match the old instant-copy behavior; `ch11-checkpoint.test.js` should still pass.
 

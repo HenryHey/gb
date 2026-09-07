@@ -36,7 +36,7 @@ LCDC bit 1 enables objects. Skip-boot `LCDC = $91` has it **clear** — games tu
 
 During mode 2/3 the PPU owns the OAM/VRAM buses. Copying 160 bytes with `LD` in a VBlank is tight and fights the PPU. Write a page number to `$FF46` and a **DMA unit** copies `$XX00–$XX9F` into OAM in 160 T-cycles. While that runs, the CPU may only use HRAM (the bus is busy). Games build a shadow OAM in WRAM, then `LDH ($46), A` once per frame.
 
-Instruction-level: an instant 160-byte copy plays Tetris and Pokémon. A 160 T-cycle lock (other addresses read `$FF`) is the next accuracy step if sprites flicker.
+Instruction-level: an instant 160-byte copy passes most commercial games. A 160 T-cycle lock (other addresses read `$FF`) is the next accuracy step if sprites flicker; timed DMA will be implemented in the future ([ToDo.md](../ToDo.md)).
 
 ## OAM entry
 
@@ -249,7 +249,7 @@ Hook this from `writeIo` when `addr === 0xff46`. Do **not** route DMA through `i
 
 **Source:** `$00–$F1` pages (160 bytes ending before the next page). Games use WRAM (`$C000+`) or ROM. Reading through `read8` is correct (DMA from `$FE00` is nonsense but harmless).
 
-**During DMA** the CPU should only access HRAM. Instruction-level: either ignore that or, while `dmaLeft > 0`, have `read8`/`write8` outside `$FF80–$FFFE` return `$FF` / no-op. Instant copy without a lock still plays Tetris and Pokémon. If sprites flicker, add the 160 T-cycle lock and decrement `dmaLeft` in `tickEmu` alongside PPU/timer.
+**During DMA** the CPU should only access HRAM. Instruction-level: either ignore that or, while `dmaLeft > 0`, have `read8`/`write8` outside `$FF80–$FFFE` return `$FF` / no-op. Instant copy without a lock passes most games. If sprites flicker, add the 160 T-cycle lock and decrement `dmaLeft` in `tickEmu` alongside PPU/timer.
 
 Trigger DMA on **write**, not read. Reading `$FF46` returns the last written value (`$FF` after reset).
 

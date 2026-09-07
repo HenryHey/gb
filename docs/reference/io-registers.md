@@ -4,7 +4,7 @@ All addresses are in `$FF00–$FF7F` plus `IE` at `$FFFF`. Bits marked unused of
 
 Pan Docs: [Hardware Registers](https://gbdev.io/pandocs/Hardware_Reg_List.html).
 
-## Implement for playable Tetris / Pokémon
+## Implement for playable DMG games
 
 | Addr | Name | Chapter | Role |
 | --- | --- | --- | --- |

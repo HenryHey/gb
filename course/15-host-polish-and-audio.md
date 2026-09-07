@@ -67,7 +67,7 @@ The APU is four analogue channels (two pulse, wave, noise) clocked from the same
 - `NR52` bit 7 is master power. Power-off clears most regs; power-on does not start sound by itself.
 - Skip-boot leaves `NR52 = $F1` (APU on, leftover channel-1 flag) because the boot ROM played a beep.
 
-A stub that implements that contract lets Tetris and Pokémon run silently. The optional square wave below is host audio driven from channel 2’s frequency bits — a morale feature, not an APU.
+A stub that implements that contract lets games run silently. The optional square wave below is host audio driven from channel 2’s frequency bits — a morale feature, not an APU.
 
 Minimum:
 
@@ -94,7 +94,7 @@ function apuWrite(addr, v) {
 
 Skip-boot `NR52 = $F1` (APU on, channel 1 leftover). Copy the other NR values from [skip-boot.md](../docs/reference/skip-boot.md) if a game is picky.
 
-Wave RAM can be zeros. Tetris and Pokémon play silently and should not freeze.
+Wave RAM can be zeros. Games play silently and should not freeze.
 
 Serial (`$FF01/$FF02`): keep the stub. Optional debug: on write to `$FF02` with bit 7 set, `console.log(String.fromCharCode($FF01))` — Blargg tests print this way.
 
@@ -107,7 +107,7 @@ Not a Game Boy APU. A morale feature.
 - Trigger: write to NR24 with bit 7 set → start/restart an `OscillatorNode` type `"square"`.
 - NR52 bit 7 off → `osc.stop()`.
 
-This is enough to hear Tetris’s theme badly. A real APU needs frame sequencer, length, envelope, sweep, wave, LFSR noise, capacitor high-pass. Out of scope.
+This is enough to hear a square-wave approximation badly. A real APU needs frame sequencer, length, envelope, sweep, wave, LFSR noise, capacitor high-pass — will be implemented in the future ([ToDo.md](../../ToDo.md)).
 
 ## UX extras (pick any)
 
@@ -128,20 +128,23 @@ A DMG interpreter with:
 - MBC1, MBC3, SRAM saves
 - APU register stub
 
-That is a **playable** emulator.
+That is a **playable** emulator for most common DMG carts (ROM ONLY, MBC1, MBC3).
 
-## What you did not build
+## What comes next
 
-| Topic | Why it can wait |
+| Topic | Where |
 | --- | --- |
-| Cycle-accurate PPU (pixel FIFO, mode 3 stretch) | Mooneye / dmg-acid2 perfection |
-| HALT bug, OAM corruption, STAT IRQ blocking | Obscure; few commercial DMG titles |
-| CGB (double speed, palettes, VRAM banks) | Different machine |
-| MBC5, rumble, camera, printer | [chapter 17](17-remaining-mappers.md); rumble/camera can stay stubbed |
-| Real APU | Large project of its own |
-| Serial link | Two emulators |
-| Boot ROM / Nintendo logo | Cosmetic; legal dump required |
-| WASM / Worker | Performance; JS is fine for DMG |
+| Cycle-accurate PPU (pixel FIFO, mode 3 stretch) | [ToDo.md](../ToDo.md), [appendix 99](99-mooneye-polish.md) |
+| HALT bug, OAM corruption, STAT IRQ blocking | [ToDo.md](../ToDo.md) |
+| CGB (double speed, palettes, VRAM banks) | [ToDo.md](../ToDo.md) |
+| MBC5, MBC2, full MBC3 routing | [chapter 17](17-remaining-mappers.md) |
+| Rumble, camera, exotic mappers | [ToDo.md](../ToDo.md) |
+| Real APU | [ToDo.md](../ToDo.md) |
+| Serial link | [ToDo.md](../ToDo.md) |
+| Boot ROM / Nintendo logo | [ToDo.md](../ToDo.md) |
+| WASM / Worker | [ToDo.md](../ToDo.md) |
+
+When a **specific game** glitches, debug that glitch (often `EI`/`HALT`, window line counter, MBC bank 0, DMA) before chasing cycle accuracy.
 
 When a **specific game** glitches, debug that glitch (often `EI`/`HALT`, window line counter, MBC bank 0, DMA) before chasing cycle accuracy.
 
@@ -155,7 +158,7 @@ When a **specific game** glitches, debug that glitch (often `EI`/`HALT`, window 
 ## Checkpoint
 
 - rAF loop at ~60 fps, Pause works, canvas scales crisply.
-- Tetris is silent but playable; optional square wave beeps if you did the extra.
+- Games are silent but playable; optional square wave beeps if you did the extra.
 - Pokémon still saves.
 - You can explain, out loud, the `stepInstruction` → `timer.step` → `ppu.step` loop from chapter 0.
 

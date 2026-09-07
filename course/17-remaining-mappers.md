@@ -24,9 +24,9 @@ Your `createCart()` probably throws on anything outside `$00`, `$01–$03`, and 
 | **MBC5** | `$19–$1E` | **Do this** | Shantae, Donkey Kong Land III, many homebrew tests |
 | **MBC3 family** | `$0F–$13` | **Wire routing** | Same silicon you built in ch. 14; Gold/Silver is `$10` |
 | **MBC2** | `$05–$06` | **Nice to have** | 512 × 4-bit RAM on-chip; few commercial titles |
-| MBC3 RTC | `$10`, `$0F` | Stub OK | Return 0 / ignore latch unless you want a real clock |
-| MBC5 rumble | `$1C–$1E` | Stub OK | Record `rumbleOn` if you like; no hardware to drive |
-| HuC1/3, MMM01, MBC6/7, TAMA5 | various | Skip | Rare; add when a specific ROM demands it |
+| MBC3 RTC | `$10`, `$0F` | Stub OK for now | Full RTC in [ToDo.md](../ToDo.md); Gold/Silver day/night needs it |
+| MBC5 rumble | `$1C–$1E` | Stub OK | Host rumble feedback in [ToDo.md](../ToDo.md) |
+| HuC1/3, MMM01, MBC6/7, TAMA5 | various | Future ([ToDo.md](../ToDo.md)) | Rare; add when a specific ROM demands it |
 
 Pan Docs has the full [cartridge type table](https://gbdev.io/pandocs/The_Cartridge_Header.html#0147---cartridge-type).
 
@@ -131,7 +131,7 @@ You already implemented MBC3 for Pokémon (`$13`). The same chip answers for:
 
 Wire **all five** to `createMbc3`. Behavior differences are header RAM size and whether the game touches RTC registers (`ramBank` `$08–$0C`).
 
-For `$10` / `$0F`, keep the chapter 14 RTC stub (reads return 0, latch ignored) unless you want a real clock. Gold/Silver’s day/night cycle needs RTC; Red/Blue does not.
+For `$10` / `$0F`, keep the chapter 14 RTC stub (reads return 0, latch ignored) until the RTC chapter ([ToDo.md](../ToDo.md)). Gold/Silver’s day/night cycle needs RTC; Red/Blue does not.
 
 **Pitfall:** only accepting `$13` in `createCart` while testing a `$10` ROM — the fix is routing, not new banking logic.
 
@@ -199,7 +199,7 @@ Bump `GBSS_VERSION` only if you change the on-disk layout; new mappers using the
 2. **MBC3 routing** — one-line factory change; test with a `$10` header if you have Gold/Silver.
 3. **MBC2** — self-contained; good practice for address-bit decode.
 4. **Rumble stub** — optional `state.rumbleOn` on `$6000–$7FFF` for `$1C–$1E`.
-5. **RTC** — optional; only if you want Gold/Silver’s clock to advance.
+5. **RTC** — [ToDo.md](../ToDo.md); Gold/Silver day/night cycle.
 
 ## Files to touch
 

@@ -10,11 +10,11 @@ An emulator is not a Game Boy made of JavaScript. It is a **program that, from t
 
 For this course, “indistinguishable enough” means:
 
-- Tetris, Dr. Mario, Super Mario Land, and Pokémon Red/Blue are playable in a browser.
+- **Commercial DMG ROMs become playable chapter by chapter** — each checkpoint unlocks more of the library (see [test-roms.md](../docs/reference/test-roms.md) for what to expect after each chapter).
 - You drive a 160×144 canvas from emulated VRAM, and a joypad from the keyboard.
-- You are **not** matching every Mooneye test or every audio click.
+- Some hardware quirks and test-ROM suites are **simplified early on** and tightened later ([appendix 99](99-mooneye-polish.md), [ToDo.md](../ToDo.md)).
 
-That is a deliberately lower bar than a research emulator, and a higher bar than a CPU simulator that never draws a pixel.
+That is a higher bar than a CPU simulator that never draws a pixel, and a stepping stone toward full DMG compatibility.
 
 ## The machine in one page
 
@@ -98,9 +98,9 @@ If a chapter feels like copy-paste, stop at the hardware section and name which 
 
 If a checkpoint fails, do not skip ahead. Later chapters assume the bus, the interrupt line, and T-cycle stepping already exist.
 
-## What we will not do
+## What comes after the core course
 
-Game Boy Color, Super Game Boy, rumble, a pixel-FIFO PPU, a complete APU, cycle-accurate memory accesses, or shipping ROMs. Chapter 15 lists follow-on work; [chapter 16](16-save-states.md) covers instant save states (fixed-layout snapshots); [chapter 17](17-remaining-mappers.md) covers MBC5 and the rest of the common mappers; [appendix 99](99-mooneye-polish.md) is an optional Mooneye accuracy pass tracked outside the main chapter sequence.
+Chapters 0–15 build a playable DMG emulator. [Chapter 16](16-save-states.md) adds instant save states; [chapter 17](17-remaining-mappers.md) adds MBC5, MBC2, and full MBC3 routing; [appendix 99](99-mooneye-polish.md) is a Mooneye accuracy pass. Everything else — CGB, a real APU, pixel-FIFO PPU, boot ROM, exotic mappers, and cycle-accurate quirks — is tracked in [ToDo.md](../ToDo.md) for future chapters. This repo never ships ROM files.
 
 ## Checkpoint
 

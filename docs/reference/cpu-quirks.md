@@ -119,4 +119,4 @@ Stack grows **down**. `PUSH`: `SP -= 2`, write high byte at `SP+1`, low at `SP`.
 
 ## Accuracy bar for this course
 
-Instruction-level: after each opcode, add its T-cycles to PPU, timer, and DMA. Do **not** model per-memory-access cycles. That is enough for Tetris, Dr. Mario, and Pokémon Red/Blue. It is not enough for Mooneye timing tests.
+Instruction-level: after each opcode, add its T-cycles to PPU, timer, and DMA. Per-memory-access cycle timing will be implemented in the future ([ToDo.md](../../ToDo.md)); instruction-level stepping passes most commercial games but not Mooneye timing tests.

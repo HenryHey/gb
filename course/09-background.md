@@ -187,7 +187,7 @@ Also worth asserting:
 
 Then load Tetris, reset, run frames (Frame button or a short `for` of `runFrame`).
 
-**Passing the unit tests above is the chapter 9 bar.** A commercial ROM may still flicker or show init junk — read [Tetris and other rabbit holes](#tetris-and-other-rabbit-holes-read-this-before-debugging) before chasing that.
+**Passing the unit tests above is the chapter 9 bar.** A commercial ROM may still flicker or show init junk — read [Commercial ROM rabbit holes](#commercial-rom-rabbit-holes-read-this-before-debugging) before chasing that.
 
 On a **fully working** emulator you should eventually recognize the title screen, playfield, or at least a **stable** tiled image. At this stage in the course, a **one-frame sanity check** is enough: in the dev console, force `ppu.lcdc = $99` (or `$D3` if the game already switched map bases), call `runFrame()`, and confirm **tile shapes** appear. Colors may be wrong until chapter 10; the image may revert next frame when the game writes LCDC again — that is fine.
 
@@ -197,7 +197,7 @@ Dr. Mario should also show a title or playing field once the rest of the machine
 
 Screenshot your canvas when you get a recognizable frame — even a forced one. This is the first chapter that can look like a Game Boy.
 
-## Tetris and other rabbit holes (read this before debugging)
+## Commercial ROM rabbit holes (read this before debugging)
 
 While finishing this chapter, people often dump `LCDC`, `LY`, and VBlank PCs into the console and conclude the **background renderer** or **VBlank timing** is broken. Usually it is not. Use this table before rewriting `renderScanline` or adding a second interrupt check after `ppuStep`.
 
@@ -218,7 +218,7 @@ e.ppu.lcdc = 0xd3; // or 0x99 for skip-boot map/tiles
 runFrame();
 ```
 
-If tile **shapes** appear, chapter 9 is done — move on to [palettes and window](10-palettes-and-window.md). A stable Tetris title that responds to Start is a **full-emulator** milestone (joypad, palettes, sprites, polish), not this checkpoint.
+If tile **shapes** appear, chapter 9 is done — move on to [palettes and window](10-palettes-and-window.md). A stable title screen that responds to Start is a **later-chapter** milestone (joypad, palettes, sprites, polish), not this checkpoint.
 
 ## Further reading
 

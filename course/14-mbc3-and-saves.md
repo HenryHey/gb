@@ -6,7 +6,7 @@ MBC3 ROM/RAM banking and SRAM in `localStorage`. **Pokémon Red/Blue** boots, yo
 
 ## Why
 
-Pokémon Red (USA) is header type **`$13`**: MBC3 + 32 KiB SRAM + battery, **no RTC**. Gold/Silver (`$10`) need a clock; we stub RTC registers so a mistaken Gold dump does not crash, but we do not emulate days/hours.
+Pokémon Red (USA) is header type **`$13`**: MBC3 + 32 KiB SRAM + battery, **no RTC**. Gold/Silver (`$10`) need a clock; we stub RTC registers so a mistaken Gold dump does not crash. Full RTC will be implemented in the future ([ToDo.md](../ToDo.md)).
 
 MBC3 is simpler than MBC1 in one way (no mode bit, banks `$20/$40/$60` exist) and more annoying in another (RAM bank can mean RTC).
 
@@ -128,7 +128,7 @@ Pokémon Red/Blue:
 
 If the intro battle (Gengar vs Nidorino) plays, your sprites, BG, and window are in good shape.
 
-Regression: Tetris, Dr. Mario, Super Mario Land.
+Regression: ROM ONLY games (Tetris, Dr. Mario) and MBC1 titles (Super Mario Land).
 
 ## Further reading
 

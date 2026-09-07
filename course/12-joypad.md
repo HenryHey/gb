@@ -2,7 +2,7 @@
 
 ## Goal
 
-Map the keyboard to `$FF00`. **Play Tetris and Dr. Mario.**
+Map the keyboard to `$FF00`. **Play any ROM ONLY game** (e.g. Tetris, Dr. Mario).
 
 ## Why
 
@@ -108,9 +108,9 @@ Buttons must be sampled **asynchronously** from the CPU. The event listeners wri
 
 ## Checkpoint
 
-**Play Tetris.** Start (Enter) from the title, move pieces, rotate with A/B, drop. If the menu does not react, dump `$FF00` on each read in the console while you hold A — you should see bit 0 go to 0 when the action row is selected.
+**Play a ROM ONLY game** (e.g. Tetris). Start (Enter) from the title, move pieces, rotate with A/B, drop. If the menu does not react, dump `$FF00` on each read in the console while you hold A — you should see bit 0 go to 0 when the action row is selected.
 
-**Play Dr. Mario** the same way. Both are ROM-only 32 KiB; no MBC.
+**Play Dr. Mario** the same way. Any 32 KiB ROM ONLY cart works; no MBC required.
 
 If the game boots but ignores you: LCD/CPU are fine, P1 is wrong. If it reacts once and sticks: you never got `keyup`.
 

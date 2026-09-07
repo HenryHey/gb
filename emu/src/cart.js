@@ -188,7 +188,7 @@ function createMbc3(rom, header) {
         const i = state.ramBank * 0x2000 + (addr - 0xa000);
         return ram[i] ?? 0xff;
       }
-      // RTC $08-$0C (not implemented)
+      // RTC $08-$0C — will be implemented in the future (see ToDo.md)
       return 0;
     },
     writeRam(addr, v) {

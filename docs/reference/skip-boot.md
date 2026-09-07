@@ -2,7 +2,7 @@
 
 The real CPU starts at `$0000` with a 256-byte **boot ROM** overlaying the cartridge. It draws the Nintendo logo, beeps, checksums the header, then writes `$FF50` and falls into the game at `$0100`.
 
-This course **skips** that program. You map the cartridge from `$0000`, set registers as if the boot ROM had just finished, and begin at `$0100`. You will not see the logo animation unless you later load a [boot ROM dump](https://gbdev.io/pandocs/Power_Up_Sequence.html) (optional; not required for Tetris/Pokémon).
+This course **skips** that program. You map the cartridge from `$0000`, set registers as if the boot ROM had just finished, and begin at `$0100`. You will not see the logo animation unless you later load a [boot ROM dump](https://gbdev.io/pandocs/Power_Up_Sequence.html) (will be implemented in the future — [ToDo.md](../../ToDo.md)).
 
 Pan Docs: [Power-Up Sequence](https://gbdev.io/pandocs/Power_Up_Sequence.html). Values below are **DMG** (original Game Boy), recorded at `PC = $0100`.
 
@@ -88,4 +88,4 @@ Then implement the rest of I/O as you reach each chapter.
 2. Start `PC = 0`, registers zeroed.
 3. On write to `$FF50` with a nonzero value, unmap the overlay. The instruction at `$00FE` is `LDH ($FF50), A`; the next fetch is from cart `$0100`.
 
-Needs a working PPU, timer, and APU stub to finish. Nice demo; not required for the playable-game path.
+Needs a working PPU, timer, and APU stub to finish. Will be implemented in the future ([ToDo.md](../../ToDo.md)).

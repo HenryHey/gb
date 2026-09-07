@@ -26,7 +26,7 @@ one frame = 154 lines × 456 = 70 224 T  (~59.7 Hz)
   LY 144–153 VBlank (mode 1, 456 T each). Entering LY=144 sets IF bit 0.
 ```
 
-Mode 3 is **fixed 172 T** in this course. On hardware it stretches with sprites and the window (pixel FIFO). Fixed lengths play Tetris/Pokémon; they fail Mooneye PPU tests. That is the accuracy bar from chapter 0.
+Mode 3 is **fixed 172 T** in early chapters. On hardware it stretches with sprites and the window (pixel FIFO). Fixed lengths pass most commercial games; Mooneye PPU tests need variable length ([ToDo.md](../ToDo.md)).
 
 `LY` (`$FF44`) is “which line is the beam on.” Games poll it (`wait until LY === $90`) or enable the VBlank interrupt. Writes to `LY` are ignored — you cannot rewind the beam. `LYC` + STAT bit 2 are “tell me when we hit this line” (HUD splits, effects).
 
@@ -201,7 +201,7 @@ Spam “step 1000 T-cycles”; LY climbs 0→153→0. Tests: `LY visits 0..153 o
 
 Tetris should **get past** the “wait for vblank” spin. Still a blank canvas. If PC is alive in a main loop rather than stuck on `LDH A,($FF44); CP $90; JR NZ`, you win. Test: `vblank wait loop exits instead of spinning forever` — requires `$FF44` → `ppu.ly` via bus wiring above.
 
-**VBlank handler at LY = 0:** IF bit 0 is set when the beam **enters** LY=144, but the CPU only services it when `IME = 1`. Tetris init often runs long setup with interrupts off; `EI` at the end can land at **LY=0** of the next frame, so the vector at `$0040` runs there. That matches hardware — do not restrict VBlank service to LY 144–153. Chapter 9 has a fuller “rabbit hole” table if you are debugging Tetris with the canvas open.
+**VBlank handler at LY = 0:** IF bit 0 is set when the beam **enters** LY=144, but the CPU only services it when `IME = 1`. Game init often runs long setup with interrupts off; `EI` at the end can land at **LY=0** of the next frame, so the vector at `$0040` runs there. That matches hardware — do not restrict VBlank service to LY 144–153. Chapter 9 has a fuller “rabbit hole” table if you are debugging a commercial ROM with the canvas open.
 
 **LCD off**
 

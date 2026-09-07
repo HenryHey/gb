@@ -22,7 +22,7 @@ TMA  ($FF06)  value TIMA reloads on overflow
 TAC  ($FF07)  bit 2 = on/off; bits 1–0 = which bit of divCounter
 ```
 
-**Why falling edges, not “add N and divide”?** Because writes to `DIV` *reset* `divCounter` to 0, and changing TAC can coincide with a bit already high. The edge model gets those interactions right. The period table (1024 / 16 / 64 / 256 T-cycles) is the same frequencies with less accuracy on those edges — enough for Tetris/Pokémon if **any write to** `$FF04` **zeros** `divCounter`.
+**Why falling edges, not “add N and divide”?** Because writes to `DIV` *reset* `divCounter` to 0, and changing TAC can coincide with a bit already high. The edge model gets those interactions right. The period table (1024 / 16 / 64 / 256 T-cycles) is the same frequencies with less accuracy on those edges — sufficient for most games if **any write to** `$FF04` **zeros** `divCounter`.
 
 `DIV` looks read-only to games: they `LDH A,($FF04)` to seed RNG. A write is a reset, not a store. That surprise is the number-one timer bug.
 
@@ -64,7 +64,7 @@ Instruction-level version that is good enough: count T-cycles in a remainder and
 | 11      | 256                             |
 
 
-DIV still comes from `divCounter >> 8`. The bit-edge version is more accurate (TAC changes and DIV resets interact). For Tetris/Pokémon the period version works if **any write to** `$FF04` **sets** `divCounter = 0` (and you reset the TIMA remainder).
+DIV still comes from `divCounter >> 8`. The bit-edge version is more accurate (TAC changes and DIV resets interact). The period version works for most games if **any write to** `$FF04` **sets** `divCounter = 0` (and you reset the TIMA remainder).
 
 ```js
 const PERIOD = [1024, 16, 64, 256];

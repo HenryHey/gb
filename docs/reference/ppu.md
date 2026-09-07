@@ -2,7 +2,7 @@
 
 Pan Docs: [LCD Control](https://gbdev.io/pandocs/LCDC.html), [STAT](https://gbdev.io/pandocs/STAT.html), [Rendering](https://gbdev.io/pandocs/Rendering.html), [Tile Data](https://gbdev.io/pandocs/Tile_Data.html).
 
-This course uses a **scanline renderer**: when a line finishes mode 3, decode 160 pixels into a framebuffer. Not a pixel FIFO. Mode 3 length is **fixed 172 T-cycles**. Good enough for Tetris, Dr. Mario, Pokémon; not for Mooneye PPU tests.
+This course uses a **scanline renderer**: when a line finishes mode 3, decode 160 pixels into a framebuffer. Not a pixel FIFO. Mode 3 length is **fixed 172 T-cycles** in early chapters; variable length will be implemented in the future ([ToDo.md](../../ToDo.md)). Fixed lengths pass most commercial games; Mooneye PPU tests need the accurate model.
 
 ## Frame
 
@@ -117,7 +117,7 @@ LCDC bit 1 disables all objects. LCDC bit 0 (DMG) disables BG/window; objects ca
 
 Write of `src` to `$FF46` copies `$src00–$src9F` → `$FE00–$FE9F`.
 
-Course-grade: copy immediately (or over 160 T-cycles) and, while DMA is active, CPU reads from `$FE00–$FEFF` / `$FF00–$FF7F` except HRAM should see `$FF` if you bother. Games run DMA from a tiny routine in HRAM. Instant copy is enough for Tetris/Pokémon.
+Early chapters: copy immediately (or over 160 T-cycles) and, while DMA is active, CPU reads from `$FE00–$FEFF` / `$FF00–$FF7F` except HRAM should see `$FF` if you bother. Games run DMA from a tiny routine in HRAM. Timed 160 M-cycle DMA will be implemented in the future ([ToDo.md](../../ToDo.md)).
 
 ## STAT interrupts (keep it simple)
 
