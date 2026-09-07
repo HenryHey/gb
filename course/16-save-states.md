@@ -329,4 +329,4 @@ When you add a feature, add its block to GBSS and bump the version.
 
 ## Next
 
-**Optional:** [99 — Mooneye polish](99-mooneye-polish.md) — run the Mooneye harness and fix accuracy gaps one ROM at a time.
+**Optional:** [17 — Remaining mappers](17-remaining-mappers.md) — MBC5, MBC2, and full MBC3 header routing. [99 — Mooneye polish](99-mooneye-polish.md) — run the Mooneye harness and fix accuracy gaps one ROM at a time.

@@ -1,6 +1,6 @@
-# MBC1 and MBC3
+# MBC reference
 
-Pan Docs: [MBC1](https://gbdev.io/pandocs/MBC1.html), [MBC3](https://gbdev.io/pandocs/MBC3.html), [header type byte](https://gbdev.io/pandocs/The_Cartridge_Header.html).
+Pan Docs: [MBC1](https://gbdev.io/pandocs/MBC1.html), [MBC2](https://gbdev.io/pandocs/MBC2.html), [MBC3](https://gbdev.io/pandocs/MBC3.html), [MBC5](https://gbdev.io/pandocs/MBC5.html), [header type byte](https://gbdev.io/pandocs/The_Cartridge_Header.html).
 
 The CPU always sees 32 KiB of ROM space. Larger games put a **mapper** on the cartridge that banks 16 KiB windows. Writes to `$0000–$7FFF` are **commands**, not RAM.
 
@@ -11,8 +11,10 @@ The CPU always sees 32 KiB of ROM space. Larger games put a **mapper** on the ca
 | `$00` | ROM ONLY | Tetris, Dr. Mario |
 | `$01` | MBC1 | Super Mario Land (no SRAM) |
 | `$03` | MBC1+RAM+BATTERY | many 90s titles |
-| `$13` | MBC3+RAM+BATTERY | Pokémon Red/Blue (USA) |
-| `$10` | MBC3+TIMER+RAM+BATTERY | Pokémon Gold/Silver — RTC required for in-game clock |
+| `$05` | MBC2 | Built-in 512 × 4-bit RAM |
+| `$06` | MBC2+BATTERY | Same + battery for RAM |
+| `$0F–$13` | MBC3 variants | `$13` Red/Blue; `$10` Gold/Silver (RTC) |
+| `$19–$1E` | MBC5 family | `$1B` common for large ROM + RAM + battery |
 
 Red/Blue is **`$13`**: RAM + battery, **no** RTC. Stub RTC registers anyway so a Gold ROM does not explode if you try one later.
 
@@ -101,6 +103,62 @@ State:
 - `$0000–$3FFF`: always ROM bank 0.
 - `$4000–$7FFF`: ROM bank `romBank` (masked).
 - `$A000–$BFFF`: if ramBank is 0–3, that SRAM bank (8 KiB). If `$08–$0C` and you stub RTC, return 0. If disabled, `$FF`.
+
+## MBC2
+
+State:
+
+```js
+{ ramEnable: false, romBank: 1 }  // 4-bit ROM bank; 0 → 1 in $4000–$7FFF
+```
+
+512 bytes × 4-bit RAM at `$A000–$A1FF`. Reads: `0xF0 | nibble`. `$A200–$BFFF` reads `$FF`.
+
+### Registers (write)
+
+| Address | Action |
+| --- | --- |
+| `$0000–$1FFF`, A8=0 | RAM enable: `(value & 0x0f) === 0x0a` |
+| `$0000–$1FFF`, A8=1 | `romBank = (value & 0x0f) \|\| 1` |
+| `$2000–$3FFF` | `romBank = (value & 0x0f) \|\| 1` |
+
+### Reads
+
+- `$0000–$3FFF`: ROM bank 0.
+- `$4000–$7FFF`: ROM bank `romBank` (masked to cart size).
+
+## MBC5
+
+State:
+
+```js
+{
+  ramEnable: false,
+  romBankLow: 0,   // $2000–$2FFF
+  romBankHigh: 0,  // $3000–$3FFF (1 bit)
+  ramBank: 0,      // $4000–$5FFF (4 bits)
+}
+```
+
+9-bit ROM bank: `(romBankHigh << 8) | romBankLow`. **Bank 0 is valid** in `$4000–$7FFF` (no `\|\| 1` quirk).
+
+### Registers (write)
+
+| Address | Action |
+| --- | --- |
+| `$0000–$1FFF` | RAM enable: `(value & 0x0f) === 0x0a` |
+| `$2000–$2FFF` | `romBankLow = value` |
+| `$3000–$3FFF` | `romBankHigh = value & 0x01` |
+| `$4000–$5FFF` | `ramBank = value & 0x0f` |
+| `$6000–$7FFF` | Rumble carts: bit 3 on/off — stub OK |
+
+### Reads
+
+- `$0000–$3FFF`: always ROM bank 0.
+- `$4000–$7FFF`: ROM bank `(romBankHigh << 8) | romBankLow` (masked).
+- `$A000–$BFFF`: same as MBC3 SRAM (8 KiB per bank, `ramEnable` gate).
+
+Types `$1C–$1E` add rumble on `$6000–$7FFF`; types `$19–$1B` omit rumble.
 
 ## Saves
 

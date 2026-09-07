@@ -137,7 +137,7 @@ That is a **playable** emulator.
 | Cycle-accurate PPU (pixel FIFO, mode 3 stretch) | Mooneye / dmg-acid2 perfection |
 | HALT bug, OAM corruption, STAT IRQ blocking | Obscure; few commercial DMG titles |
 | CGB (double speed, palettes, VRAM banks) | Different machine |
-| MBC5, rumble, camera, printer | Optional [appendix 99](99-mooneye-polish.md); full cart features can wait |
+| MBC5, rumble, camera, printer | [chapter 17](17-remaining-mappers.md); rumble/camera can stay stubbed |
 | Real APU | Large project of its own |
 | Serial link | Two emulators |
 | Boot ROM / Nintendo logo | Cosmetic; legal dump required |
@@ -161,7 +161,7 @@ When a **specific game** glitches, debug that glitch (often `EI`/`HALT`, window 
 
 That is the end of the core course. Go play something.
 
-**Optional:** [16 — Save states](16-save-states.md) — fixed-layout snapshots (mGBA as reference, not compatibility). [99 — Mooneye polish](99-mooneye-polish.md) — run the Mooneye harness and fix accuracy gaps one ROM at a time.
+**Optional:** [16 — Save states](16-save-states.md) — fixed-layout snapshots (mGBA as reference, not compatibility). [17 — Remaining mappers](17-remaining-mappers.md) — MBC5, MBC2, full MBC3 routing. [99 — Mooneye polish](99-mooneye-polish.md) — run the Mooneye harness and fix accuracy gaps one ROM at a time.
 
 ## Next
 

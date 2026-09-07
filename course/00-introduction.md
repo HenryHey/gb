@@ -100,7 +100,7 @@ If a checkpoint fails, do not skip ahead. Later chapters assume the bus, the int
 
 ## What we will not do
 
-Game Boy Color, Super Game Boy, rumble, a pixel-FIFO PPU, a complete APU, cycle-accurate memory accesses, or shipping ROMs. Chapter 15 lists follow-on work; [chapter 16](16-save-states.md) covers instant save states (fixed-layout snapshots); [appendix 99](99-mooneye-polish.md) is an optional Mooneye accuracy pass tracked outside the main chapter sequence.
+Game Boy Color, Super Game Boy, rumble, a pixel-FIFO PPU, a complete APU, cycle-accurate memory accesses, or shipping ROMs. Chapter 15 lists follow-on work; [chapter 16](16-save-states.md) covers instant save states (fixed-layout snapshots); [chapter 17](17-remaining-mappers.md) covers MBC5 and the rest of the common mappers; [appendix 99](99-mooneye-polish.md) is an optional Mooneye accuracy pass tracked outside the main chapter sequence.
 
 ## Checkpoint
 
