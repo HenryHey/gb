@@ -22,8 +22,16 @@ Re-run `bun run test:mooneye` after each fix and update this table.
 | 3   | Basic MBC5 ROM banking                    | `oam_dma/sources-GS.gb` loads | done (may still timeout) |
 | 4   | Non-atomic interrupt dispatch (`IE` push) | `interrupts/ie_push.gb`       | done                     |
 | 5   | Cycle-accurate OAM DMA                    | `oam_dma_timing.gb`           | done                     |
-| 6   | One CPU `*_timing.gb`                     | e.g. `push_timing.gb`         | pending                  |
-| 7   | PPU timing suite                          | e.g. `ppu/lcdon_timing-GS.gb` | pending                  |
+| 6a  | M-cycle CPU stepping                      | (infrastructure)              | pending                  |
+| 6b  | PUSH / POP memory timing                  | `push_timing.gb`              | pending                  |
+| 6c  | JP / CALL imm16 fetch timing              | `jp_timing.gb`                | pending                  |
+| 6d  | RET / RST / RETI stack timing               | `ret_timing.gb`               | pending                  |
+| 7a  | LCD-on delay + bus access                 | `ppu/lcdon_timing-GS.gb`      | pending                  |
+| 7b  | STAT IRQ blocking                         | `ppu/stat_irq_blocking.gb`    | pending                  |
+| 7c  | STAT interrupt edge timing                | `ppu/intr_2_mode3_timing.gb`  | pending                  |
+| 7d  | LYC latch when LCD off                    | `ppu/stat_lyc_onoff.gb`       | pending                  |
+| 7e  | VBlank + mode-2 at LY 144                 | `ppu/vblank_stat_intr-GS.gb`  | pending                  |
+| 7f  | Variable mode-3 length (SCX / sprites)     | `ppu/hblank_ly_scx_timing-GS.gb` | pending              |
 
 
 **Latest tally:** 31 pass · 30 fail · 1 timeout · 62 DMG-filtered total (after Fix 5 — `oam_dma_start`, `oam_dma_timing`, `oam_dma_restart` pass).
@@ -449,36 +457,471 @@ bun test
 
 Expect **+3** on the Mooneye summary (`oam_dma_start`, `oam_dma_timing`, `oam_dma_restart`). `oam_dma/sources-GS.gb` may still fail or timeout until source decoding / bus conflicts are implemented — that is OK for this fix.
 
+## Fix 6 — CPU memory-access timing (`*_timing.gb`)
+
+
+
+### Hardware
+
+Chapter 4–7 implemented the CPU as **instruction-level**: each opcode runs to completion, returns a total T-cycle count, and only then do timer, PPU, and DMA advance. That matches [docs/reference/cpu-quirks.md](../docs/reference/cpu-quirks.md) and is enough for Tetris and Pokémon.
+
+Mooneye’s remaining CPU timing ROMs need **M-cycle accuracy** — *when* each memory access inside a multi-cycle instruction happens, not just the final duration. On hardware every memory read/write is a separate 4 T-cycle M-cycle; DMA, DIV, and OAM lock can observe the bus **mid-instruction**.
+
+After Fix 5 the suite has **12 failing** CPU/stack timing ROMs (below). Another **10** `*_timing.gb` ROMs already pass because they only check **total** instruction length synced via timer/DIV (`add_sp_e_timing`, `ld_hl_sp_e_timing`, `div_timing`, `ei_timing`, `di_timing-GS`, `halt_ime*`, `intr_timing`, `reti_intr_timing`, …).
+
+
+| ROM | What it checks |
+| --- | --- |
+| `push_timing.gb` | PUSH `rr`: M1 internal delay, M2 high-byte write, M3 low-byte write (OAM DMA overlap) |
+| `pop_timing.gb` | POP `rr`: M1 low-byte read, M2 high-byte read (DIV increment alignment) |
+| `jp_timing.gb` | JP `nn`: M1/M2 imm16 fetch, M3 internal delay |
+| `jp_cc_timing.gb` | JP `cc, nn`: same fetch timing when branch taken |
+| `call_timing.gb` | CALL `nn`: M1/M2 imm16 fetch, M3 delay, M4/M5 PC push |
+| `call_timing2.gb` | Second round of `call_timing` with different DMA alignment |
+| `call_cc_timing.gb` | CALL `cc, nn` when condition true |
+| `call_cc_timing2.gb` | Second round of conditional CALL |
+| `ret_timing.gb` | RET: M1/M2 PC pop, M3 internal delay (OAM DMA overlap) |
+| `ret_cc_timing.gb` | RET `cc` when condition true |
+| `rst_timing.gb` | RST: M1 delay, M2/M3 PC push (like PUSH) |
+| `reti_timing.gb` | RETI: same stack timing as RET + IME enable |
+
+Reference: [Pan Docs — CPU instruction set](https://gbdev.io/pandocs/CPU_Instruction_Set.html), Mooneye `.s` comments for M-cycle breakdowns.
+
+### What we do wrong today
+
+Opcodes execute **atomically**. Memory helpers run back-to-back with no T-cycles between them:
+
+```js
+// src/ops/ld.js — both stack writes in one instant
+export function push16(cpu, v) {
+  cpu.sp = (cpu.sp - 1) & 0xffff;
+  cpu.bus.write8(cpu.sp, v >> 8);
+  cpu.sp = (cpu.sp - 1) & 0xffff;
+  cpu.bus.write8(cpu.sp, v & 0xff);
+  return 16;
+}
+
+// src/ops/helpers.js — both operand bytes fetched instantly
+export function readImm16(cpu) {
+  const lo = readImm8(cpu);
+  const hi = readImm8(cpu);
+  return lo | (hi << 8);
+}
+```
+
+`tickEmu` advances timer/PPU/DMA **once per finished instruction**:
+
+```js
+export function tickEmu(emu) {
+  const dt = cpuStep(emu);          // whole instruction
+  emu.bus.dmaStep(dt);
+  timerStep(emu.io, dt);
+  ppuStep(emu.ppu, emu.io, dt, ...);
+  ...
+}
+```
+
+Mooneye aligns bus events to specific M-cycles:
+
+- **`push_timing` / `rst_timing` / `call_timing` / `jp_timing` / `ret_timing`** — start OAM DMA, busy-wait until the transfer is one T-cycle before/after ending, then execute the opcode. If the imm16 **high byte** is fetched from `$FE00` while DMA still locks OAM, the read returns `$FF` and the jump/call target is wrong. Atomic fetch breaks that alignment.
+- **`pop_timing`** — points SP at `$FF04` (DIV), counts `nop`s so a DIV increment (256 T) lands on M1/M2/M3 of POP, and checks which byte was affected.
+
+Total cycle **counts** in `gb-opcodes.json` and opcode handlers are already correct for many opcodes (hence passing `add_sp_e_timing`, etc.). Fix 6 is about **splitting** memory operations across M-cycles so the rest of the machine can tick between them.
+
+### Design
+
+Work through **6a → 6d**. Fix 5 (cycle-accurate DMA) is a **hard dependency** — most stack/fetch tests overlap OAM DMA.
+
+```
+src/emu.js          tickEmu steps partial T-cycles between M-cycles
+src/ops/index.js    step() respects mid-instruction state
+src/ops/ld.js       push16 / pop16 / readImm16 split across M-cycles
+src/ops/call.js     CALL / RET / RST / RETI split across M-cycles
+src/ops/jp_jr.js    JP nn / JP cc split imm16 fetch
+src/interrupts.js   IME countdown + IRQ check still once per *finished* instruction
+```
+
+#### Fix 6a — M-cycle stepping infrastructure
+
+Add a **`cpu.exec`** field (or equivalent) that tracks a partially executed instruction:
+
+```js
+// null when idle; otherwise { finish, mCycle, ... }
+cpu.exec = null;
+```
+
+Two workable shapes:
+
+1. **Global M-cycle loop** — `cpuStep` always advances exactly one M-cycle (4 T), returns 4, and `tickEmu` always runs DMA/timer/PPU for those 4 T. Opcodes register multi-M-cycle sequences.
+2. **Yielding opcodes** — `step()` returns early with `{ cycles: 4, done: false }` until the instruction completes; `cpuStep` loops or `tickEmu` re-enters until `done`.
+
+Pick one; Mooneye only needs memory-access boundaries, not a full SM83 microcode table.
+
+Rules:
+
+- **Fetch** (`step` reading opcode/`$CB`) is M0 of the instruction — already separate from the handler.
+- After each **memory access** M-cycle, return control so `dmaStep` / `timerStep` / `ppuStep` run for 4 T (or the correct count for internal delays — see M-cycle tables below).
+- **Interrupt dispatch** (Fix 4) already uses two explicit `write8` calls; keep IRQ checks at **instruction boundaries** (after `cpu.exec` clears), not mid-PUSH.
+- **`HALT`** still returns 4 T per spin without starting `cpu.exec`.
+- Unit tests that call `step()` once expecting a finished instruction may need `runUntilInstructionDone(emu)` helper.
+
+#### Fix 6b — PUSH / POP (`push_timing`, `pop_timing`)
+
+Hardware M-cycle maps (from Mooneye sources):
+
+| Instruction | M0 | M1 | M2 | M3 |
+| --- | --- | --- | --- | --- |
+| PUSH `rr` | decode | internal | write high byte | write low byte |
+| POP `rr` | decode | read low byte | read high byte | — |
+
+Implementation notes:
+
+- **PUSH** — do not call `push16()` as one blob. Decrement SP and write high byte on M2; decrement SP and write low byte on M3. M1 is idle (still costs 4 T).
+- **POP** — read low byte on M1, read high byte on M2; update `rr` after both. M3 for RET is internal delay (see 6d); POP itself is 3 M-cycles (12 T).
+
+`push_timing.gb` expects:
+
+- First PUSH: high-byte write at M2 while OAM DMA still allows OAM writes → `POP HL` reads `$4224`.
+- Second PUSH: high-byte write at M3 while OAM is locked → high byte lost, `POP DE` sees `$81xx` from DMA-filled OAM.
+
+`pop_timing.gb` expects DIV bit to flip during M1/M2/M3 — verify with `assert` on `B`, `C`, `D`, `E`, `A` after scripted `nop` counts (61/62 T offsets).
+
+#### Fix 6c — JP / CALL imm16 fetch (`jp_timing`, `jp_cc_timing`, `call_timing*`)
+
+| Instruction | M0 | M1 | M2 | M3 | M4 | M5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| JP `nn` | decode | read `nn` low | read `nn` high | internal | — | — |
+| CALL `nn` | decode | read `nn` low | read `nn` high | internal | push PC high | push PC low |
+
+Conditional variants (`JP cc`, `CALL cc`) fetch **both operand bytes** before evaluating the condition — same M1/M2 timing whether taken or not; only M3+ differ (JP taken: internal + PC update; CALL taken: push; not taken: shorter path, 12 T total for JP cc).
+
+Do **not** use `readImm16()` inside these handlers. Fetch low byte on M1, high byte on M2 as separate bus reads (PC advances one byte per read). CALL push uses the same split push as 6b on M4/M5.
+
+The Mooneye HRAM test copies `JP $1a00` / `CALL $1a00` so the **high byte of `nn` lives in OAM** during the fetch. Aligning DMA end to M2 makes the high byte `$FF` → jump/call to `$xxCA` (fail path) vs `$1a` → success path.
+
+Apply the same pattern to all four CALL/JP ROMs (`call_timing2`, `call_cc_timing2` are second alignment rounds).
+
+#### Fix 6d — RET / RST / RETI (`ret_timing`, `ret_cc_timing`, `rst_timing`, `reti_timing`)
+
+| Instruction | M0 | M1 | M2 | M3 | M4 |
+| --- | --- | --- | --- | --- | --- |
+| RET | decode | read PC low | read PC high | internal | — |
+| RST | decode | internal | push PC high | push PC low | — |
+| RETI | same as RET | | | | IME=1 after pop |
+
+- **RET** — split `ret()` in `call.js` like POP: low byte M1, high byte M2, idle M3. `ret_timing.gb` overlaps RET’s high-byte read with OAM DMA (similar to PUSH).
+- **RET `cc`** — when condition false, 8 T (2 M-cycles); when true, use RET timing (20 T).
+- **RST** — M1 internal, then PUSH-style M2/M3 writes. `rst_timing.gb` checks high vs low push relative to DMA (expects wrong high byte `$81`, correct low `$9E` in round 1).
+- **RETI** — identical stack timing to RET; set `cpu.ime = true` and clear `imeEnableCountdown` **after** the M3 delay (same instant as hardware). `reti_intr_timing.gb` already passes; `reti_timing.gb` fails on stack access timing, not IME semantics.
+
+### Pitfalls
+
+- **Only fixing `gb-opcodes.json` totals** — `push_timing` still fails; the test never compares your JSON, it compares bus observation mid-instruction.
+- **Keeping atomic `push16` / `readImm16`** — wrap them for chapter tests if needed, but Mooneye paths must use split M-cycles.
+- **Advancing DMA/timer/PPU once at the end of a split instruction** — must tick **between** M-cycles or OAM lock alignment is wrong.
+- **Running interrupt dispatch mid-PUSH** — keep `serviceIfNeeded` at instruction end only (after `cpu.exec` is null).
+- **Breaking Fix 4 `ie_push`** — non-atomic IRQ dispatch is separate; its two `write8` calls are already sequential.
+- **Breaking chapter 4–6 checkpoints** — finished-instruction behaviour must stay identical; only *when* subsystems tick changes.
+- **Fix 5 regression** — DMA M1 startup window must still work; these tests rely on it.
+
+### Verify
+
+Work through one sub-fix at a time:
+
+```bash
+# 6b
+MOONEYE=1 bun test mooneye.test.js -t "push_timing"
+MOONEYE=1 bun test mooneye.test.js -t "pop_timing"
+
+# 6c
+MOONEYE=1 bun test mooneye.test.js -t "jp_timing"
+MOONEYE=1 bun test mooneye.test.js -t "jp_cc_timing"
+MOONEYE=1 bun test mooneye.test.js -t "call_timing"
+
+# 6d
+MOONEYE=1 bun test mooneye.test.js -t "ret_timing"
+MOONEYE=1 bun test mooneye.test.js -t "ret_cc_timing"
+MOONEYE=1 bun test mooneye.test.js -t "rst_timing"
+MOONEYE=1 bun test mooneye.test.js -t "reti_timing"
+
+# Full stack-timing set + regressions
+MOONEYE=1 bun test mooneye.test.js -t "push_timing|pop_timing|jp_timing|call_timing|ret_timing|rst_timing|reti_timing"
+bun test ch04-checkpoint.test.js
+bun test ch06-checkpoint.test.js
+bun test ch11-checkpoint.test.js
+bun test
+```
+
+Expect **+12** on the Mooneye summary when all of 6b–6d pass (31 → 43). Partial progress is normal — update the progress table as each sub-fix lands.
+
+## Fix 7 — PPU timing suite (`ppu/*`)
+
+
+
+### Hardware
+
+Chapter 8 built a **fixed-length** mode machine: 80 T OAM → 172 T draw → 204 T HBlank, plus 456 T VBlank lines. That is enough for Tetris and Pokémon. Mooneye’s PPU acceptance ROMs need **cycle-accurate edges**: LCD-on quirks, CPU bus restrictions during modes 2–3, STAT IRQ blocking, LYC latch behaviour, and (for the hardest tests) **variable mode-3 length** from SCX and sprites.
+
+Read the `.s` sources upstream in [mooneye-test-suite/acceptance/ppu/](https://github.com/Gekkio/mooneye-test-suite/tree/master/acceptance/ppu). After Fix 5 the suite has **2 / 11** PPU ROMs passing (`intr_1_2_timing-GS`, `intr_2_0_timing`); the rest report `42`.
+
+
+| ROM | What it checks |
+| --- | --- |
+| `lcdon_timing-GS.gb` | LY, STAT, and OAM/VRAM **read** accessibility after LCDC bit 7 goes 0→1 |
+| `lcdon_write_timing-GS.gb` | Same window, but **writes** to OAM/VRAM |
+| `stat_irq_blocking.gb` | Internal STAT line stays set when hopping between enabled modes; only mode 3 clears it |
+| `intr_2_mode3_timing.gb` | T-cycles from STAT mode-2 IRQ until STAT reads mode 3 |
+| `intr_2_mode0_timing.gb` | T-cycles from STAT mode-2 IRQ until STAT reads mode 0 (HBlank) |
+| `intr_2_oam_ok_timing.gb` | T-cycles from STAT mode-2 IRQ until OAM reads return real data (not `$FF`) |
+| `intr_2_mode0_timing_sprites.gb` | Like `intr_2_mode0_timing`, but mode-3 length depends on sprite count |
+| `stat_lyc_onoff.gb` | LYC coincidence bit latched when LCD off; interrupt only when comparison **changes** on LCD on |
+| `vblank_stat_intr-GS.gb` | Mode-2 STAT IRQ at LY 144 fires at the **same instant** as VBlank (IF bit 0) |
+| `hblank_ly_scx_timing-GS.gb` | Mode-3 length varies with `SCX mod 8`; affects HBlank IRQ → LY increment delay |
+
+References: [Pan Docs — LCD Status register (STAT)](https://gbdev.io/pandocs/STAT.html), [Pan Docs — LCD Timing](https://gbdev.io/pandocs/LCDC.html#lcd-status-stat), [docs/reference/ppu.md](../docs/reference/ppu.md).
+
+### What we do wrong today
+
+**LCD on jumps to mode 2.** `writeLcdc` in `src/bus.js` sets `mode = MODE_OAM` when bit 7 goes 0→1. Hardware starts line 0 in **mode 0** (HBlank), skips the OAM scan, and is **2 T-cycles late** relative to a normal line.
+
+**No CPU bus restrictions.** `read8` / `write8` always reach OAM and VRAM. During mode 2 the CPU cannot read OAM (`$FF`); during mode 3 it cannot read or write OAM or VRAM.
+
+**STAT IRQs fire naïvely.** `advanceMode` calls `io.requestIf(1)` on every mode entry when the matching STAT enable bit is set. Hardware has an **internal STAT line** that is **not cleared** when entering one enabled mode from another enabled mode — only **mode 3** clears it. See `stat_irq_blocking.gb`.
+
+**Fixed mode-3 length (172 T).** `modeLength(3)` is a constant. Real hardware stretches mode 3 by `SCX mod 8` (and by sprites). `hblank_ly_scx_timing-GS.gb` and `intr_2_mode0_timing_sprites.gb` need this.
+
+**LYC comparison ignores LCD-off latch.** `updateStatLyEquals` runs only inside `ppuStep` while the LCD is on. When the LCD is off, the LYC coincidence bit is **frozen**; writes to `$FF45` do not update it until the comparison clock runs again.
+
+**No mode-2 STAT IRQ at LY 144.** Entering VBlank sets IF bit 0 but does not also raise STAT when bit 5 (mode-2 IE) is enabled — `vblank_stat_intr-GS.gb` compares DIV timestamps and expects them to match.
+
+### Design
+
+Work through **7a → 7f** in order. Each sub-fix should pass its ROM(s) before moving on. Files:
+
+```
+src/ppu.js     mode machine, STAT line, LYC latch, variable mode 3
+src/bus.js     LCD-on edge, OAM/VRAM access gating (needs ppu.mode)
+src/emu.js     thread ppu into bus if needed for access checks
+```
+
+#### Fix 7a — LCD-on delay (`lcdon_timing-GS`, `lcdon_write_timing-GS`)
+
+When LCDC bit 7 goes **0→1** (in `writeLcdc`):
+
+- Set `ly = 0`, `lineCycles = 0`, `mode = MODE_HBLANK` (mode 0) — **not** mode 2.
+- Set a flag such as `ppu.lcdJustEnabled = true` (or `firstLineAfterEnable = true`).
+
+In `ppuStep`, while `lcdJustEnabled` is true for **line 0 only**:
+
+- **Skip mode 2** entirely: from mode 0 go straight to mode 3 when the first HBlank slice ends (Mooneye: “line 0 starts with mode 0 and goes straight to mode 3”).
+- Shorten the first line’s timings by **2 T** (the PPU starts late). The test samples at cycles 0, 17, 60, 110, … — three passes offset the LCDC write by 0, 1, and 2 `nop`s before reading.
+- Clear `lcdJustEnabled` when line 0 completes (LY becomes 1); lines 1+ use normal 80/172/204 timing.
+
+Expected LY after LCD enable (from `lcdon_timing-GS.s`, all three pass offsets combined):
+
+```
+00 00 00 00 01 01 01 02   (pass 1 — write then read immediately)
+00 00 00 01 01 01 02 02   (pass 2 — 1 nop before reads)
+00 00 00 01 01 01 02 02   (pass 3 — 2 nops before reads)
+```
+
+Implement **7a together with bus access** (below) — the same ROMs check OAM/VRAM accessibility at each cycle.
+
+**OAM / VRAM access** — in `bus.js` `read8` / `write8`, when LCD is on (`ppu.lcdc & 0x80`):
+
+| PPU mode | OAM `$FE00–$FE9F` | VRAM `$8000–$9FFF` |
+| --- | --- | --- |
+| 0 HBlank | read/write OK | read/write OK |
+| 1 VBlank | read/write OK | read/write OK |
+| 2 OAM scan | **read → `$FF`**, write ignored | read/write OK |
+| 3 Draw | **read → `$FF`**, write ignored | **read → `$FF`**, write ignored |
+
+DMA (`dmaLock`) is independent — OAM lock during DMA still returns `$FF` as in Fix 5.
+
+`lcdon_write_timing-GS.gb` uses the same cycle windows but checks that **writes stick** (value `$81`) when access is allowed and are **discarded** (memory stays `$00`) when blocked.
+
+#### Fix 7b — STAT IRQ blocking (`stat_irq_blocking`)
+
+Track an internal **`statSignal`** (or `statIrqLine`) on the PPU:
+
+- When a STAT condition becomes true (mode entry with IE bit set, or LY=LYC rising edge with bit 6 set), set `statSignal = true` and `io.requestIf(1)` **only if** the signal was previously false **or** the condition is one that clears and re-asserts per hardware rules.
+- **Entering a mode whose STAT IE bit is enabled does not request IF** if `statSignal` is already true from a previous enabled mode — the internal line was never cleared.
+- **Entering mode 3 (draw) clears `statSignal`.** After mode 3 ends, the next enabled mode can raise IF again.
+
+The test (`stat_irq_blocking.s`) enables all STAT IE bits, loops LY 0..143 with LYC=LY, waits for LYC match during mode 0 while keeping LY=LYC through mode 2, and expects **no STAT IRQ** in the inner loop because the line stays asserted from mode 2 through mode 0 without passing through mode 3.
+
+Pseudocode sketch inside `advanceMode`:
+
+```js
+function requestStatIf(ppu, io, reason) {
+  // reason: 'mode0' | 'mode1' | 'mode2' | 'lyc'
+  if (!statIeBitEnabled(ppu, reason)) return;
+  if (ppu.statSignal) return; // blocked — internal line still high
+  ppu.statSignal = true;
+  io.requestIf(1);
+}
+
+function enterMode3(ppu) {
+  ppu.statSignal = false; // only mode 3 clears the internal line
+  ppu.mode = MODE_DRAW;
+}
+```
+
+LYC coincidence needs the same signal: if LY=LYC stays true across mode boundaries without mode 3, do not re-fire.
+
+#### Fix 7c — STAT interrupt edge timing (`intr_2_mode3`, `intr_2_mode0`, `intr_2_oam_ok`)
+
+These ROMs HALT with only STAT enabled, wait for **mode-2** STAT IRQ at a chosen scanline, then count `nop`s until STAT (or OAM) reads show the next mode.
+
+| ROM | Poll target | Expected `nop` counts (B register) |
+| --- | --- | --- |
+| `intr_2_mode3_timing.gb` | STAT mode === 3 | delay 3 → B=1, delay 2 → B=2 |
+| `intr_2_mode0_timing.gb` | STAT mode !== 0 (wait until HBlank) | delay 46 → B=1, delay 45 → B=2 |
+| `intr_2_oam_ok_timing.gb` | OAM read !== `$FF` | delay 46 → B=1, delay 45 → B=2 |
+
+They pass only when:
+
+1. STAT mode-2 IRQ fires at the **correct T-cycle** within mode 2 (start of OAM scan after HBlank).
+2. Mode lengths match hardware (fixed 172 T is OK for the non-sprite variants **if** LCD-on and STAT blocking are already correct).
+3. OAM accessibility in `bus.js` turns off at mode 2 start and back on at mode 3 end — the OAM test counts from the IRQ handler until `$FF` clears.
+
+If 7a–7b pass but these still fail, log `ppu.mode`, `ppu.lineCycles`, and IF/STAT at each T-cycle against the Mooneye source — the off-by-one is usually IRQ fire timing (edge of mode transition vs start of `ppuStep` slice).
+
+#### Fix 7d — LYC latch when LCD off (`stat_lyc_onoff`)
+
+When LCDC bit 7 is **0**:
+
+- **Freeze** the LYC coincidence state: keep exposing `(ppu.ly === ppu.lyc)` on STAT bit 2 as it was when the LCD turned off (store `ppu.lycMatchLatched`).
+- **Ignore writes to `$FF45`** for comparison purposes until the LCD is on again (still store `ppu.lyc` for when the clock restarts).
+- Do **not** run `updateStatLyEquals` while the LCD is off.
+
+When LCDC bit 7 goes **0→1**:
+
+- Recompute LY vs LYC with `ly = 0` and the current `lyc`.
+- Fire STAT IRQ (bit 6) **only if** the coincidence bit **changes** compared to the latched value — not if both old and new comparisons are “equal” (see round 2 vs round 4 in `stat_lyc_onoff.s`).
+
+Four rounds in the test:
+
+| Round | LCD off while | LYC change while off | LCD on | Expect |
+| --- | --- | --- | --- | --- |
+| 1 | match (LY=$90) | yes ($90→$01) | yes | bit clears ($C0), **STAT IRQ** |
+| 2 | match | yes ($90→$00, still match logically) | yes | bit stays ($C4), **no IRQ** |
+| 3 | no match | yes ($00→$01) | yes | bit stays ($C0), **no IRQ** |
+| 4 | no match | no | yes | bit sets, **STAT IRQ** |
+
+#### Fix 7e — VBlank + mode-2 at LY 144 (`vblank_stat_intr-GS`)
+
+When **LY becomes 144** (end of visible line 143, entering VBlank):
+
+- Always `io.requestIf(0)` (VBlank) as today.
+- **Also**, if STAT bit 5 (mode-2 / OAM IE) is set, treat this as a mode-2 STAT condition and `io.requestIf(1)` at the **same T-cycle** — the test compares DIV deltas between pure VBlank and STAT-at-144 and expects identical timing (rounds 1&3 → `$01`, rounds 2&4 → `$00`).
+
+This is separate from the mode-1 STAT IE (bit 4). Bit 5 is “OAM scan interrupt enable,” but hardware also uses it at the VBlank boundary on line 144.
+
+#### Fix 7f — Variable mode-3 length (`hblank_ly_scx_timing-GS`, `intr_2_mode0_timing_sprites`)
+
+Mode 3 is **not** always 172 T, and mode 0 is **not** always 204 T — a scanline is always **456 T** total (80 T mode 2 + mode 3 + mode 0). On DMG with no sprites, **SCX fine scroll** (`SCX & 7`, latched at mode-3 start) lengthens mode 3 and **shortens HBlank by the same amount**:
+
+```js
+const scxFine = ppu.scx & 7;
+const mode3Len = 172 + scxFine;
+const mode0Len = 204 - scxFine;
+// mode2Len stays 80; 80 + mode3Len + mode0Len === 456
+```
+
+`hblank_ly_scx_timing-GS.s` enables STAT HBlank IE (bit 3), HALTs on HBlank IRQ, then counts `nop`s until `LY` increments. Because HBlank is shorter when `SCX & 7` is larger, the same handler overhead crosses the LY increment on fewer `nop`s:
+
+| `SCX mod 8` | T-cycles from STAT IRQ to LY increment (approx.) | Test `delay_a` / `delay_b` |
+| --- | --- | --- |
+| 0 | 51 | 2 / 3 |
+| 1–4 | 50 | 1 / 2 |
+| 5–7 | 49 | 0 / 1 |
+
+`intr_2_mode0_timing_sprites.gb` adds **sprite penalty** on top: mode 3 grows by **2 T per sprite** on the line (up to 10 sprites), and mode 0 shrinks accordingly.
+
+This is the largest jump in complexity. A full pixel FIFO is out of scope; per-line `mode3Len` / `mode0Len` from latched SCX (+ sprites) is enough for these Mooneye ROMs. Commercial games may need more later.
+
+### Pitfalls
+
+- **Jumping to mode 2 on LCD enable** — the single most common `lcdon_timing-GS` failure; chapter 8 explicitly said mode 2, but Mooneye documents the hardware exception for line 0.
+- **Gating VRAM in mode 2** — only OAM is locked during mode 2; VRAM stays accessible until mode 3.
+- **Clearing `statSignal` on every mode change** — breaks `stat_irq_blocking`; only mode 3 clears it.
+- **Re-firing LYC IRQ every line** while LY=LYC — use `lycMatchPrev` (you already have this) **and** respect the LCD-off latch from 7d.
+- **Fixed 172 T forever** — `intr_2_mode0_timing` may pass with fixed length, but `hblank_ly_scx_timing-GS` and `intr_2_mode0_timing_sprites` will not.
+- **Breaking chapter 8–11 checkpoints** — LCD off still forces LY=0, mode 0, white screen; one frame is still 70 224 T; Tetris VBlank wait must keep working.
+- **Forgetting `halted = false` on pending IRQ** — already required for Fix 4; PPU timing HALT tests depend on it.
+
+### Verify
+
+Work through one sub-fix at a time:
+
+```bash
+# 7a — LCD on + bus access
+MOONEYE=1 bun test mooneye.test.js -t "lcdon_timing"
+MOONEYE=1 bun test mooneye.test.js -t "lcdon_write_timing"
+
+# 7b
+MOONEYE=1 bun test mooneye.test.js -t "stat_irq_blocking"
+
+# 7c
+MOONEYE=1 bun test mooneye.test.js -t "intr_2_mode3_timing"
+MOONEYE=1 bun test mooneye.test.js -t "intr_2_mode0_timing"
+MOONEYE=1 bun test mooneye.test.js -t "intr_2_oam_ok_timing"
+
+# 7d
+MOONEYE=1 bun test mooneye.test.js -t "stat_lyc_onoff"
+
+# 7e
+MOONEYE=1 bun test mooneye.test.js -t "vblank_stat_intr"
+
+# 7f
+MOONEYE=1 bun test mooneye.test.js -t "hblank_ly_scx_timing"
+MOONEYE=1 bun test mooneye.test.js -t "intr_2_mode0_timing_sprites"
+
+# Full PPU folder + chapter regressions
+MOONEYE=1 bun test mooneye.test.js -t "ppu/"
+bun test test/ch08-checkpoint.test.js
+bun test test/ch09-checkpoint.test.js
+bun test test/ch11-checkpoint.test.js
+bun test
+```
+
+Expect **+9** on the Mooneye summary when all of 7a–7f pass (11/11 PPU ROMs; two already pass today). Partial progress is normal — update the progress table rows as each sub-fix lands.
+
 ## What still fails (and why)
 
-After fixes 1–4, expect roughly **26 pass / 35 fail / 1 timeout**. Group the remainder:
+After fixes 1–5, expect roughly **31 pass / 30 fail / 1 timeout**. Group the remainder:
 
 
-| Category           | ROMs still failing                                                                                             | Blocker                                             |
-| ------------------ | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Instruction timing | `call_timing`, `jp_timing`, `push_timing`, `pop_timing`, `ret_timing`, `rst_timing`, `add_sp_e_timing`, … (14) | Per-opcode cycle counts must match hardware exactly |
-| OAM DMA timing     | `oam_dma/sources-GS` (fail/timeout)                                                                            | DMA address decoding for `$FE00` source page        |
-| Timer edge cases   | `timer/tim00_div_trigger`, `timer/tima_reload`, `timer/rapid_toggle`, … (8)                                    | DIV-to-TIMA phase, reload quirks                    |
-| PPU timing         | `ppu/lcdon_timing-GS`, `ppu/stat_irq_blocking`, `ppu/intr_2_mode3_timing`, … (10)                              | Mode 3 stretch, STAT blocking, LCD-on delay         |
+| Category           | ROMs still failing                                                                                             | Blocker                                                       |
+| ------------------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| CPU memory timing  | 12× `push_timing`, `pop_timing`, `jp_timing`, `call_timing*`, `ret_timing`, `rst_timing`, … (see Fix 6)      | M-cycle memory access timing; instructions run atomically today |
+| OAM DMA timing     | `oam_dma/sources-GS` (fail/timeout)                                                                            | DMA address decoding for `$FE00` source page                  |
+| Timer edge cases   | `timer/tim00_div_trigger`, `timer/tima_reload`, `timer/rapid_toggle`, … (8)                                    | DIV-to-TIMA phase, reload quirks                              |
+| PPU timing         | 9× `ppu/*` (see Fix 7)                                                                                         | LCD-on delay, bus gating, STAT blocking, mode-3 stretch       |
 
 
 Do not try to fix all of these in one sitting. Pick **one ROM**, read the `.s` source in the Mooneye repo, reproduce the failure, fix the smallest thing that makes that ROM pass, regression-test the suite.
 
 ## Suggested order for the next passes
 
-1. **`oam_dma_timing.gb`** — Fix 5 above; implement 160 M-cycle DMA with OAM lock and startup delay.
-2. **One** `*_timing.gb` **from the CPU set** — forces you to audit opcode durations in `gb-opcodes.json`.
-3. **PPU tests** — only after you accept mode-3 variable length or fixed-172 limitations.
-4. **`oam_dma/sources-GS.gb`** — optional stretch; needs DMA address decoding beyond basic timing.
+1. **Fix 6a** — M-cycle stepping in `tickEmu` / `cpuStep` (infrastructure for everything below).
+2. **Fix 6b** — `push_timing` + `pop_timing` (simplest split stack ops).
+3. **Fix 6c–6d** — JP/CALL fetch timing, then RET/RST/RETI.
+4. **Fix 7a** — `lcdon_timing-GS` + `lcdon_write_timing-GS` (LCD-on delay and OAM/VRAM gating).
+5. **Fix 7b–7e** — STAT quirks in order (blocking → edge timing → LYC latch → VBlank/144).
+6. **Fix 7f** — variable mode-3 length (`hblank_ly_scx_timing-GS`, sprites variant).
+7. **`oam_dma/sources-GS.gb`** — optional stretch; needs DMA address decoding beyond basic timing.
 
 
 
 ## Checkpoint
 
 - `bun run test:mooneye` runs without crashing.
-- Fixes 1–4 pass.
-- `bun test` still green (unit + chapter checkpoints).
 - Fixes 1–5 pass (`oam_dma_start`, `oam_dma_timing`, `oam_dma_restart`; not `sources-GS`).
+- `bun test` still green (unit + chapter checkpoints).
+- Fix 6 (optional): all 12 stack/fetch timing ROMs pass; chapter CPU checkpoints still green.
+- Fix 7 (optional): all 11 `ppu/*` acceptance ROMs pass; `ch08`–`ch11` checkpoints still green.
 
 
 
@@ -486,9 +929,12 @@ Do not try to fix all of these in one sitting. Pick **one ROM**, read the `.s` s
 
 - [Mooneye Test Suite](https://github.com/Gekkio/mooneye-test-suite) — `.s` sources next to each `.gb`
 - [gbdoc — Interrupts](https://mgba-emu.github.io/gbdoc/)
+- [docs/reference/ppu.md](../docs/reference/ppu.md) — scanline renderer vs Mooneye accuracy bar
 - [docs/reference/io-registers.md](../docs/reference/io-registers.md) — stub vs implemented I/O
 - [docs/reference/test-roms.md](../docs/reference/test-roms.md) — Blargg vs Mooneye vs commercial games
 - [docs/reference/cpu-quirks.md](../docs/reference/cpu-quirks.md) — when instruction-level timing is not enough
+- [Pan Docs — STAT](https://gbdev.io/pandocs/STAT.html)
 - [Pan Docs — OAM DMA transfer](https://gbdev.io/pandocs/OAM_DMA_Transfer.html)
 - [Pan Docs — MBC5](https://gbdev.io/pandocs/MBC5.html)
+- [course/08-ppu-timing.md](08-ppu-timing.md) — baseline mode machine this appendix extends
 
