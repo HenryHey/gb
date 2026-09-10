@@ -1,7 +1,7 @@
 const MODE_HBLANK = 0;
 const MODE_OAM = 2;
 
-export function createBus({ cart, io, ppu }) {
+export function createBus({ cart, io, ppu, onCartRamWrite }) {
   const wram = new Uint8Array(0x2000);
   const hram = new Uint8Array(0x7f);
   const vram = new Uint8Array(0x2000); // PPU will own this later; bus can hold it
@@ -181,6 +181,9 @@ export function createBus({ cart, io, ppu }) {
     }
     if (addr < 0xc000) {
       cart.writeRam(addr, v);
+      if (onCartRamWrite && cart.ram?.length && cart.state?.ramEnable) {
+        onCartRamWrite();
+      }
       return;
     }
     if (addr < 0xe000) {

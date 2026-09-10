@@ -10,13 +10,13 @@ import { handleHalt, serviceIfNeeded, tickImeCountdown } from './interrupts.js';
 /** One DMG frame in T-cycles (456 dots × 154 lines). */
 export const FRAME_T = 70224;
 
-export function createEmu(rom) {
+export function createEmu(rom, { onCartRamWrite } = {}) {
   const io = createIo();
   const ppu = createPpu();
   const romBuf =
     rom.length >= 0x150 ? rom : Uint8Array.from({ length: 0x150 }, (_, i) => rom[i] ?? 0);
   const cart = createCart(romBuf);
-  const bus = createBus({ cart, io, ppu });
+  const bus = createBus({ cart, io, ppu, onCartRamWrite });
   const cpu = createCpu(bus);
   return { cpu, bus, io, rom: romBuf, cart, ppu };
 }

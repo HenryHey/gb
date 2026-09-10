@@ -9,6 +9,35 @@ let emu = createEmu(new Uint8Array());
 reset(emu);
 renderCpu(emu.cpu);
 
+const SRAM_SAVE_DELAY_MS = 1000;
+
+/** @type {ReturnType<typeof setTimeout> | null} */
+let sramSaveTimer = null;
+/** @type {ReturnType<typeof parseHeader> | null} */
+let sramPersistHeader = null;
+
+function cancelSramSave() {
+  if (sramSaveTimer !== null) {
+    clearTimeout(sramSaveTimer);
+    sramSaveTimer = null;
+  }
+}
+
+function flushSramSave(emuRef = emu, header = sramPersistHeader) {
+  cancelSramSave();
+  if (!emuRef?.cart?.ram?.length || !header) return;
+  saveSram(emuRef.cart, header);
+}
+
+function scheduleSramSave() {
+  cancelSramSave();
+  if (!emu.cart?.ram?.length || !sramPersistHeader) return;
+  sramSaveTimer = setTimeout(() => {
+    sramSaveTimer = null;
+    saveSram(emu.cart, sramPersistHeader);
+  }, SRAM_SAVE_DELAY_MS);
+}
+
 let running = false;
 let clockOrigin = 0;
 let framesDone = 0;
@@ -104,6 +133,9 @@ function updateCopySaveStateBtn() {
 syncDebugUi();
 debugUi.addEventListener('change', syncDebugUi);
 window.addEventListener('resize', layoutDisplay);
+window.addEventListener('pagehide', () => {
+  flushSramSave();
+});
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && running) setRunning(false);
 });
@@ -180,7 +212,16 @@ function loadRomBytes(rom, { logHeader = true } = {}) {
 
 function loadRom(rom) {
   setRunning(false);
-  emu = createEmu(rom);
+  flushSramSave();
+
+  const header = parseHeader(rom);
+  sramPersistHeader = header;
+  emu = createEmu(rom, { onCartRamWrite: scheduleSramSave });
+
+  if (emu.cart.ram?.length) {
+    loadSram(emu.cart, header);
+  }
+
   reset(emu);
   resetClock();
   renderCpu(emu.cpu);
@@ -339,6 +380,7 @@ saveSramBtn.addEventListener('click', () => {
       log('Save SRAM: no SRAM');
       return;
     }
+    cancelSramSave();
     saveSram(emu.cart, header);
     info.textContent = '';
     log(`Saved SRAM (${emu.cart.ram.length} bytes) — ${header.title}`);
