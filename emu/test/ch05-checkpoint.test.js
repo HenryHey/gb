@@ -86,6 +86,21 @@ describe('chapter 5 checkpoint', () => {
     expect(emu.ppu.framebuffer.every((byte) => byte === 0xff)).toBe(true);
   });
 
+  test('reset clears in-progress OAM DMA', () => {
+    const emu = createEmu(gameRom());
+    reset(emu);
+    emu.bus.write8(0xc000, 0x42);
+    emu.bus.write8(0xff46, 0xc0);
+    emu.bus.dmaStep(12);
+    expect(emu.bus.read8(0xff46)).toBe(0xc0);
+
+    reset(emu);
+
+    expect(emu.bus.read8(0xff46)).toBe(0xff);
+    expect(emu.bus.read8(0xfe00)).toBe(0);
+    expect(emu.bus.oam.every((byte) => byte === 0)).toBe(true);
+  });
+
   test('first step leaves $0100 (JP entry)', () => {
     const emu = createEmu(gameRom());
     reset(emu);

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { createBus } from '../src/bus.js';
 import { createCart, parseHeader } from '../src/cart.js';
+import { createEmu, reset } from '../src/emu.js';
 import { createIo } from '../src/io.js';
 import { createPpu } from '../src/ppu.js';
 
@@ -172,6 +173,37 @@ describe('createCart', () => {
   test('throws for unimplemented mappers', () => {
     const rom = makeRom({ banks: 4, type: 0x20, ramId: 0x03 });
     expect(() => createCart(rom)).toThrow(/not implemented/i);
+  });
+});
+
+describe('reset lifecycle', () => {
+  test('reset restores MBC1 bank 1 and mode 0 after mapper changes', () => {
+    const rom = makeRom({ banks: 4, type: 0x01 });
+    const emu = createEmu(rom);
+    reset(emu);
+
+    emu.bus.write8(0x2000, 2);
+    emu.bus.write8(0x4000, 3);
+    emu.bus.write8(0x6000, 1);
+    emu.bus.write8(0x0000, 0x0a);
+    expect(emu.cart.state).toEqual({
+      ramEnable: true,
+      romBank: 2,
+      ramBank: 3,
+      mode: 1,
+    });
+    expect(emu.bus.read8(0x4000)).toBe(0x12);
+
+    reset(emu);
+
+    expect(emu.cart.state).toEqual({
+      ramEnable: false,
+      romBank: 1,
+      ramBank: 0,
+      mode: 0,
+    });
+    expect(emu.bus.read8(0x0000)).toBe(0x10);
+    expect(emu.bus.read8(0x4000)).toBe(0x11);
   });
 });
 

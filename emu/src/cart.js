@@ -61,6 +61,7 @@ function createRomOnly(rom, header) {
     mapperType: header.type,
     ram: null,
     state: null,
+    reset() {},
     readRom(addr) {
       return rom[addr] ?? 0xff;
     },
@@ -110,6 +111,12 @@ function createMbc1(rom, header) {
     mapperType: header.type,
     ram,
     state,
+    reset() {
+      state.ramEnable = false;
+      state.romBank = 1;
+      state.ramBank = 0;
+      state.mode = 0;
+    },
     readRom(addr) {
       if (addr < 0x4000) {
         const b = mapRom00();
@@ -153,6 +160,11 @@ function createMbc3(rom, header) {
     mapperType: header.type,
     ram, // for save/load
     state,
+    reset() {
+      state.ramEnable = false;
+      state.romBank = 1;
+      state.ramBank = 0;
+    },
     readRom(addr) {
       if (addr < 0x4000) {
         return rom[addr];
@@ -247,6 +259,12 @@ function createMbc5(rom, header) {
     mapperType: header.type,
     ram,
     state,
+    reset() {
+      state.ramEnable = false;
+      state.romBankLow = 0;
+      state.romBankHigh = 0;
+      state.ramBank = 0;
+    },
     readRom(addr) {
       if (addr < 0x4000) return rom[addr];
       const bank = romBankIndex();

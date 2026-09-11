@@ -22,6 +22,8 @@ export function createEmu(rom, { onCartRamWrite } = {}) {
 }
 
 export function reset(emu) {
+  emu.cart.reset();
+  emu.bus.resetDma();
   emu.bus.vram.fill(0);
   emu.bus.oam.fill(0);
   emu.bus.wram.fill(0);

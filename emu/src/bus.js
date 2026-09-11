@@ -236,9 +236,19 @@ export function createBus({ cart, io, ppu, onCartRamWrite }) {
     while (dmaActive) dmaStep(4);
   }
 
+  function resetDma() {
+    dmaReg = 0xff;
+    dmaActive = false;
+    dmaLock = false;
+    dmaSrc = 0;
+    dmaIndex = 0;
+    dmaCountdown = 0;
+  }
+
   return {
     dmaStep,
     finishDma,
+    resetDma,
     read8,
     write8,
     vram,
