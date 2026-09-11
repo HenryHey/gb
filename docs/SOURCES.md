@@ -1,16 +1,33 @@
-# Sources in this repository
+# External references
 
-This folder is a local reference library. Nothing here is original course material — that lives in [`course/`](../course/). Treat **Pan Docs** as the hardware source of truth. Use the two tutorials for *shape* (how someone once explained a subsystem), not for timings, flags, or “is this opcode a Z80 instruction?”.
+This folder holds **original** cheat sheets in [`reference/`](reference/). Everything below is third-party material — use live links, not copies in this repo.
+
+Treat **Pan Docs** as the hardware source of truth. Use the two tutorials for *shape* (how someone once explained a subsystem), not for timings, flags, or “is this opcode a Z80 instruction?”
 
 ## Inventory
 
-| Path | What it is | Use it for | Do not use it for |
+| Source | URL | Use it for | Do not use it for |
 | --- | --- | --- | --- |
-| [`JS Emu/`](JS%20Emu/) | Imran Nazar, *GameBoy Emulation in JavaScript* (2010–2011), parts 1–10 | A JS-flavored walkthrough of CPU → MMU → GPU → input → sprites → interrupts → MBC1 → timers | Opcode completeness, cycle accuracy, interrupts/`EI`, timers, PPU mode lengths, CPU identity |
-| [`Pan Docs/Pan Docs.html`](Pan%20Docs/Pan%20Docs.html) | Offline dump of [gbdev Pan Docs](https://gbdev.io/pandocs/) | Every register, the ISA, MBC maps, boot sequence, obscure behaviour | A coding order — it is a reference, not a course |
-| [`Rust tutorial/`](Rust%20tutorial/) | Ryan Levick, *DMG-01: How to Emulate a Game Boy* | Pedagogy for registers, flags, decode, 2bpp tiles | A finished emulator. The book stops around tile RAM / memory map |
+| **Pan Docs** (gbdev) | [gbdev.io/pandocs](https://gbdev.io/pandocs/) | Every register, the ISA, MBC maps, boot sequence, obscure behaviour | A coding order — it is a reference, not a course |
+| **Nazar JS series** | [GameBoy Emulation in JavaScript](https://imrannazar.com/series/gameboy-emulation-in-javascript) (2010–2011, parts 1–10) | A JS-flavored walkthrough of CPU → MMU → GPU → input → sprites → interrupts → MBC1 → timers | Opcode completeness, cycle accuracy, interrupts/`EI`, timers, PPU mode lengths, CPU identity |
+| **DMG-01** (Ryan Levick) | [rylev.github.io/DMG-01](https://rylev.github.io/DMG-01/public/book/) | Pedagogy for registers, flags, decode, 2bpp tiles | A finished emulator. The book stops around tile RAM / memory map |
 
-Nazar’s series **never published a Sound part** (part 10 teases it). There is no APU tutorial in this dump. Implement a stub from Pan Docs ([Audio](https://gbdev.io/pandocs/Audio.html)) as in [course chapter 15](../course/15-host-polish-and-audio.md).
+### Nazar series — direct links
+
+| Part | Topic | URL |
+| --- | --- | --- |
+| 1 | CPU | [cpu](https://imrannazar.com/series/gameboy-emulation-in-javascript/cpu) |
+| 2 | Memory | [memory](https://imrannazar.com/series/gameboy-emulation-in-javascript/memory) |
+| 3 | GPU timings | [gpu-timing](https://imrannazar.com/series/gameboy-emulation-in-javascript/gpu-timing) |
+| 4 | Graphics | [graphics](https://imrannazar.com/series/gameboy-emulation-in-javascript/graphics) |
+| 5 | Integration | [integration](https://imrannazar.com/series/gameboy-emulation-in-javascript/integration) |
+| 6 | Input | [input](https://imrannazar.com/series/gameboy-emulation-in-javascript/input) |
+| 7 | Sprites | [sprites](https://imrannazar.com/series/gameboy-emulation-in-javascript/sprites) |
+| 8 | Interrupts | [interrupts](https://imrannazar.com/series/gameboy-emulation-in-javascript/interrupts) |
+| 9 | Memory banking | [memory-banks](https://imrannazar.com/series/gameboy-emulation-in-javascript/memory-banks) |
+| 10 | Timers | [timers](https://imrannazar.com/series/gameboy-emulation-in-javascript/timers) |
+
+Nazar’s series **never published a Sound part** (part 10 teases it). There is no APU tutorial. Implement a stub from Pan Docs ([Audio](https://gbdev.io/pandocs/Audio.html)) as in [course chapter 15](../course/15-host-polish-and-audio.md).
 
 DMG-01 is a **Rust** book. The ideas transfer; the code does not. Prefer the patterns in this course (bus `read8`/`write8`, opcode tables, `step(tCycles)`).
 
@@ -32,10 +49,10 @@ Nazar is the most tempting to copy because it is already JavaScript. Copy the *a
 
 When in doubt: [Pan Docs](https://gbdev.io/pandocs/) → [`docs/reference/`](reference/) cheat sheets → this course’s chapter → Nazar/DMG-01 for a second explanation.
 
-## Live links worth keeping
+## More links
 
-- [Pan Docs](https://gbdev.io/pandocs/)
 - [SM83 opcode tables](https://gbdev.io/gb-opcodes/optables/classic)
 - [gbz80(7) instruction descriptions](https://rgbds.gbdev.io/docs/v0.9.4/gbz80.7)
 - [Game Boy: Complete Technical Reference (TCAGBD)](https://github.com/Gekkio/gb-ctr) — denser than Pan Docs; optional later reading
 - [gbdev Awesome list](https://gbdev.io/list.html)
+- [jsGB source](https://github.com/Two9A/jsGB) — Nazar’s reference emulator (archival)

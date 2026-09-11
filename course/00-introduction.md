@@ -77,7 +77,7 @@ A frame is 154 scanlines × 456 T-cycles = **70 224 T-cycles** ≈ 59.7 Hz. Th
 
 | Priority | Source | Role |
 | --- | --- | --- |
-| 1 | [Pan Docs](https://gbdev.io/pandocs/) ([local dump](../docs/Pan%20Docs/Pan%20Docs.html)) | Hardware |
+| 1 | [Pan Docs](https://gbdev.io/pandocs/) | Hardware |
 | 2 | [`docs/reference/`](../docs/reference/) | Tables you will keep open while coding |
 | 3 | This `course/` directory | Order, patterns, checkpoints |
 | 4 | Nazar JS series / DMG-01 ([`docs/SOURCES.md`](../docs/SOURCES.md)) | Second explanations; **not** timings |
@@ -92,7 +92,7 @@ Nazar calls the CPU a Z80 and ships a partial ISA. If you copy his opcode list, 
 - **Implementation** — snippets you generalize. Not a paste-ready emulator.
 - **Pitfalls** — the bugs everyone hits.
 - **Checkpoint** — something you can *see* or *assert*.
-- **Further reading** — Pan Docs section + local dump.
+- **Further reading** — Pan Docs section + links in [`docs/SOURCES.md`](../docs/SOURCES.md).
 
 If a chapter feels like copy-paste, stop at the hardware section and name which part of the machine each snippet is: a latch, a bus decode, a flag, a cycle count, or a host-side convenience. Chapter 2 spells that out for the CPU; later chapters do the same for the bus, interrupts, timer, PPU, joypad, and mappers.
 
@@ -113,8 +113,8 @@ No code yet. You should be able to answer, without looking:
 
 - [Pan Docs — Specs](https://gbdev.io/pandocs/Specifications.html)
 - [docs/SOURCES.md](../docs/SOURCES.md)
-- Nazar part 1, *The CPU* (concept only): [`docs/JS Emu/…The CPU…`](../docs/JS%20Emu/GameBoy%20Emulation%20in%20JavaScript_%20The%20CPU%20-%20Imran%20Nazar.html)
-- DMG-01 architecture overview: [`docs/Rust tutorial/…`](../docs/Rust%20tutorial/DMG-01_%20How%20to%20Emulate%20a%20Game%20Boy.html)
+- Nazar part 1, *The CPU* (concept only): [imrannazar.com/…/cpu](https://imrannazar.com/series/gameboy-emulation-in-javascript/cpu)
+- DMG-01 architecture overview: [rylev.github.io/DMG-01](https://rylev.github.io/DMG-01/public/book/architecture_overview.html)
 
 ## Next
 
