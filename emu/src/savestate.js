@@ -1,6 +1,5 @@
 import { parseHeader } from './cart.js';
 import { createEmu } from './emu.js';
-import { syncWindowState } from './ppu.js';
 
 export const GBSS_MAGIC = 0x53534247; // 'GBSS' LE
 export const GBSS_VERSION = 1;
@@ -62,6 +61,9 @@ function writePpu(out, view, ppu) {
   out[0x4c] = ppu.obp0;
   out[0x4d] = ppu.obp1;
   out[0x4e] = ppu.windowLine & 0xff;
+  out[0x4f] = ppu.wyTriggered ? 1 : 0;
+  out[0x36] = ppu.lycMatchPrev ? 1 : 0;
+  out[0x37] = ppu.frameReady ? 1 : 0;
 }
 
 function readPpu(ppu, view) {
@@ -79,6 +81,29 @@ function readPpu(ppu, view) {
   ppu.obp0 = view.getUint8(0x4c);
   ppu.obp1 = view.getUint8(0x4d);
   ppu.windowLine = view.getUint8(0x4e);
+  ppu.wyTriggered = view.getUint8(0x4f) !== 0;
+  ppu.lycMatchPrev = view.getUint8(0x36) !== 0;
+  ppu.frameReady = view.getUint8(0x37) !== 0;
+}
+
+function writeDma(out, dma) {
+  out[0x74] = dma.dmaReg;
+  out[0x75] = dma.dmaActive ? 1 : 0;
+  out[0x76] = dma.dmaLock ? 1 : 0;
+  out[0x77] = dma.dmaSrc;
+  out[0x78] = dma.dmaIndex;
+  out[0x79] = dma.dmaCountdown;
+}
+
+function readDma(bus, view) {
+  bus.setDmaState({
+    dmaReg: view.getUint8(0x74),
+    dmaActive: view.getUint8(0x75) !== 0,
+    dmaLock: view.getUint8(0x76) !== 0,
+    dmaSrc: view.getUint8(0x77),
+    dmaIndex: view.getUint8(0x78),
+    dmaCountdown: view.getUint8(0x79),
+  });
 }
 
 function writeTimer(out, view, io) {
@@ -179,6 +204,7 @@ export function serializeEmu(emu) {
   writeTimer(out, view, emu.io);
   writeJoypad(out, emu.io.joypad);
   writeCart(out, view, emu.cart, header.type);
+  writeDma(out, emu.bus.getDmaState());
 
   out.set(emu.bus.vram, 0x80);
   out.set(emu.bus.wram, 0x2080);
@@ -221,10 +247,10 @@ export function deserializeEmu(bytes, rom) {
   cpu.halted = view.getUint8(0x35) !== 0;
 
   readPpu(emu.ppu, view);
-  syncWindowState(emu.ppu);
   readTimer(emu.io, view);
   readJoypad(emu.io.joypad, view);
   readCart(emu.cart, view);
+  readDma(emu.bus, view);
 
   emu.bus.vram.set(bytes.subarray(0x80, 0x2080));
   emu.bus.wram.set(bytes.subarray(0x2080, 0x4080));

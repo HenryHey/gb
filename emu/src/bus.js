@@ -245,10 +245,25 @@ export function createBus({ cart, io, ppu, onCartRamWrite }) {
     dmaCountdown = 0;
   }
 
+  function getDmaState() {
+    return { dmaReg, dmaActive, dmaLock, dmaSrc, dmaIndex, dmaCountdown };
+  }
+
+  function setDmaState(s) {
+    dmaReg = s.dmaReg & 0xff;
+    dmaActive = !!s.dmaActive;
+    dmaLock = !!s.dmaLock;
+    dmaSrc = s.dmaSrc & 0xff;
+    dmaIndex = s.dmaIndex & 0xff;
+    dmaCountdown = s.dmaCountdown & 0xff;
+  }
+
   return {
     dmaStep,
     finishDma,
     resetDma,
+    getDmaState,
+    setDmaState,
     read8,
     write8,
     vram,

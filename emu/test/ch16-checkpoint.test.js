@@ -141,6 +141,40 @@ describe('serialize / deserialize', () => {
     expect(restored.bus.ie).toBe(0x5a);
   });
 
+  test('round-trips PPU latch fields explicitly', () => {
+    const rom = makeRom({ banks: 2, type: 0x00 });
+    const emu = freshEmu(rom);
+    emu.ppu.wy = 128;
+    emu.ppu.ly = 131;
+    emu.ppu.wyTriggered = false;
+    emu.ppu.lycMatchPrev = true;
+    emu.ppu.frameReady = true;
+
+    const restored = roundTrip(emu);
+    expect(restored.ppu.wyTriggered).toBe(false);
+    expect(restored.ppu.lycMatchPrev).toBe(true);
+    expect(restored.ppu.frameReady).toBe(true);
+    expect(restored.ppu.windowLine).toBe(emu.ppu.windowLine);
+  });
+
+  test('round-trips in-progress OAM DMA', () => {
+    const rom = makeRom({ banks: 2, type: 0x00 });
+    const emu = freshEmu(rom);
+    for (let i = 0; i < 0xa0; i++) {
+      emu.bus.write8(0xc000 + i, (0x80 + i) & 0xff);
+    }
+    emu.bus.write8(0xff46, 0xc0);
+    emu.bus.dmaStep(12);
+
+    const dmaBefore = emu.bus.getDmaState();
+    const oamBefore = emu.bus.oam.slice(0, 8);
+
+    const restored = roundTrip(emu);
+    expect(restored.bus.getDmaState()).toEqual(dmaBefore);
+    expect(restored.bus.oam.slice(0, 8)).toEqual(oamBefore);
+    expect(restored.bus.read8(0xff46)).toBe(dmaBefore.dmaReg);
+  });
+
   test('round-trips PPU ly and timer divCounter', () => {
     const rom = makeRom({ banks: 2, type: 0x00 });
     const emu = freshEmu(rom);
