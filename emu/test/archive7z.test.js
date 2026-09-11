@@ -6,9 +6,16 @@ import { extractRomsFrom7z } from '../src/archive7z.js';
 
 const root = resolve(import.meta.dir, '..');
 
+function minimalRom(title) {
+  const rom = new Uint8Array(0x8000).fill(0xff);
+  rom[0x147] = 0x00;
+  for (let i = 0; i < title.length && i < 16; i++) rom[0x134 + i] = title.charCodeAt(i);
+  return rom;
+}
+
 async function makeTestArchive() {
   const sevenZip = await SevenZip({ print: () => {}, printErr: () => {} });
-  sevenZip.FS.writeFile('/tetris.gb', readFileSync(resolve(root, 'tetris.gb')));
+  sevenZip.FS.writeFile('/tetris.gb', minimalRom('TETRIS'));
   sevenZip.FS.writeFile(
     '/halt_bug.gb',
     readFileSync(resolve(root, '../test_carts/blargg/halt_bug.gb')),

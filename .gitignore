@@ -1,6 +1,10 @@
-# Ignore local emulator scaffolding and ROMs
+# Ignore local emulator scaffolding and personal ROMs (test ROMs live under test_carts/)
 emu/node_modules/
 emu/dist/
+docs/*.gb
+docs/*.gbc
+emu/*.gb
+emu/*.gbc
 *.sav
 *.srm
 .DS_Store
