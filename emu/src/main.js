@@ -1,6 +1,6 @@
 import './style.css';
 import { extractRomsFrom7z } from './archive7z.js';
-import { loadSram, parseHeader, saveSram } from './cart.js';
+import { hasBatterySram, loadSram, parseHeader, saveSram } from './cart.js';
 import { log, renderCpu, renderVram, formatOpcode } from './debug.js';
 import { createEmu, reset, runFrame, tickEmu } from './emu.js';
 import { getSavedStateRaw, loadStateSlot, saveStateSlot, savedStateToJson } from './savestate.js';
@@ -23,18 +23,18 @@ function cancelSramSave() {
   }
 }
 
-function flushSramSave(emuRef = emu, header = sramPersistHeader) {
+function flushSramSave(emuRef = emu) {
   cancelSramSave();
-  if (!emuRef?.cart?.ram?.length || !header) return;
-  saveSram(emuRef.cart, header);
+  if (!emuRef?.cart?.ram?.length || !emuRef?.rom?.length) return;
+  saveSram(emuRef.cart, emuRef.rom);
 }
 
 function scheduleSramSave() {
   cancelSramSave();
-  if (!emu.cart?.ram?.length || !sramPersistHeader) return;
+  if (!emu.cart?.ram?.length || !sramPersistHeader || !hasBatterySram(sramPersistHeader.type)) return;
   sramSaveTimer = setTimeout(() => {
     sramSaveTimer = null;
-    saveSram(emu.cart, sramPersistHeader);
+    saveSram(emu.cart, emu.rom);
   }, SRAM_SAVE_DELAY_MS);
 }
 
@@ -218,8 +218,8 @@ function loadRom(rom) {
   sramPersistHeader = header;
   emu = createEmu(rom, { onCartRamWrite: scheduleSramSave });
 
-  if (emu.cart.ram?.length) {
-    loadSram(emu.cart, header);
+  if (hasBatterySram(header.type) && emu.cart.ram?.length) {
+    loadSram(emu.cart, emu.rom);
   }
 
   reset(emu);
@@ -354,12 +354,12 @@ stepBtn.addEventListener('click', () => {
 loadSramBtn.addEventListener('click', () => {
   try {
     const header = parseHeader(emu.rom);
-    if (!emu.cart.ram?.length) {
+    if (!hasBatterySram(header.type) || !emu.cart.ram?.length) {
       info.textContent = 'No battery SRAM on this cart';
       log('Load SRAM: no SRAM');
       return;
     }
-    if (loadSram(emu.cart, header)) {
+    if (loadSram(emu.cart, emu.rom)) {
       info.textContent = '';
       log(`Loaded SRAM (${emu.cart.ram.length} bytes) — ${header.title}`);
     } else {
@@ -375,13 +375,13 @@ loadSramBtn.addEventListener('click', () => {
 saveSramBtn.addEventListener('click', () => {
   try {
     const header = parseHeader(emu.rom);
-    if (!emu.cart.ram?.length) {
+    if (!hasBatterySram(header.type) || !emu.cart.ram?.length) {
       info.textContent = 'No battery SRAM on this cart';
       log('Save SRAM: no SRAM');
       return;
     }
     cancelSramSave();
-    saveSram(emu.cart, header);
+    saveSram(emu.cart, emu.rom);
     info.textContent = '';
     log(`Saved SRAM (${emu.cart.ram.length} bytes) — ${header.title}`);
   } catch (err) {

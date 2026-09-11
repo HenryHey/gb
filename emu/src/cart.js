@@ -1,3 +1,5 @@
+import { crc32 } from './crc32.js';
+
 const CART_TYPES = {
   0x00: 'ROM ONLY',
   0x01: 'MBC1',
@@ -7,6 +9,21 @@ const CART_TYPES = {
   0x1b: 'MBC5+RAM+BATTERY',
   // add others as you meet them; full table in Pan Docs
 };
+
+/** Cartridge types with battery-backed SRAM (Pan Docs $0147). */
+const BATTERY_SRAM_TYPES = new Set([
+  0x03, // MBC1+RAM+BATTERY
+  0x06, // MBC2+BATTERY
+  0x0f, // MBC3+TIMER+BATTERY
+  0x10, // MBC3+TIMER+RAM+BATTERY
+  0x13, // MBC3+RAM+BATTERY
+  0x1b, // MBC5+RAM+BATTERY
+  0x1e, // MBC5+RUMBLE+SRAM+BATTERY
+]);
+
+export function hasBatterySram(type) {
+  return BATTERY_SRAM_TYPES.has(type);
+}
 
 const ROM_BANKS = {
   0x00: 2,
@@ -212,21 +229,24 @@ function createMbc3(rom, header) {
   };
 }
 
-function saveKey(header) {
-  return `gb-sram:${header.title}:${header.headerChecksum.toString(16)}`;
+export function sramKey(rom) {
+  return `gb-sram:${crc32(rom).toString(16).padStart(8, '0')}`;
 }
 
-export function loadSram(cart, header) {
-  const raw = localStorage.getItem(saveKey(header));
-  if (!raw || !cart.ram?.length) return false;
+export function loadSram(cart, rom) {
+  const header = parseHeader(rom);
+  if (!hasBatterySram(header.type) || !cart.ram?.length) return false;
+  const raw = localStorage.getItem(sramKey(rom));
+  if (!raw) return false;
   const bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
   cart.ram.set(bytes.subarray(0, cart.ram.length));
   return true;
 }
 
-export function saveSram(cart, header) {
-  if (!cart.ram?.length) return;
-  localStorage.setItem(saveKey(header), btoa(String.fromCharCode(...cart.ram)));
+export function saveSram(cart, rom) {
+  const header = parseHeader(rom);
+  if (!hasBatterySram(header.type) || !cart.ram?.length) return;
+  localStorage.setItem(sramKey(rom), btoa(String.fromCharCode(...cart.ram)));
 }
 
 export function createCart(rom) {
