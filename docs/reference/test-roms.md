@@ -14,7 +14,7 @@ Do **not** block a chapter on a red test screen. A passing checkpoint with a fai
 | Blargg `halt_bug` | same repo | Optional |
 | Blargg `oam_bug` | same repo | DMG OAM corruption — will be implemented in the future ([ToDo.md](../../ToDo.md)) |
 | dmg-acid2 | [mattcurrie/dmg-acid2](https://github.com/mattcurrie/dmg-acid2) | PPU: BG, window, sprites, priority. Visual |
-| Mooneye Test Suite | [Gekkio/mooneye-test-suite](https://github.com/Gekkio/mooneye-test-suite) | Hardware quirks. Most fail until [appendix 99](../course/99-mooneye-polish.md) accuracy fixes |
+| Mooneye Test Suite | [Gekkio/mooneye-test-suite](https://github.com/Gekkio/mooneye-test-suite) | Hardware quirks. Most fail until [appendix 99](../../course/99-mooneye-polish.md) accuracy fixes |
 
 Homebrew that is nice as “does anything show up?”:
 
@@ -67,7 +67,7 @@ ROMs under `test_carts/mooneye/acceptance/`. Run:
 cd emu && bun run test:mooneye
 ```
 
-Pass = six serial bytes `03 05 08 0D 15 22`. Fail = `42` repeated. See [course/99-mooneye-polish.md](../course/99-mooneye-polish.md).
+Pass = six serial bytes `03 05 08 0D 15 22`. Fail = `42` repeated. See [course/99-mooneye-polish.md](../../course/99-mooneye-polish.md).
 
 ## Reading Blargg results without serial
 

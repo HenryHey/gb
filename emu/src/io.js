@@ -23,7 +23,7 @@ function isUnmapped(offset) {
 function readStored(regs, offset) {
   const hi = READ_HI[offset];
   if (hi !== undefined) return regs[offset] | hi;
-  if (offset === 0x26) return (regs[offset] & 0x0f) | 0x70; // NR52
+  if (offset === 0x26) return (regs[offset] & 0x8f) | 0x70; // NR52: bit 7 + channel flags; bits 6-4 read 1
   return regs[offset];
 }
 

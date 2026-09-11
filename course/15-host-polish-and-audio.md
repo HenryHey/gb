@@ -107,7 +107,7 @@ Not a Game Boy APU. A morale feature.
 - Trigger: write to NR24 with bit 7 set → start/restart an `OscillatorNode` type `"square"`.
 - NR52 bit 7 off → `osc.stop()`.
 
-This is enough to hear a square-wave approximation badly. A real APU needs frame sequencer, length, envelope, sweep, wave, LFSR noise, capacitor high-pass — will be implemented in the future ([ToDo.md](../../ToDo.md)).
+This is enough to hear a square-wave approximation badly. A real APU needs frame sequencer, length, envelope, sweep, wave, LFSR noise, capacitor high-pass — will be implemented in the future ([ToDo.md](../ToDo.md)).
 
 ## UX extras (pick any)
 
@@ -143,8 +143,6 @@ That is a **playable** emulator for most common DMG carts (ROM ONLY, MBC1, MBC3)
 | Serial link | [ToDo.md](../ToDo.md) |
 | Boot ROM / Nintendo logo | [ToDo.md](../ToDo.md) |
 | WASM / Worker | [ToDo.md](../ToDo.md) |
-
-When a **specific game** glitches, debug that glitch (often `EI`/`HALT`, window line counter, MBC bank 0, DMA) before chasing cycle accuracy.
 
 When a **specific game** glitches, debug that glitch (often `EI`/`HALT`, window line counter, MBC bank 0, DMA) before chasing cycle accuracy.
 
