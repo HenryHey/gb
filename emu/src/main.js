@@ -31,7 +31,8 @@ function flushSramSave(emuRef = emu) {
 
 function scheduleSramSave() {
   cancelSramSave();
-  if (!emu.cart?.ram?.length || !sramPersistHeader || !hasBatterySram(sramPersistHeader.type)) return;
+  if (!emu.cart?.ram?.length || !sramPersistHeader || !hasBatterySram(sramPersistHeader.type))
+    return;
   sramSaveTimer = setTimeout(() => {
     sramSaveTimer = null;
     saveSram(emu.cart, emu.rom);

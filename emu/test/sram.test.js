@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import {
-  createCart,
-  hasBatterySram,
-  loadSram,
-  saveSram,
-  sramKey,
-} from '../src/cart.js';
+import { createCart, hasBatterySram, loadSram, saveSram, sramKey } from '../src/cart.js';
 import { crc32 } from '../src/crc32.js';
 
 const ROM_SIZE_CODE = { 2: 0x00, 4: 0x01, 8: 0x02, 16: 0x03, 32: 0x04, 64: 0x05 };
