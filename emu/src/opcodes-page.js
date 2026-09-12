@@ -84,7 +84,7 @@ function implementedSets(list) {
 }
 
 async function loadImplemented() {
-  const res = await fetch('/opcodes.json', { cache: 'no-store' });
+  const res = await fetch(`${import.meta.env.BASE_URL}opcodes.json`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Could not read opcodes.json');
   return implementedSets(await res.json());
 }

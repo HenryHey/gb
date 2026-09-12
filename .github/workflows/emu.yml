@@ -13,6 +13,10 @@ on:
       - 'test_carts/**'
       - '.github/workflows/emu.yml'
 
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   test-and-lint:
     runs-on: ubuntu-latest
@@ -33,3 +37,38 @@ jobs:
 
       - name: Lint
         run: bun run lint
+
+  deploy:
+    needs: test-and-lint
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: emu
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build -- --base /${{ github.event.repository.name }}/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: emu/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
