@@ -104,7 +104,7 @@ Write bits 5–4 to select a row; read bits 3–0 as buttons (0 = pressed):
 | 1 | B | Left |
 | 0 | A | Right |
 
-Bits 7–6 read 1. If both rows are selected, OR the two nibbles (both pressed). If neither is selected, buttons read 1.
+Bits 7–6 read 1. If both rows are selected, AND the two nibbles (a press in either row pulls that bit low). If neither is selected, buttons read 1.
 
 ## After skip-boot (DMG)
 

@@ -153,11 +153,23 @@ When a **specific game** glitches, debug that glitch (often `EI`/`HALT`, window 
 - Blargg `cpu_instrs` with the serial log hook
 - dmg-acid2 for PPU pride
 
+## Tests
+
+`test/ch15-checkpoint.test.js` (chapter 15 checkpoint):
+
+1. **Register storage** — writes to `$FF12` / `$FF19` read back (not stuck at `$FF`).
+2. **NR52 contract** — bit 7 reflects power; bits 6–4 read 1.
+3. **Wave RAM** — `$FF30–$FF3F` store bytes.
+4. **Unmapped holes** — e.g. `$FF03` still read `$FF`.
+
+Run: `bun test test/ch15-checkpoint.test.js`.
+
 ## Checkpoint
 
 - rAF loop at ~60 fps, Pause works, canvas scales crisply.
 - Games are silent but playable; optional square wave beeps if you did the extra.
 - Pokémon still saves.
+- `bun test test/ch15-checkpoint.test.js` passes.
 - You can explain, out loud, the `stepInstruction` → `timer.step` → `ppu.step` loop from chapter 0.
 
 That is the end of the core course. Go play something.

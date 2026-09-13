@@ -118,6 +118,17 @@ If `ramKiB === 0`, skip persistence. Reads at `$A000` stay `$FF`.
 - Pokémon hanging on a white screen: often still CPU/PPU, not MBC. Log bank writes: you should see `romBank` change after the copyright screen. If it stays 1 forever, writes to `$2000` are not reaching `writeRom` (bus sent them to ROM array).
 - Window layer (ch. 10) missing → garbled menus but overworld might work.
 
+## Tests
+
+`test/ch14-checkpoint.test.js` (chapter 14 checkpoint):
+
+1. **MBC3 ROM banking** — 7-bit index, 64 banks, bank 0 → 1, `$0000` always bank 0.
+2. **SRAM banks** — enable via `$0A`, four 8 KiB pages via `$4000`.
+3. **RTC stub** — `ramBank` > 3 reads 0, writes ignored (reference masks `$4000` to 3 bits; hardware uses `$08–$0C`).
+4. **Persistence** — `saveSram` / `loadSram` round-trip for type `$13`; non-battery `$12` skips storage.
+
+Run: `bun test test/ch14-checkpoint.test.js`.
+
 ## Checkpoint
 
 Pokémon Red/Blue:
@@ -125,6 +136,7 @@ Pokémon Red/Blue:
 1. Copyright → title → “PRESS START.”
 2. New game, name a player, walk in Pallet Town.
 3. Refresh the browser, load the same ROM: **CONTINUE** appears and works.
+4. `bun test test/ch14-checkpoint.test.js` passes.
 
 If the intro battle (Gengar vs Nidorino) plays, your sprites, BG, and window are in good shape.
 

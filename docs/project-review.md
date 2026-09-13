@@ -1,7 +1,7 @@
 # Project review
 
 **Date:** 2025-09-11  
-**Updated:** 2026-09-13 — MBC2/ch17 checkpoint resolved; other fixed items removed  
+**Updated:** 2026-09-13 — MBC2/ch17 checkpoint resolved; ch14/ch15 checkpoints, joypad doc, selectWrite note  
 **Scope:** Architecture, code clarity, correctness, tests, tutorial/docs alignment, tooling, and repository hygiene.
 
 ---
@@ -77,14 +77,6 @@ Remaining high-impact work: **NR52 power-off write behaviour**, **GBSS save-stat
 
 ---
 
-### Medium — documentation and pedagogy
-
-| Topic | Issue |
-| --- | --- |
-| **Joypad doc error** | `docs/reference/io-registers.md` says OR nibbles; implementation and ch. 12 correctly AND |
-| **Missing checkpoint tests** | Chapters 14 and 15 have no `chNN-checkpoint.test.js` (ch. 17 covered by `ch17-checkpoint.test.js`) |
-| **Course vs code** | Chapter 12 shows `selectWrite: 0x30`; implementation uses `0x00` (both valid post-boot paths — document the choice) |
-
 ---
 
 ### Low — polish and accessibility
@@ -157,7 +149,7 @@ flowchart TB
 
 ## Strengths worth preserving
 
-1. **Chapter-aligned checkpoints** — `ch03`–`ch16` tests give learners verifiable milestones.
+1. **Chapter-aligned checkpoints** — `ch03`–`ch17` tests give learners verifiable milestones.
 2. **Clear mental model** — `course/00-introduction.md` “one loop” diagram matches `tickEmu()` structure.
 3. **Opcode organization** — Split under `emu/src/ops/` keeps the ISA teachable.
 4. **Mooneye harness** — Opt-in suite with DMG filtering and serial decode is well designed.
@@ -171,7 +163,7 @@ flowchart TB
 
 1. **Remaining correctness** — NR52 power-off write, skip-boot APU values, GBSS key → CRC32.
 2. **Save state contract** — Frame-boundary saves only (or document mid-frame as best-effort).
-3. **Test and CI gaps** — `ch14`, `ch15` checkpoints; GitHub Actions with Bun.
+3. **Test and CI gaps** — GitHub Actions with Bun.
 4. **Timing infrastructure** — M-cycle CPU stepping (Fix 6), then timer and PPU Mooneye groups.
 5. **Refactors** — Split `main.js`, timer module, PPU allocation fixes.
 6. **Repo hygiene** — README, LICENSE, third-party notices, clarify ROM policy.
@@ -183,8 +175,6 @@ flowchart TB
 - Add minimal CI workflow running `bun test`, `bun run lint`, and `bun run format:check`.
 - NR52 power-off write + skip-boot `$F1` seed; unit test for read/write contract.
 - Migrate GBSS `stateKey()` to ROM CRC32 (match SRAM).
-- Fix joypad OR vs AND doc in `docs/reference/io-registers.md`.
-
 ---
 
 ## Subagent notes

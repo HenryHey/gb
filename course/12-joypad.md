@@ -67,6 +67,8 @@ export function writeP1(j, v) {
 }
 ```
 
+**Initial `selectWrite`:** the snippet uses `0x30` (neither row selected) — reads as `$FF` until the game writes P1. Skip-boot leaves **both** select lines low (`P1 = $CF`), so the reference implementation uses `selectWrite: 0x00`. Either is fine once the game writes bits 5–4; match `$CF` on the first read if you wire skip-boot.
+
 Writes only update bits 5–4. Reads combine those bits with live button state.
 
 Both rows selected: a button that is pressed in either row pulls that bit low (AND the two nibbles). Neither selected: `nibble = 0x0f`.
