@@ -1,14 +1,14 @@
 # Project review
 
 **Date:** 2025-09-11  
-**Updated:** 2026-09-13 — MBC2/ch17 checkpoint resolved; ch14/ch15 checkpoints, joypad doc, selectWrite note  
+**Updated:** 2026-09-13 — CI format check, THIRD_PARTY_NOTICES; tooling table trimmed  
 **Scope:** Architecture, code clarity, correctness, tests, tutorial/docs alignment, tooling, and repository hygiene.
 
 ---
 
 ## Executive summary
 
-This is a strong tutorial codebase with a clear chapter progression, a well-tested CPU core, and a practical browser host. The default test suite is green (**694 pass, 65 skip, 0 fail**), lint and format checks pass, and Mooneye baseline matches the documented appendix 99 tally (**31 pass / 30 fail / 1 timeout**).
+This is a strong tutorial codebase with a clear chapter progression, a well-tested CPU core, and a practical browser host. The default test suite is green (**731 pass, 65 skip, 0 fail**), lint and format checks pass, and Mooneye baseline matches the documented appendix 99 tally (**31 pass / 30 fail / 1 timeout**).
 
 Remaining high-impact work: **NR52 power-off write behaviour**, **GBSS save-state keying** (still title + header checksum), and **frame-boundary save enforcement**.
 
@@ -18,7 +18,7 @@ Remaining high-impact work: **NR52 power-off write behaviour**, **GBSS save-stat
 
 | Check | Result |
 | --- | --- |
-| `bun test` (default) | 694 pass, 65 skip, 0 fail |
+| `bun test` (default) | 731 pass, 65 skip, 0 fail |
 | `bun run lint` | Pass |
 | `bun run format:check` | Pass |
 | `bun run test:mooneye` | 31 pass, 30 fail, 1 timeout (expected baseline) |
@@ -67,15 +67,8 @@ Remaining high-impact work: **NR52 power-off write behaviour**, **GBSS save-stat
 
 | Topic | Issue | Remediation |
 | --- | --- | --- |
-| **No CI** | No `.github/workflows` | Add workflow: `bun test`, lint, format:check, `vite build` |
-| **No root README** | Onboarding starts at `course/00-introduction.md` only | Add README with goals, `bun install`, `bun dev`, `bun test` |
-| **No LICENSE** | Legal status unclear | Add license + `THIRD_PARTY_NOTICES` for vendored test ROMs and reference dumps |
-| **ROM policy mismatch** | Docs say repo never ships ROMs; many `.gb` files are tracked | Either document test ROM provenance or move to submodule/LFS |
-| **Vite `base`** | Root-absolute asset URLs | Set `base` for subpath deploys (e.g. GitHub Pages) |
-| **7z extraction** | No file-count or size limits | Cap entries and decompressed bytes before extract |
-| **Clipboard export** | Requires secure context; no fallback | Try/catch with user-visible message or download link |
-
----
+| **7z extraction** | No file-count or size limits in [`archive7z.js`](../emu/src/archive7z.js) | Cap archive size, entry count, and decompressed bytes before extract |
+| **Clipboard export** | [`main.js`](../emu/src/main.js) try/catch only; no fallback on non-HTTPS | Offer download link when `navigator.clipboard` is unavailable |
 
 ---
 
@@ -84,7 +77,7 @@ Remaining high-impact work: **NR52 power-off write behaviour**, **GBSS save-stat
 - Canvas and status messages lack `aria-live` / accessible names for screen readers.
 - Keyboard shortcuts (`1`/`0` save/load) are undocumented in the UI (only in course ch. 16).
 - `localStorage` quota errors from large save states are not handled gracefully.
-- Reference dumps under `docs/` (~4.3M) inflate clone size; consider trimming or documenting as optional.
+- `test_carts/` (~5.2M, 133 test ROMs) inflates clone size; documented in README but not optional/submodule.
 
 ---
 
@@ -163,23 +156,23 @@ flowchart TB
 
 1. **Remaining correctness** — NR52 power-off write, skip-boot APU values, GBSS key → CRC32.
 2. **Save state contract** — Frame-boundary saves only (or document mid-frame as best-effort).
-3. **Test and CI gaps** — GitHub Actions with Bun.
+3. **Host hardening** — 7z caps; clipboard download fallback.
 4. **Timing infrastructure** — M-cycle CPU stepping (Fix 6), then timer and PPU Mooneye groups.
 5. **Refactors** — Split `main.js`, timer module, PPU allocation fixes.
-6. **Repo hygiene** — README, LICENSE, third-party notices, clarify ROM policy.
+6. **Repo hygiene** — optional `test_carts/` submodule/LFS if clone size becomes a problem.
 
 ---
 
 ## Quick wins (≤1 hour each)
 
-- Add minimal CI workflow running `bun test`, `bun run lint`, and `bun run format:check`.
 - NR52 power-off write + skip-boot `$F1` seed; unit test for read/write contract.
 - Migrate GBSS `stateKey()` to ROM CRC32 (match SRAM).
+
 ---
 
 ## Subagent notes
 
-- [Review tooling and quality](aad22767-75e5-49c3-8fa5-95f2f271251f) completed; confirmed Vite `base` and clipboard/HTTPS concerns above.
+- [Review tooling and quality](aad22767-75e5-49c3-8fa5-95f2f271251f) completed; CI, README, LICENSE, ROM policy, and GitHub Pages `base` since resolved.
 - Architecture, tests, and tutorial subagents did not complete (resource limits); findings above were verified directly against the repo and test runs.
 
 ---
