@@ -96,7 +96,7 @@ From `emu/`:
 ## Third-party material
 
 - **Course and emulator code** in this repo: [MIT License](LICENSE).
-- **Test ROMs** in `test_carts/` are by their respective authors (e.g. Shay Green / Blargg, Gekkio / Mooneye).
+- **Test ROMs, npm packages, and attribution:** [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - **External tutorials and Pan Docs** are linked from [docs/SOURCES.md](docs/SOURCES.md); they are not vendored in this repository.
 
 ## License
