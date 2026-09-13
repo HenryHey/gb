@@ -153,7 +153,13 @@ function frame(emu) {
     ppuStep(emu.ppu, emu.io, t);
     budget -= t;
   }
+  presentFrame(emu);
+}
+
+function presentFrame(emu, { force = false } = {}) {
+  if (!force && !emu.ppu.frameReady) return;
   blit(emu.ppu.framebuffer);
+  emu.ppu.frameReady = false;
 }
 
 function blit(fb) {
@@ -162,6 +168,8 @@ function blit(fb) {
   ctx.putImageData(img, 0, 0);
 }
 ```
+
+The PPU sets `frameReady` at LY 144 (VBlank start). The host clears it after blitting so playback skips redundant canvas work between frames. Reset, load-state, and the Frame button use `force: true` to blit even when `frameReady` is false (LCD off or mid-frame snapshot).
 
 Until chapter 9, fill the framebuffer with white (`rgba 224,248,208,255` or similar) once at reset so the canvas is not random.
 

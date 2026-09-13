@@ -257,7 +257,7 @@ function advanceOneFrame({ logFrame = false, blitFrame = true } = {}) {
   const pcBefore = cpu.pc;
   const t = runFrame(emu);
   framesDone++;
-  if (blitFrame) blit(emu.ppu.framebuffer);
+  if (blitFrame) presentFrame({ force: true });
   info.textContent = '';
   if (logFrame) {
     const haltNote = cpu.halted ? ' (HALT spin)' : '';
@@ -287,7 +287,7 @@ function hostTick(now) {
     renderCpu(emu.cpu);
   }
 
-  if (running) blit(emu.ppu.framebuffer);
+  if (running) presentFrame();
   requestAnimationFrame(hostTick);
 }
 
@@ -344,7 +344,7 @@ resetBtn.addEventListener('click', () => {
     setRunning(false);
     reset(emu);
     resetClock();
-    blit(emu.ppu.framebuffer);
+    presentFrame({ force: true });
     info.textContent = '';
     renderCpu(emu.cpu);
     log('Reset (skip-boot)');
@@ -490,7 +490,7 @@ function loadState() {
     }
     emu = loaded;
     resetClock();
-    blit(emu.ppu.framebuffer);
+    presentFrame({ force: true });
     info.textContent = '';
     renderCpu(emu.cpu);
     log(`Loaded state — ${parseHeader(emu.rom).title}`);
@@ -507,6 +507,14 @@ function blit(fb) {
   screenImageData.data.set(fb);
   screenCtx.putImageData(screenImageData, 0, 0);
   if (debugUi.checked) renderVram(emu.cpu);
+}
+
+/** Blit when a new frame is ready; clear `frameReady` after presenting. */
+function presentFrame({ force = false } = {}) {
+  const { ppu } = emu;
+  if (!force && !ppu.frameReady) return;
+  blit(ppu.framebuffer);
+  ppu.frameReady = false;
 }
 
 function mapKey(code, down) {

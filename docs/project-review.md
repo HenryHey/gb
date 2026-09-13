@@ -51,7 +51,7 @@ Remaining high-impact work: **NR52 power-off write behaviour**. Mid-frame saves 
 | **PPU allocations** | `paletteShades()` recreated per background pixel | Cache per-line or per-palette-index arrays |
 | **Frame boundary** | `runFrame()` may overshoot 70,224 T-cycles | Track remainder or stop at real frame end |
 | **Mapper edge cases** | Header ROM/RAM tables omit larger codes; MBC5 bitmask assumes power-of-two ROM size | Extend tables; use modulo against actual ROM length |
-| **`frameReady`** | Set at LY 144, never cleared or consumed by host | Clear after blit or remove if unused |
+| **`frameReady`** | ~~Set at LY 144, never cleared or consumed by host~~ | **Done** — `presentFrame()` in `main.js` blits when set, clears after present |
 
 ---
 
