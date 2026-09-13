@@ -96,9 +96,9 @@ describe('GBSS format', () => {
     expect(bytes.byteLength).toBe(0x4220);
   });
 
-  test('stateKey is scoped to title and header checksum', () => {
+  test('stateKey is scoped to ROM CRC32', () => {
     const rom = makeRom({ title: 'TETRIS' });
-    expect(stateKey(rom)).toBe('gb-state:TETRIS:1');
+    expect(stateKey(rom)).toBe(`gb-state:${crc32(rom).toString(16).padStart(8, '0')}`);
   });
 });
 

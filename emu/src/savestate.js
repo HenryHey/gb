@@ -10,8 +10,7 @@ export const GBSS_VERSION = 1;
 const BASE_SIZE = 0x4220;
 
 export function stateKey(rom) {
-  const h = parseHeader(rom);
-  return `gb-state:${h.title}:${h.headerChecksum.toString(16)}`;
+  return `gb-state:${crc32(rom).toString(16).padStart(8, '0')}`;
 }
 
 export function bytesToBase64(bytes) {

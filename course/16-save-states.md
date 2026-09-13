@@ -86,7 +86,7 @@ Store `a` and `f` separately, matching `createCpu`. Also save:
 - `ime`, `halted`
 - `imeEnableCountdown`
 
-You do not need event-scheduler fields (`cycles`, `nextEvent`, …) until the core is event-driven. Frame-boundary snapshots are enough for this course.
+You do not need event-scheduler fields (`cycles`, `nextEvent`, …) until the core is event-driven. Snapshotting the fields above is enough at **any point in a frame** — not only at VBlank.
 
 ### PPU block — source of truth
 
@@ -137,9 +137,13 @@ test/ch16-checkpoint.test.js
 
 ### When to snapshot
 
-Save at a **frame boundary** — after `runFrame(emu)` or when paused. Mid-instruction saves are possible once you store DMA progress; until then, frame end is the contract.
+Pause the rAF loop before serialize (`setRunning(false)`) so a tick cannot race the copy. That is the only host synchronization requirement.
 
-Pause the rAF loop before serialize so a tick does not race the copy.
+**Mid-frame saves are supported.** GBSS captures CPU registers, full PPU timing (`ly`, `mode`, `lineCycles`), timer `divCounter`, cart mapper state, and in-progress OAM DMA. Pressing **`1`** during playback or while paused/stepping snapshots whatever point the machine is at.
+
+During normal playback, key events arrive between rAF callbacks — after whole `runFrame()` calls — so saves often land near a frame boundary anyway. When debugging with Step, saves can occur mid-scanline or mid-DMA; `ch16-checkpoint.test.js` round-trips those cases.
+
+**Frame boundary is recommended, not required.** Saving after `runFrame(emu)` (e.g. when `ppu.ly === 144` at VBlank start) is a convenient convention if you want a deterministic “same moment each time.” The serializer does not enforce it. If you add M-cycle stepping or new bus quirks later, revisit whether mid-frame saves remain safe.
 
 ### Serialize
 
@@ -269,7 +273,7 @@ window.addEventListener('keydown', (e) => {
 });
 ```
 
-`saveStateSlot` / `loadStateSlot` live in `src/savestate.js` and use `stateKey(rom)` → `gb-state:${title}:${headerChecksum}`. For large blobs, chunk base64 encode/decode (same note as chapter 14).
+`saveStateSlot` / `loadStateSlot` live in `src/savestate.js` and use `stateKey(rom)` → `gb-state:${crc32}` (same CRC32 scheme as SRAM keys in chapter 14). For large blobs, chunk base64 encode/decode (same note as chapter 14).
 
 ## Pitfalls
 
@@ -279,7 +283,7 @@ window.addEventListener('keydown', (e) => {
 - **Saving `$FF44` from regs** — your `LY` is on `ppu`; restore `ppu.ly`.
 - **MBC state in closures** — serializer cannot see `let romBank` inside `createMbc3`. Refactor to `cart.state`.
 - **MBC1 missing `cart.ram`** — chapter 14 exposed `ram` on MBC3; MBC1/MBC5 need it too for save states and SRAM persistence.
-- **Saving mid-DMA** — your DMA is instant; frame boundary hides the problem. If you add timed DMA later, save `dmaRemaining`.
+- **Saving mid-DMA** — GBSS saves `dmaActive`, `dmaSrc`, `dmaIndex`, and countdown at `0x74–0x79`; `ch16-checkpoint.test.js` round-trips in-progress DMA. If you add bus quirks during DMA, extend the block and bump `GBSS_VERSION`.
 - **APU stub** — saving `NR10–NR3F` in `io.regs` is enough; do not trigger sound pulses on load.
 - **Chasing mGBA byte parity** — wastes time; GBSS only has to match *your* structs.
 
@@ -315,8 +319,8 @@ When you add a feature, add its block to GBSS and bump the version.
 
 ## Checkpoint
 
-- **`1` / `0` keys** save and load the single state slot (pause first).
-- `bun test test/ch16-checkpoint.test.js` passes.
+- **`1` / `0` keys** save and load the single state slot (host pauses rAF before copy; mid-frame is OK).
+- `bun test test/ch16-checkpoint.test.js` passes (includes in-progress OAM DMA round-trip).
 - Any ROM ONLY game: save mid-game, load, gameplay continues.
 - Pokémon: save state restores party/position; distinct from SRAM CONTINUE (both can coexist).
 - You can explain GBSS layout (header → blocks → memory) and why ROM CRC32 is in the header — without referencing mGBA offsets.
