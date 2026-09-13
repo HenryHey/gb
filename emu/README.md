@@ -42,7 +42,7 @@ MOONEYE=1 bun test mooneye.test.js   # same as bun run test:mooneye
 src/
   emu.js          machine loop: createEmu, reset, runFrame, tickEmu
   bus.js          16-bit address decode, OAM DMA
-  cart.js         header parse, MBC1/MBC3/MBC5 (MBC2 stub)
+  cart.js         header parse, MBC1/MBC2/MBC3/MBC5
   ops/            SM83 instruction implementations + decode tables
   ppu.js          scanline timing and pixel output
   io.js           timer, serial stub, LCD/STAT/APU registers
@@ -77,7 +77,7 @@ In dev mode, the console exposes `emu()` and `runFrame()` for inspection.
 ## Features
 
 - Skip-boot DMG startup (no boot ROM execution)
-- MBC1, MBC3 (incl. battery SRAM), MBC5; MBC2 not implemented
+- MBC1, MBC2 (512×4-bit RAM), MBC3 (incl. battery SRAM), MBC5 (incl. save-state round-trip)
 - Background, window, sprites, timed OAM DMA
 - APU register stub (silent)
 - SRAM auto-save to `localStorage` for battery carts (debounced)

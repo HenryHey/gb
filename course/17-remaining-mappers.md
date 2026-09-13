@@ -153,11 +153,12 @@ MBC2 is odd: **512 × 4-bit** RAM built into the mapper (not a separate SRAM chi
 
 | Address | Action |
 | --- | --- |
-| `$0000–$1FFF` | If `(addr & 0x100) === 0`: RAM enable `(value & 0x0f) === 0x0a`. If bit 8 set: `romBank = value & 0x0f \|\| 1` |
-| `$2000–$3FFF` | `romBank = value & 0x0f \|\| 1` |
+| `$0000–$1FFF`, **A8 = 0** (`addr & 0x100 === 0`) | RAM enable: `(value & 0x0f) === 0x0a` |
+| `$0000–$1FFF`, **A8 = 1** (`addr & 0x100 !== 0`) | `romBank = (value & 0x0f) \|\| 1` |
+| `$2000–$3FFF` | `romBank = (value & 0x0f) \|\| 1` |
 | `$4000–$7FFF` | (no effect on MBC2) |
 
-The **`addr & 0x100`** split in `$0000–$1FFF` is real hardware — do not treat the whole range as RAM enable.
+**A8** is address bit 8 — the same bit that distinguishes `$0100` from `$0000`. MBC2 uses it inside `$0000–$1FFF` to pick RAM enable vs ROM bank; do not treat the whole range as RAM enable only.
 
 ### RAM
 

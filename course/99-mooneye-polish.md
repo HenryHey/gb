@@ -143,7 +143,7 @@ bun test ch06-checkpoint.test.js
 
 
 
-## Fix 3 — MBC5 stub (`oam_dma/sources-GS`)
+## Fix 3 — MBC5 banking (`oam_dma/sources-GS`)
 
 See [chapter 17 — Remaining mappers](17-remaining-mappers.md) for the full MBC5 implementation. This appendix item is the Mooneye-specific smoke test.
 
