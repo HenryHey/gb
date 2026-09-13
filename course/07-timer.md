@@ -122,7 +122,7 @@ timerStep(emu.io, t);
 ppuStep(emu.ppu, t); // next chapter
 ```
 
-
+**Files:** `src/timer.js` (`timerStep`), `src/io.js` (MMIO for `$FF04`–`$FF07`), `src/emu.js` (`tickEmu` calls `timerStep` alongside PPU).
 
 ## Pitfalls
 

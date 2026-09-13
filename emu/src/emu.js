@@ -6,6 +6,7 @@ import { skipBoot } from './skipboot.js';
 import { createPpu, ppuStep } from './ppu.js';
 import { cbOps, createCpu, ops, step } from './ops/index.js';
 import { handleHalt, serviceIfNeeded, tickImeCountdown } from './interrupts.js';
+import { timerStep } from './timer.js';
 
 /** One DMG frame in T-cycles (456 dots × 154 lines). */
 export const FRAME_T = 70224;
@@ -50,25 +51,6 @@ export function cpuStep(emu) {
   tickImeCountdown(cpu);
   const extra = serviceIfNeeded(emu);
   return t + extra;
-}
-
-function incrementTima(io) {
-  io.tima = (io.tima + 1) & 0xff;
-  if (io.tima === 0) {
-    io.tima = io.tma;
-    io.requestIf(2);
-  }
-}
-
-function timerStep(io, tCycles) {
-  for (let i = 0; i < tCycles; i++) {
-    io.divCounter = (io.divCounter + 1) & 0xffff;
-    if (!(io.tac & 0x04)) continue;
-    const bit = [9, 3, 5, 7][io.tac & 3];
-    const oldBit = (io.divCounter - 1) & (1 << bit);
-    const newBit = io.divCounter & (1 << bit);
-    if (oldBit && !newBit) incrementTima(io);
-  }
 }
 
 /** Advance CPU, timer, and PPU by one instruction (or HALT spin). */
