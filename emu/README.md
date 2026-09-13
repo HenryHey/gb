@@ -19,15 +19,15 @@ Open http://localhost:5173. Load a `.gb`, `.gbc`, or `.bin` ROM from the file pi
 
 ## Scripts
 
-| Command | Description |
-| --- | --- |
-| `bun dev` | Vite dev server with HMR |
-| `bun run build` | Production build to `dist/` |
-| `bun run preview` | Serve `dist/` locally |
-| `bun test` | Unit and chapter checkpoint tests |
+| Command                | Description                                              |
+| ---------------------- | -------------------------------------------------------- |
+| `bun dev`              | Vite dev server with HMR                                 |
+| `bun run build`        | Production build to `dist/`                              |
+| `bun run preview`      | Serve `dist/` locally                                    |
+| `bun test`             | Unit and chapter checkpoint tests                        |
 | `bun run test:mooneye` | Mooneye acceptance ROMs (needs `../test_carts/mooneye/`) |
-| `bun run lint` | ESLint |
-| `bun run format:check` | Prettier check |
+| `bun run lint`         | ESLint                                                   |
+| `bun run format:check` | Prettier check                                           |
 
 Run tests from this directory. Mooneye ROMs live one level up:
 
@@ -60,15 +60,15 @@ Hardware cheat sheets: [`../docs/reference/`](../docs/reference/).
 
 ## Controls
 
-| Key | Game Boy |
-| --- | --- |
-| Arrow keys / WASD | D-pad |
-| Z / J | A |
-| X / K | B |
-| Enter | Start |
-| Shift / Backspace | Select |
-| `1` | Quick save (localStorage) |
-| `0` | Quick load |
+| Key               | Game Boy                  |
+| ----------------- | ------------------------- |
+| Arrow keys / WASD | D-pad                     |
+| Z / J             | A                         |
+| X / K             | B                         |
+| Enter             | Start                     |
+| Shift / Backspace | Select                    |
+| `1`               | Quick save (localStorage) |
+| `0`               | Quick load                |
 
 Enable **Debugging** in the UI for register view, VRAM tile map, step / step-frame buttons, and **Copy save state** (GBSS JSON).
 

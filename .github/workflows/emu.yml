@@ -38,6 +38,9 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      - name: Format check
+        run: bun run format:check
+
   deploy:
     needs: test-and-lint
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
