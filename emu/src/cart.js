@@ -5,9 +5,20 @@ const CART_TYPES = {
   0x01: 'MBC1',
   0x02: 'MBC1+RAM',
   0x03: 'MBC1+RAM+BATTERY',
+  0x05: 'MBC2',
+  0x06: 'MBC2+BATTERY',
+  0x0f: 'MBC3+TIMER+BATTERY',
+  0x10: 'MBC3+TIMER+RAM+BATTERY',
+  0x11: 'MBC3',
+  0x12: 'MBC3+RAM',
   0x13: 'MBC3+RAM+BATTERY',
+  0x19: 'MBC5',
+  0x1a: 'MBC5+RAM',
   0x1b: 'MBC5+RAM+BATTERY',
-  // add others as you meet them; full table in Pan Docs
+  0x1c: 'MBC5+RUMBLE',
+  0x1d: 'MBC5+RUMBLE+RAM',
+  0x1e: 'MBC5+RUMBLE+RAM+BATTERY',
+  // exotic mappers ($04, $07–$0E, $15–$18, …) — full table in Pan Docs
 };
 
 /** Cartridge types with battery-backed SRAM (Pan Docs $0147). */
@@ -165,7 +176,44 @@ function createMbc1(rom, header) {
 }
 
 function createMbc2(rom, header) {
-  throw new Error(`Mapper ${header.typeName} not implemented`);
+  const ram = new Uint8Array(512);
+  const state = { ramEnable: false, romBank: 1 };
+  const romBanks = header.romBanks ?? Math.max(2, rom.length >> 14);
+  return {
+    mapperType: header.type,
+    ram,
+    state,
+    reset() {
+      state.ramEnable = false;
+      state.romBank = 1;
+    },
+    readRom(addr) {
+      if (addr < 0x4000) {
+        return rom[addr] ?? 0xff;
+      } else {
+        return rom[(state.romBank & (romBanks - 1) || 1) * 0x4000 + (addr - 0x4000)] ?? 0xff;
+      }
+    },
+    writeRom(addr, v) {
+      if (addr < 0x2000) {
+        if ((addr & 0x100) === 0) {
+          state.ramEnable = (v & 0x0f) === 0x0a;
+        } else {
+          state.romBank = v & 0x0f || 1;
+        }
+      } else if (addr < 0x4000) {
+        state.romBank = v & 0x0f || 1;
+      }
+    },
+    readRam(addr) {
+      if (!state.ramEnable || addr >= 0xa200) return 0xff;
+      return 0xf0 | (ram[addr - 0xa000] & 0x0f);
+    },
+    writeRam(addr, v) {
+      if (!state.ramEnable || addr >= 0xa200) return;
+      ram[addr - 0xa000] = v & 0x0f;
+    },
+  };
 }
 
 function createMbc3(rom, header) {
@@ -229,43 +277,6 @@ function createMbc3(rom, header) {
   };
 }
 
-export function sramKey(rom) {
-  return `gb-sram:${crc32(rom).toString(16).padStart(8, '0')}`;
-}
-
-export function loadSram(cart, rom) {
-  const header = parseHeader(rom);
-  if (!hasBatterySram(header.type) || !cart.ram?.length) return false;
-  const raw = localStorage.getItem(sramKey(rom));
-  if (!raw) return false;
-  const bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
-  cart.ram.set(bytes.subarray(0, cart.ram.length));
-  return true;
-}
-
-export function saveSram(cart, rom) {
-  const header = parseHeader(rom);
-  if (!hasBatterySram(header.type) || !cart.ram?.length) return;
-  localStorage.setItem(sramKey(rom), btoa(String.fromCharCode(...cart.ram)));
-}
-
-export function createCart(rom) {
-  const MBC1_TYPES = new Set([0x01, 0x02, 0x03]);
-  const MBC2_TYPES = new Set([0x05, 0x06]);
-  const MBC3_TYPES = new Set([0x0f, 0x10, 0x11, 0x12, 0x13]);
-  const MBC5_TYPES = new Set([0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e]);
-  const header = parseHeader(rom);
-  const t = header.type;
-
-  if (t === 0x00) return createRomOnly(rom, header);
-  if (MBC1_TYPES.has(t)) return createMbc1(rom, header);
-  if (MBC2_TYPES.has(t)) return createMbc2(rom, header);
-  if (MBC3_TYPES.has(t)) return createMbc3(rom, header);
-  if (MBC5_TYPES.has(t)) return createMbc5(rom, header);
-
-  throw new Error(`Mapper ${header.typeName} not implemented`);
-}
-
 function createMbc5(rom, header) {
   const romBanks = header.romBanks ?? Math.max(2, rom.length >> 14);
   const ram = new Uint8Array((header.ramKiB || 0) * 1024);
@@ -310,4 +321,41 @@ function createMbc5(rom, header) {
       ram[state.ramBank * 0x2000 + (addr - 0xa000)] = v;
     },
   };
+}
+
+export function sramKey(rom) {
+  return `gb-sram:${crc32(rom).toString(16).padStart(8, '0')}`;
+}
+
+export function loadSram(cart, rom) {
+  const header = parseHeader(rom);
+  if (!hasBatterySram(header.type) || !cart.ram?.length) return false;
+  const raw = localStorage.getItem(sramKey(rom));
+  if (!raw) return false;
+  const bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
+  cart.ram.set(bytes.subarray(0, cart.ram.length));
+  return true;
+}
+
+export function saveSram(cart, rom) {
+  const header = parseHeader(rom);
+  if (!hasBatterySram(header.type) || !cart.ram?.length) return;
+  localStorage.setItem(sramKey(rom), btoa(String.fromCharCode(...cart.ram)));
+}
+
+export function createCart(rom) {
+  const MBC1_TYPES = new Set([0x01, 0x02, 0x03]);
+  const MBC2_TYPES = new Set([0x05, 0x06]);
+  const MBC3_TYPES = new Set([0x0f, 0x10, 0x11, 0x12, 0x13]);
+  const MBC5_TYPES = new Set([0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e]);
+  const header = parseHeader(rom);
+  const t = header.type;
+
+  if (t === 0x00) return createRomOnly(rom, header);
+  if (MBC1_TYPES.has(t)) return createMbc1(rom, header);
+  if (MBC2_TYPES.has(t)) return createMbc2(rom, header);
+  if (MBC3_TYPES.has(t)) return createMbc3(rom, header);
+  if (MBC5_TYPES.has(t)) return createMbc5(rom, header);
+
+  throw new Error(`Mapper ${header.typeName} not implemented`);
 }
