@@ -31,10 +31,19 @@ a {
   flex: none;
 }
 
-.rom-bar > label[for='rom'],
-.rom-bar > label[for='rom-choice'] {
+.rom-bar > label[for='rom'] {
   display: inline;
   margin: 0;
+}
+
+#rom-choice-label:not([hidden]) {
+  display: inline;
+  margin: 0;
+}
+
+#rom-choice-label[hidden],
+#rom-choice[hidden] {
+  display: none !important;
 }
 
 #rom-choice {
@@ -69,6 +78,10 @@ body:not(.debug-ui) .footer {
   width: 480px;
   margin: 4px auto;
   flex: none;
+}
+
+body:not(.rom-loaded) .control-label {
+  display: none !important;
 }
 
 .control-label {
@@ -124,10 +137,11 @@ body:not(.debug-ui) {
   padding: 8px;
 }
 
+body:not(.debug-ui) .controls,
 body:not(.debug-ui) .debug-col,
 body:not(.debug-ui) #debug,
 body:not(.debug-ui) .controls-debug {
-  display: none;
+  display: none !important;
 }
 
 #info {

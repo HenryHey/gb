@@ -1,3 +1,8 @@
+# Live Demo
+[henryhey.github.io/gb](https://henryhey.github.io/gb/) — the completed emulator built by following this course, running in the browser.
+
+
+
 # Game Boy Emulator Tutorial
 
 A step-by-step course for building a **DMG (original Game Boy) emulator** in JavaScript, with a working browser host and a test suite you can run after every chapter.

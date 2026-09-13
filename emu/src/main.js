@@ -39,6 +39,7 @@ function scheduleSramSave() {
   }, SRAM_SAVE_DELAY_MS);
 }
 
+let romLoaded = false;
 let running = false;
 let clockOrigin = 0;
 let framesDone = 0;
@@ -119,9 +120,18 @@ function layoutDisplay() {
   screenCanvas.style.top = `${shellH * LCD_TOP}px`;
 }
 
+function hasRomLoaded() {
+  return romLoaded;
+}
+
+function syncRomUi() {
+  document.body.classList.toggle('rom-loaded', hasRomLoaded());
+  layoutDisplay();
+}
+
 function syncDebugUi() {
   document.body.classList.toggle('debug-ui', debugUi.checked);
-  layoutDisplay();
+  syncRomUi();
   updateCopySaveStateBtn();
 }
 
@@ -190,7 +200,16 @@ function setRomSource({ romFileName, archiveFileName = null }) {
 
 function populateRomChoice(roms) {
   archiveRoms = roms;
-  romChoice.replaceChildren(
+  const options = [];
+  if (roms.length > 1) {
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select a ROM…';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    options.push(placeholder);
+  }
+  options.push(
     ...roms.map((entry, i) => {
       const opt = document.createElement('option');
       opt.value = String(i);
@@ -198,6 +217,7 @@ function populateRomChoice(roms) {
       return opt;
     }),
   );
+  romChoice.replaceChildren(...options);
   setRomChoiceVisible(roms.length > 1);
 }
 
@@ -214,6 +234,7 @@ function loadRomBytes(rom, { logHeader = true } = {}) {
 function loadRom(rom) {
   setRunning(false);
   flushSramSave();
+  romLoaded = true;
 
   const header = parseHeader(rom);
   sramPersistHeader = header;
@@ -226,7 +247,9 @@ function loadRom(rom) {
   reset(emu);
   resetClock();
   renderCpu(emu.cpu);
+  syncRomUi();
   updateCopySaveStateBtn();
+  setRunning(true);
 }
 
 function advanceOneFrame({ logFrame = false, blitFrame = true } = {}) {
@@ -282,8 +305,13 @@ input.addEventListener('change', async () => {
       info.textContent = 'Extracting archive…';
       const roms = await extractRomsFrom7z(buf);
       populateRomChoice(roms);
-      setRomSource({ romFileName: roms[0].name, archiveFileName: file.name });
-      loadRomBytes(roms[0].data);
+      if (roms.length === 1) {
+        setRomSource({ romFileName: roms[0].name, archiveFileName: file.name });
+        loadRomBytes(roms[0].data);
+      } else {
+        currentArchiveFileName = file.name;
+        info.textContent = 'Select a ROM from the archive';
+      }
       return;
     }
 
@@ -297,11 +325,13 @@ input.addEventListener('change', async () => {
 });
 
 romChoice.addEventListener('change', () => {
+  if (romChoice.value === '') return;
+
   const entry = archiveRoms[Number(romChoice.value)];
   if (!entry) return;
 
   try {
-    currentRomFileName = entry.name;
+    setRomSource({ romFileName: entry.name, archiveFileName: currentArchiveFileName });
     loadRomBytes(entry.data);
   } catch (err) {
     info.textContent = err.message;
