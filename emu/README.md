@@ -51,7 +51,8 @@ src/
   interrupts.js   IME, HALT, IRQ dispatch
   skipboot.js     post-boot register state
   savestate.js    GBSS save/load (localStorage + export)
-  main.js         Vite host: canvas, controls, keyboard
+  main.js         Vite host bootstrap (DOM wiring)
+  host/           browser shell: clock, display, persistence, input, rom, debug-ui
   archive7z.js    .7z ROM extraction (7z-wasm)
 test/             bun test suites and chNN-checkpoint tests
 opcodes.html      browsable opcode reference (dev aid)

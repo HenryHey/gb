@@ -46,7 +46,7 @@ Remaining high-impact work: **NR52 power-off write behaviour**. Mid-frame saves 
 | **Subsystem lifecycle** | Reset/serialize responsibilities are scattered | Introduce `reset()`, `step(tCycles)`, `serialize()`, `restore()` per subsystem |
 | **Timer location** | `timerStep()` lives in `emu.js` | Move to `timer.js` (or `io.js`) for symmetry with PPU/joypad |
 | **CPU timing model** | Instructions run atomically | M-cycle stepping infrastructure (Fix 6 in appendix 99) unblocks 12 Mooneye CPU timing ROMs |
-| **Host monolith** | `main.js` is ~544 lines | Split into clock, persistence, input, display, debug modules |
+| **Host monolith** | ~~`main.js` is ~544 lines~~ | **Done** — split into `host/` (clock, display, persistence, input, rom, debug-ui); thin `main.js` wires DOM |
 | **Bus vs PPU I/O** | PPU register decode and future access gating live in `bus.js` | Keep bus facade; isolate PPU MMIO and mode-gating helpers |
 | **PPU allocations** | `paletteShades()` recreated per background pixel | Cache per-line or per-palette-index arrays |
 | **Frame boundary** | `runFrame()` may overshoot 70,224 T-cycles | Track remainder or stop at real frame end |
