@@ -263,3 +263,108 @@ function spritesOnLine(ppu, oam, ly) {
   });
   return sprites;
 }
+
+/** `$FF40`–`$FF4B` LCD registers (not DMA at `$FF46` or unused `$FF4C`). */
+export function isPpuReg(addr) {
+  if (addr === 0xff46 || addr === 0xff4c) return false;
+  return addr >= 0xff40 && addr <= 0xff4b;
+}
+
+export function readPpuReg(ppu, addr) {
+  switch (addr) {
+    case 0xff40:
+      return ppu.lcdc;
+    case 0xff41:
+      return 0x80 | (ppu.stat & 0x78) | ppu.mode | (ppu.ly === ppu.lyc ? 4 : 0);
+    case 0xff42:
+      return ppu.scy;
+    case 0xff43:
+      return ppu.scx;
+    case 0xff44:
+      return ppu.ly;
+    case 0xff45:
+      return ppu.lyc;
+    case 0xff47:
+      return ppu.bgp;
+    case 0xff48:
+      return ppu.obp0;
+    case 0xff49:
+      return ppu.obp1;
+    case 0xff4a:
+      return ppu.wy;
+    case 0xff4b:
+      return ppu.wx;
+    default:
+      return 0xff;
+  }
+}
+
+function writeLcdc(ppu, v) {
+  const old = ppu.lcdc;
+  ppu.lcdc = v;
+  const wasOn = old & 0x80;
+  const nowOn = v & 0x80;
+  if (wasOn && !nowOn) {
+    ppu.ly = 0;
+    ppu.mode = MODE_HBLANK;
+    ppu.lineCycles = 0;
+    ppu.windowLine = 0;
+    ppu.wyTriggered = false;
+    ppu.framebuffer.fill(255);
+  } else if (!wasOn && nowOn) {
+    ppu.ly = 0;
+    ppu.mode = MODE_OAM;
+    ppu.lineCycles = 0;
+    ppu.windowLine = 0;
+    ppu.wyTriggered = false;
+  }
+}
+
+export function writePpuReg(ppu, addr, v) {
+  switch (addr) {
+    case 0xff40:
+      writeLcdc(ppu, v);
+      return;
+    case 0xff41:
+      ppu.stat = (ppu.stat & ~0x78) | (v & 0x78);
+      return;
+    case 0xff42:
+      ppu.scy = v;
+      return;
+    case 0xff43:
+      ppu.scx = v;
+      return;
+    case 0xff44:
+      return;
+    case 0xff45:
+      ppu.lyc = v;
+      return;
+    case 0xff47:
+      ppu.bgp = v;
+      return;
+    case 0xff48:
+      ppu.obp0 = v;
+      return;
+    case 0xff49:
+      ppu.obp1 = v;
+      return;
+    case 0xff4a:
+      ppu.wy = v;
+      return;
+    case 0xff4b:
+      ppu.wx = v;
+      return;
+  }
+}
+
+/** CPU may read/write VRAM when LCD is off or during HBlank/VBlank/OAM scan. */
+export function ppuVramAccessible(ppu) {
+  if (!(ppu.lcdc & 0x80)) return true;
+  return ppu.mode !== MODE_DRAW;
+}
+
+/** CPU may read/write OAM when LCD is off or during HBlank/VBlank only. */
+export function ppuOamAccessible(ppu) {
+  if (!(ppu.lcdc & 0x80)) return true;
+  return ppu.mode === MODE_HBLANK || ppu.mode === MODE_VBLANK;
+}

@@ -95,7 +95,7 @@ On **LCDC write**, compare old and new bit 7:
 
 On reset / skip-boot, keep `ppu.lcdc` in sync with the post-boot `$91` you already store (either copy from `io.regs[0x40]` into a fresh `createPpu()`, or stop mirroring LCDC in `io.regs` once the PPU owns it).
 
-**Files:** `src/bus.js` and/or `src/io.js`, plus `src/emu.js` if you pass `ppu` into `createBus` / `createIo`. **Verify:** `bun test test/ch08-checkpoint.test.js` — once `$FF44` reads `ppu.ly`, drop any test-only `io.read` patch for LY.
+**Files:** `src/ppu.js` (`isPpuReg`, `readPpuReg`, `writePpuReg`, and `ppuVramAccessible` / `ppuOamAccessible` for future bus gating), `src/bus.js` (delegates `$FF40`–`$FF4B` to the PPU helpers; keeps DMA at `$FF46`), `src/emu.js` (passes `ppu` into `createBus`). **Verify:** `bun test test/ch08-checkpoint.test.js` — once `$FF44` reads `ppu.ly`, drop any test-only `io.read` patch for LY.
 
 VRAM (`$8000–$9FFF`) and OAM (`$FE00–$FE9F`) stay on the bus as they are; this chapter does not add PPU access restrictions during mode 3.
 

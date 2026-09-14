@@ -44,8 +44,9 @@ src/
   bus.js          16-bit address decode, OAM DMA
   cart.js         header parse, MBC1/MBC2/MBC3/MBC5
   ops/            SM83 instruction implementations + decode tables
-  ppu.js          scanline timing and pixel output
-  io.js           timer, serial stub, LCD/STAT/APU registers
+  ppu.js          scanline timing, pixel output, LCD MMIO helpers
+  io.js           timer, serial stub, joypad/APU registers
+  timer.js        DIV/TIMA stepping
   joypad.js       $FF00 matrix
   interrupts.js   IME, HALT, IRQ dispatch
   skipboot.js     post-boot register state

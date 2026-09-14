@@ -1,5 +1,4 @@
-const MODE_HBLANK = 0;
-const MODE_OAM = 2;
+import { isPpuReg, readPpuReg, writePpuReg } from './ppu.js';
 
 export function createBus({ cart, io, ppu, onCartRamWrite }) {
   const wram = new Uint8Array(0x2000);
@@ -14,99 +13,6 @@ export function createBus({ cart, io, ppu, onCartRamWrite }) {
   let dmaSrc = 0; // source page written to $FF46
   let dmaIndex = 0; // bytes copied so far (0..0xA0)
   let dmaCountdown = 0; // T-cycles until first byte of this transfer
-
-  function isPpuReg(addr) {
-    if (!ppu) return false;
-    if (addr === 0xff46 || addr === 0xff4c) return false;
-    return addr >= 0xff40 && addr <= 0xff4b;
-  }
-
-  function readPpuReg(addr) {
-    switch (addr) {
-      case 0xff40:
-        return ppu.lcdc;
-      case 0xff41:
-        return 0x80 | (ppu.stat & 0x78) | ppu.mode | (ppu.ly === ppu.lyc ? 4 : 0);
-      case 0xff42:
-        return ppu.scy;
-      case 0xff43:
-        return ppu.scx;
-      case 0xff44:
-        return ppu.ly;
-      case 0xff45:
-        return ppu.lyc;
-      case 0xff47:
-        return ppu.bgp;
-      case 0xff48:
-        return ppu.obp0;
-      case 0xff49:
-        return ppu.obp1;
-      case 0xff4a:
-        return ppu.wy;
-      case 0xff4b:
-        return ppu.wx;
-      default:
-        return 0xff;
-    }
-  }
-
-  function writeLcdc(v) {
-    const old = ppu.lcdc;
-    ppu.lcdc = v;
-    const wasOn = old & 0x80;
-    const nowOn = v & 0x80;
-    if (wasOn && !nowOn) {
-      ppu.ly = 0;
-      ppu.mode = MODE_HBLANK;
-      ppu.lineCycles = 0;
-      ppu.windowLine = 0;
-      ppu.wyTriggered = false;
-      ppu.framebuffer.fill(255);
-    } else if (!wasOn && nowOn) {
-      ppu.ly = 0;
-      ppu.mode = MODE_OAM;
-      ppu.lineCycles = 0;
-      ppu.windowLine = 0;
-      ppu.wyTriggered = false;
-    }
-  }
-
-  function writePpuReg(addr, v) {
-    switch (addr) {
-      case 0xff40:
-        writeLcdc(v);
-        return;
-      case 0xff41:
-        ppu.stat = (ppu.stat & ~0x78) | (v & 0x78);
-        return;
-      case 0xff42:
-        ppu.scy = v;
-        return;
-      case 0xff43:
-        ppu.scx = v;
-        return;
-      case 0xff44:
-        return;
-      case 0xff45:
-        ppu.lyc = v;
-        return;
-      case 0xff47:
-        ppu.bgp = v;
-        return;
-      case 0xff48:
-        ppu.obp0 = v;
-        return;
-      case 0xff49:
-        ppu.obp1 = v;
-        return;
-      case 0xff4a:
-        ppu.wy = v;
-        return;
-      case 0xff4b:
-        ppu.wx = v;
-        return;
-    }
-  }
 
   function writeDma(src) {
     const restarting = dmaActive;
@@ -135,15 +41,15 @@ export function createBus({ cart, io, ppu, onCartRamWrite }) {
   function readIo(addr) {
     if (addr === 0xff4c) return 0xff;
     if (addr === 0xff46) return dmaReg;
-    if (isPpuReg(addr)) return readPpuReg(addr);
+    if (ppu && isPpuReg(addr)) return readPpuReg(ppu, addr);
     return io.read(addr);
   }
 
   function writeIo(addr, v) {
     if (addr === 0xff4c) return;
     if (addr === 0xff46) return writeDma(v);
-    if (isPpuReg(addr)) {
-      writePpuReg(addr, v);
+    if (ppu && isPpuReg(addr)) {
+      writePpuReg(ppu, addr, v);
       return;
     }
     io.write(addr, v);

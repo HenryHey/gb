@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { createBus } from '../src/bus.js';
 import { createCart } from '../src/cart.js';
 import { createIo } from '../src/io.js';
-import { createPpu } from '../src/ppu.js';
+import { createPpu, ppuOamAccessible, ppuVramAccessible, readPpuReg } from '../src/ppu.js';
 
 function makeBus(romBytes = []) {
   const rom = new Uint8Array(Math.max(0x150, romBytes.length));
@@ -113,5 +113,27 @@ describe('bus memory map', () => {
   test('out-of-range ROM read returns $FF', () => {
     const { bus } = makeBus([0x01]);
     expect(bus.read8(0x0150)).toBe(0xff);
+  });
+
+  test('STAT read merges mode and sets bit 7', () => {
+    const ppu = createPpu();
+    ppu.mode = 2;
+    ppu.stat = 0x08;
+    ppu.lyc = 1;
+    expect(readPpuReg(ppu, 0xff41)).toBe(0x8a);
+  });
+
+  test('PPU access helpers follow LCD mode rules', () => {
+    const ppu = createPpu();
+    ppu.lcdc = 0x80;
+    ppu.mode = 3;
+    expect(ppuVramAccessible(ppu)).toBe(false);
+    expect(ppuOamAccessible(ppu)).toBe(false);
+    ppu.mode = 2;
+    expect(ppuVramAccessible(ppu)).toBe(true);
+    expect(ppuOamAccessible(ppu)).toBe(false);
+    ppu.lcdc = 0;
+    expect(ppuVramAccessible(ppu)).toBe(true);
+    expect(ppuOamAccessible(ppu)).toBe(true);
   });
 });
