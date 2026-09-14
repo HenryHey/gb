@@ -50,7 +50,7 @@ Remaining high-impact work: **NR52 power-off write behaviour**. Mid-frame saves 
 | **Bus vs PPU I/O** | PPU register decode and future access gating live in `bus.js` | Keep bus facade; isolate PPU MMIO and mode-gating helpers |
 | **PPU allocations** | `paletteShades()` recreated per background pixel | Cache per-line or per-palette-index arrays |
 | **Frame boundary** | `runFrame()` may overshoot 70,224 T-cycles | Track remainder or stop at real frame end |
-| **Mapper edge cases** | Header ROM/RAM tables omit larger codes; MBC5 bitmask assumes power-of-two ROM size | Extend tables; use modulo against actual ROM length |
+| **Mapper edge cases** | ~~Header ROM/RAM tables omit larger codes; MBC5 bitmask assumes power-of-two ROM size~~ | **Done** — extended `$0148`/`$0149` tables, `effectiveRomBanks` + modulo wrap, MBC2/MBC3 bank-0 quirk after wrap |
 | **`frameReady`** | ~~Set at LY 144, never cleared or consumed by host~~ | **Done** — `presentFrame()` in `main.js` blits when set, clears after present |
 
 ---

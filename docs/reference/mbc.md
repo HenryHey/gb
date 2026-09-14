@@ -181,10 +181,19 @@ Load on cart insert. Pokémon stores the save in SRAM; if the signature is missi
 | `$04` | 512 KiB (32) |
 | `$05` | 1 MiB (64) — Pokémon Red |
 | `$06` | 2 MiB (128) |
+| `$07` | 4 MiB (256) |
+| `$08` | 8 MiB (512) |
+| `$52` | 1.1 MiB (72) |
+| `$53` | 1.2 MiB (80) |
+| `$54` | 1.5 MiB (96) |
+
+Bank indices wrap with `% romBanks`, where `romBanks = min(header, rom.length / 16 KiB)`.
 
 | `$0149` | SRAM |
 | --- | --- |
 | `$00` | none |
-| `$01` | 2 KiB |
+| `$01` | 2 KiB (unused in Pan Docs; MBC1 2 KiB carts) |
 | `$02` | 8 KiB |
 | `$03` | 32 KiB (4 banks) — Pokémon Red |
+| `$04` | 128 KiB (16 banks) |
+| `$05` | 64 KiB (8 banks) |

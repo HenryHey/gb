@@ -44,8 +44,23 @@ const ROM_BANKS = {
   0x04: 32,
   0x05: 64,
   0x06: 128,
+  0x07: 256,
+  0x08: 512,
+  0x52: 72,
+  0x53: 80,
+  0x54: 96,
 };
-const RAM_KIB = { 0x00: 0, 0x01: 2, 0x02: 8, 0x03: 32 };
+const RAM_KIB = { 0x00: 0, 0x01: 2, 0x02: 8, 0x03: 32, 0x04: 128, 0x05: 64 };
+
+/** Pan Docs $0148 → number of 16 KiB ROM banks; `undefined` if unknown. */
+export function romBanksFromCode(romId) {
+  return ROM_BANKS[romId];
+}
+
+/** Pan Docs $0149 → external SRAM size in KiB; `undefined` if unknown/unused. */
+export function ramKiBFromCode(ramId) {
+  return RAM_KIB[ramId];
+}
 
 function title(rom) {
   const bytes = rom.subarray(0x134, 0x144);
@@ -76,8 +91,8 @@ export function parseHeader(rom) {
     type,
     typeName: CART_TYPES[type] ?? `unknown($${type.toString(16)})`,
     romBytes: rom.length,
-    romBanks: ROM_BANKS[romId],
-    ramKiB: RAM_KIB[ramId] ?? 0,
+    romBanks: romBanksFromCode(romId),
+    ramKiB: ramKiBFromCode(ramId) ?? 0,
     headerChecksum: rom[0x14d],
     headerChecksumOk: headerChecksum(rom) === rom[0x14d],
     cgbFlag: rom[0x143],
@@ -101,8 +116,18 @@ function createRomOnly(rom, header) {
   };
 }
 
+function effectiveRomBanks(header, rom) {
+  const fromFile = Math.max(2, rom.length >> 14);
+  const fromHeader = header.romBanks ?? fromFile;
+  return Math.min(fromHeader, fromFile); // never bank past EOF
+}
+
+function wrapRomBank(index, romBanks) {
+  return ((index % romBanks) + romBanks) % romBanks; // handles negative if ever needed
+}
+
 function createMbc1(rom, header) {
-  const romBanks = header.romBanks; // power of 2
+  const romBanks = effectiveRomBanks(header, rom);
   const ram = new Uint8Array((header.ramKiB || 0) * 1024);
   const state = { ramEnable: false, romBank: 1, ramBank: 0, mode: 0 };
 
@@ -113,7 +138,7 @@ function createMbc1(rom, header) {
     // Mode 1 — bank index for $0000–$3FFF (low ROM nibble forced to 0):
     //   bit  6 5 4 3 2 1 0
     //        R R 0 0 0 0 0   ramBank<<5 → banks 0x00 / 0x20 / 0x40 / 0x60
-    return ((state.ramBank & 3) << 5) & (romBanks - 1);
+    return wrapRomBank((state.ramBank & 3) << 5, romBanks);
   }
 
   function mapRom40() {
@@ -122,7 +147,7 @@ function createMbc1(rom, header) {
     // Bank index (both modes):
     //   bit  6 5 4 3 2 1 0
     //        R R r r r r r r   ramBank<<5 | romBank (1..31, never 0)
-    return (((state.ramBank & 3) << 5) | (state.romBank & 0x1f)) & (romBanks - 1);
+    return wrapRomBank(((state.ramBank & 3) << 5) | (state.romBank & 0x1f), romBanks);
   }
 
   function ramOffset() {
@@ -178,7 +203,7 @@ function createMbc1(rom, header) {
 function createMbc2(rom, header) {
   const ram = new Uint8Array(512);
   const state = { ramEnable: false, romBank: 1 };
-  const romBanks = header.romBanks ?? Math.max(2, rom.length >> 14);
+  const romBanks = effectiveRomBanks(header, rom);
   return {
     mapperType: header.type,
     ram,
@@ -191,7 +216,8 @@ function createMbc2(rom, header) {
       if (addr < 0x4000) {
         return rom[addr] ?? 0xff;
       } else {
-        return rom[(state.romBank & (romBanks - 1) || 1) * 0x4000 + (addr - 0x4000)] ?? 0xff;
+        const b = wrapRomBank(state.romBank, romBanks) || 1;
+        return rom[b * 0x4000 + (addr - 0x4000)] ?? 0xff;
       }
     },
     writeRom(addr, v) {
@@ -217,7 +243,7 @@ function createMbc2(rom, header) {
 }
 
 function createMbc3(rom, header) {
-  const romBanks = header.romBanks; // 64 for Red
+  const romBanks = effectiveRomBanks(header, rom);
   const ram = new Uint8Array((header.ramKiB || 0) * 1024);
   const state = { ramEnable: false, romBank: 1, ramBank: 0 };
 
@@ -234,7 +260,7 @@ function createMbc3(rom, header) {
       if (addr < 0x4000) {
         return rom[addr];
       }
-      const b = state.romBank & (romBanks - 1) || 1;
+      const b = wrapRomBank(state.romBank, romBanks) || 1;
       return rom[b * 0x4000 + (addr - 0x4000)];
     },
     // Writes to ROM space configure the MBC (data is never stored in ROM).
@@ -278,12 +304,12 @@ function createMbc3(rom, header) {
 }
 
 function createMbc5(rom, header) {
-  const romBanks = header.romBanks ?? Math.max(2, rom.length >> 14);
+  const romBanks = effectiveRomBanks(header, rom);
   const ram = new Uint8Array((header.ramKiB || 0) * 1024);
   const state = { ramEnable: false, romBankLow: 0, romBankHigh: 0, ramBank: 0 };
 
   function romBankIndex() {
-    return ((state.romBankHigh << 8) | state.romBankLow) & (romBanks - 1);
+    return wrapRomBank((state.romBankHigh << 8) | state.romBankLow, romBanks);
   }
 
   return {
