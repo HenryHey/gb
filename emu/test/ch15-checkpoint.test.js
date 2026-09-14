@@ -59,24 +59,65 @@ describe('APU register stub', () => {
     bus.write8(0xff03, 0x42);
     expect(bus.read8(0xff03)).toBe(0xff);
   });
+
+  test('power-off clears channel registers', () => {
+    const { bus } = makeBus();
+    bus.write8(0xff26, 0x80);
+    bus.write8(0xff16, 0xc0);
+    expect(bus.read8(0xff16)).toBe(0xc0);
+
+    bus.write8(0xff26, 0x00);
+    expect(bus.read8(0xff16)).toBe(0x00);
+  });
+
+  test('power-off clears wave RAM', () => {
+    const { bus } = makeBus();
+    bus.write8(0xff26, 0x80);
+    bus.write8(0xff30, 0xab);
+    expect(bus.read8(0xff30)).toBe(0xab);
+
+    bus.write8(0xff26, 0x00);
+    expect(bus.read8(0xff30)).toBe(0x00);
+  });
+
+  test('APU and wave RAM writes are ignored while powered off', () => {
+    const { bus } = makeBus();
+    bus.write8(0xff26, 0x00);
+    bus.write8(0xff16, 0xc0);
+    bus.write8(0xff30, 0xab);
+    expect(bus.read8(0xff16)).toBe(0x00);
+    expect(bus.read8(0xff30)).toBe(0x00);
+  });
 });
 
 describe('chapter 15 checkpoint', () => {
-  test('APU registers survive reset (re-seeded to $FF)', () => {
+  test('APU registers survive reset (re-seeded to post-boot values)', () => {
     const emu = createEmu(new Uint8Array(0x8000));
     reset(emu);
     emu.bus.write8(0xff14, 0x80);
     expect(emu.bus.read8(0xff14)).toBe(0x80);
 
     reset(emu);
-    expect(emu.bus.read8(0xff14)).toBe(0xff);
+    expect(emu.bus.read8(0xff14)).toBe(0xbf); // NR14 post-boot
   });
 
   test('games can read NR52 after configuring channel 2', () => {
     const { bus } = makeBus();
+    bus.write8(0xff26, 0x80);
     bus.write8(0xff16, 0xc0); // NR21 duty/volume
     bus.write8(0xff19, 0x80); // NR24 trigger
     expect(bus.read8(0xff16)).toBe(0xc0);
     expect(bus.read8(0xff26) & 0x80).toBe(0x80);
+  });
+
+  test('skip-boot seeds NR10–NR52 to DMG post-boot values', () => {
+    const emu = createEmu(new Uint8Array(0x8000));
+    reset(emu);
+    expect(emu.bus.read8(0xff10)).toBe(0x80); // NR10
+    expect(emu.bus.read8(0xff12)).toBe(0xf3); // NR12
+    expect(emu.bus.read8(0xff16)).toBe(0x3f); // NR21
+    expect(emu.bus.read8(0xff24)).toBe(0x77); // NR50
+    expect(emu.bus.read8(0xff25)).toBe(0xf3); // NR51
+    expect(emu.bus.read8(0xff26)).toBe(0xf1); // NR52
   });
 });

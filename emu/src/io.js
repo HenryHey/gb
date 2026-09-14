@@ -16,6 +16,23 @@ const READ_HI = {
   0x23: 0x3f, // NR44
 };
 
+const APU_REG_START = 0x10; // $FF10
+const APU_REG_END = 0x26; // $FF26 inclusive
+const WAVE_RAM_START = 0x30; // $FF30
+const WAVE_RAM_END = 0x3f; // $FF3f
+
+function isApuReg(offset) {
+  return offset >= APU_REG_START && offset <= APU_REG_END;
+}
+
+function isWaveRam(offset) {
+  return offset >= WAVE_RAM_START && offset <= WAVE_RAM_END;
+}
+
+function apuPowered(regs) {
+  return (regs[0x26] & 0x80) !== 0;
+}
+
 function isUnmapped(offset) {
   return UNMAPPED.has(offset);
 }
@@ -90,6 +107,16 @@ export function createIo() {
         writeP1(joypad, v);
         return;
       }
+      if (addr === 0xff26) {
+        regs[0x26] = v & 0x80;
+        if (!(v & 0x80)) {
+          for (let i = APU_REG_START; i <= APU_REG_END; i++) regs[i] = 0;
+          for (let i = WAVE_RAM_START; i <= WAVE_RAM_END; i++) regs[i] = 0;
+        }
+        return;
+      }
+      if (!apuPowered(regs) && (isApuReg(offset) || isWaveRam(offset))) return;
+
       regs[offset] = v;
     },
     ifBits() {
