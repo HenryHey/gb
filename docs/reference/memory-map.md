@@ -21,7 +21,7 @@ FFFF       IE                         interrupt enable
 
 | Region | First appears | Notes |
 | --- | --- | --- |
-| `0000-7FFF` ROM | [ch. 01](../../course/01-project-shell.md) parse header; [ch. 05](../../course/05-memory-and-skip-boot.md) execute | Mapper in [ch. 13](../../course/13-mbc1.md)–[14](../../course/14-mbc3-and-saves.md) |
+| `0000-7FFF` ROM | [ch. 01](../../course/01-project-shell.md) parse header; [ch. 05](../../course/05-memory-and-skip-boot.md) execute | Mapper in [ch. 13](../../course/13-mbc1.md)–[14](../../course/14-mbc3-and-saves.md); boot ROM overlay `$0000–$00FF` in [ch. 18](../../course/18-custom-boot-rom.md) |
 | `8000-9FFF` VRAM | [ch. 09](../../course/09-background.md) | CPU can write anytime at this accuracy bar; real DMG blocks during mode 3 |
 | `A000-BFFF` SRAM | [ch. 13](../../course/13-mbc1.md)–[14](../../course/14-mbc3-and-saves.md) | Gated by RAM enable |
 | `C000-DFFF` WRAM | [ch. 05](../../course/05-memory-and-skip-boot.md) | 8 KiB on DMG |

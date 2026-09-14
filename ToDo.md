@@ -10,7 +10,7 @@ Features not yet covered in the course. Each line is a candidate for a new chapt
 - **STAT IRQ blocking** — mode/stat interrupts blocked during certain PPU states
 - **Timed OAM DMA** — 160 M-cycle transfer with startup delay and OAM lock
 - **DMA bus conflicts** — external-bus reads during DMA (`sources-GS`, CPU vs DMA)
-- **Boot ROM** — 256-byte overlay, `$FF50` unmap, logo scroll
+- **Retail boot ROM** — Nintendo logo scroll, header checksum, startup chime (custom text boot: [course/18-custom-boot-rom.md](course/18-custom-boot-rom.md))
 - **MBC3 RTC** — real-time clock for Gold/Silver day/night
 - **MBC5 rumble** — rumble motor register stub → host feedback
 - **Exotic mappers** — HuC1/3, MMM01, MBC6/7, TAMA5

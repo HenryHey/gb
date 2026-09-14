@@ -141,7 +141,7 @@ That is a **playable** emulator for most common DMG carts (ROM ONLY, MBC1, MBC3)
 | Rumble, camera, exotic mappers | [ToDo.md](../ToDo.md) |
 | Real APU | [ToDo.md](../ToDo.md) |
 | Serial link | [ToDo.md](../ToDo.md) |
-| Boot ROM / Nintendo logo | [ToDo.md](../ToDo.md) |
+| Boot ROM / Nintendo logo | [18 — Custom boot ROM](18-custom-boot-rom.md) (text); retail logo in [ToDo.md](../ToDo.md) |
 | WASM / Worker | [ToDo.md](../ToDo.md) |
 
 When a **specific game** glitches, debug that glitch (often `EI`/`HALT`, window line counter, MBC bank 0, DMA) before chasing cycle accuracy.

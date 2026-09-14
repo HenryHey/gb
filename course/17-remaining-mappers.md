@@ -261,4 +261,6 @@ Expect **load without throw**; full pass may still need appendix 99 timing fixes
 
 ## Next
 
+**Optional:** [18 — Custom boot ROM](18-custom-boot-rom.md) — 256-byte overlay, custom text, `$FF50` unmap.
+
 **Optional:** [99 — Mooneye polish](99-mooneye-polish.md) — cycle-accurate fixes (OAM DMA, `ei` timing, interrupt dispatch) now that mappers load.

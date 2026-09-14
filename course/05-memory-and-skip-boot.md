@@ -211,6 +211,8 @@ Debugger should show hex dumps of `PC` and last opcode. You will live here.
 - [Pan Docs — Memory map](https://gbdev.io/pandocs/Memory_Map.html)
 - Nazar part 2 *Memory* (ranges; his BIOS overlay you are skipping)
 
+**Later (optional):** [18 — Custom boot ROM](18-custom-boot-rom.md) — run a real 256-byte boot program instead of faking post-boot state.
+
 
 
 ## Next

@@ -26,11 +26,11 @@ Load a `.gb` or `.gbc` ROM from the file picker, or drop a `.7z` archive contain
 ## How to use this repo
 
 1. Read [course/00-introduction.md](course/00-introduction.md) for the mental model and tooling.
-2. Work through chapters **01–17** in order. Each chapter adds one subsystem and ends with a checkpoint you can verify.
+2. Work through chapters **01–17** in order. Each chapter adds one subsystem and ends with a checkpoint you can verify. **18** (optional) adds a custom boot ROM.
 3. Keep [docs/reference/](docs/reference/) open while coding (memory map, opcodes, quirks).
 4. Use [docs/reference/test-roms.md](docs/reference/test-roms.md) to pick commercial or homebrew ROMs that match what you have implemented so far.
 
-Chapters **0–15** build a playable DMG emulator. **16** adds save states; **17** covers remaining mappers (MBC5, MBC2, MBC3 routing). [course/99-mooneye-polish.md](course/99-mooneye-polish.md) is an optional accuracy pass against the Mooneye suite.
+Chapters **0–15** build a playable DMG emulator. **16** adds save states; **17** covers remaining mappers (MBC5, MBC2, MBC3 routing); **18** (optional) generates and runs a custom 256-byte boot ROM. [course/99-mooneye-polish.md](course/99-mooneye-polish.md) is an optional accuracy pass against the Mooneye suite.
 
 ## Repository layout
 
@@ -69,6 +69,7 @@ Use for intuition and architecture; read the [Nazar errata](docs/SOURCES.md#how-
 | --- | --- | --- |
 | **Imran Nazar — GameBoy Emulation in JavaScript** | [Series index](https://imrannazar.com/series/gameboy-emulation-in-javascript) | JS walkthrough, parts 1–10; partial ISA, simplified timings |
 | **Ryan Levick — DMG-01** | [Book](https://rylev.github.io/DMG-01/public/book/) | Rust book; good pedagogy for registers, flags, tiles |
+| **Max Bonnefin — 256 Bytes to Boot** | [Article](https://bonnef.in/posts/custom-boot-rom/) | Custom 256-byte boot ROM; see [chapter 18](course/18-custom-boot-rom.md) |
 | **TCAGBD** (optional) | [Gekkio/gb-ctr](https://github.com/Gekkio/gb-ctr) | Denser than Pan Docs |
 
 Part-by-part Nazar links and full errata: [docs/SOURCES.md](docs/SOURCES.md).

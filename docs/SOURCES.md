@@ -11,6 +11,7 @@ Treat **Pan Docs** as the hardware source of truth. Use the two tutorials for *s
 | **Pan Docs** (gbdev) | [gbdev.io/pandocs](https://gbdev.io/pandocs/) | Every register, the ISA, MBC maps, boot sequence, obscure behaviour | A coding order — it is a reference, not a course |
 | **Nazar JS series** | [GameBoy Emulation in JavaScript](https://imrannazar.com/series/gameboy-emulation-in-javascript) (2010–2011, parts 1–10) | A JS-flavored walkthrough of CPU → MMU → GPU → input → sprites → interrupts → MBC1 → timers | Opcode completeness, cycle accuracy, interrupts/`EI`, timers, PPU mode lengths, CPU identity |
 | **DMG-01** (Ryan Levick) | [rylev.github.io/DMG-01](https://rylev.github.io/DMG-01/public/book/) | Pedagogy for registers, flags, decode, 2bpp tiles | A finished emulator. The book stops around tile RAM / memory map |
+| **256 Bytes to Boot** (Max Bonnefin) | [bonnef.in/posts/custom-boot-rom/](https://bonnef.in/posts/custom-boot-rom/) | Writing a **custom** 256-byte boot ROM: VRAM init, 2bpp font, `$FF50` disable, byte budget | A drop-in replacement for Nintendo's boot ROM dump; no logo checksum / scroll |
 
 ### Nazar series — direct links
 
@@ -51,6 +52,7 @@ When in doubt: [Pan Docs](https://gbdev.io/pandocs/) → [`docs/reference/`](ref
 
 ## More links
 
+- [256 Bytes to Boot — custom boot ROM generator](https://bonnef.in/posts/custom-boot-rom/) — course chapter [18](../course/18-custom-boot-rom.md), cheat sheet [`boot-rom.md`](reference/boot-rom.md)
 - [SM83 opcode tables](https://gbdev.io/gb-opcodes/optables/classic)
 - [gbz80(7) instruction descriptions](https://rgbds.gbdev.io/docs/v0.9.4/gbz80.7)
 - [Game Boy: Complete Technical Reference (TCAGBD)](https://github.com/Gekkio/gb-ctr) — denser than Pan Docs; optional later reading

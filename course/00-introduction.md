@@ -105,7 +105,7 @@ If a checkpoint fails, do not skip ahead. Later chapters assume the bus, the int
 
 ## What comes after the core course
 
-Chapters 0–15 build a playable DMG emulator. [Chapter 16](16-save-states.md) adds instant save states; [chapter 17](17-remaining-mappers.md) adds MBC5, MBC2, and full MBC3 routing; [appendix 99](99-mooneye-polish.md) is a Mooneye accuracy pass. Everything else — CGB, a real APU, pixel-FIFO PPU, boot ROM, exotic mappers, and cycle-accurate quirks — is tracked in [ToDo.md](../ToDo.md) for future chapters. This repo never ships ROM files.
+Chapters 0–15 build a playable DMG emulator. [Chapter 16](16-save-states.md) adds instant save states; [chapter 17](17-remaining-mappers.md) adds MBC5, MBC2, and full MBC3 routing; [chapter 18](18-custom-boot-rom.md) (optional) replaces skip-boot with a custom 256-byte boot program; [appendix 99](99-mooneye-polish.md) is a Mooneye accuracy pass. Everything else — CGB, a real APU, pixel-FIFO PPU, retail boot ROM / logo checksum, exotic mappers, and cycle-accurate quirks — is tracked in [ToDo.md](../ToDo.md) for future chapters. This repo never ships ROM files.
 
 ## Checkpoint
 
