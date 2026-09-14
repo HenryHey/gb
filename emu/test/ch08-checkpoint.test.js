@@ -105,6 +105,32 @@ describe('chapter 8 checkpoint', () => {
     expect(emu.ppu.frameReady).toBe(true);
   });
 
+  test('reset clears frameRemainder', () => {
+    const emu = createEmu(nopRom());
+    reset(emu);
+    emu.frameRemainder = 99;
+    reset(emu);
+    expect(emu.frameRemainder).toBe(0);
+  });
+
+  test('runFrame applies and updates frameRemainder', () => {
+    const emu = createEmu(nopRom());
+    reset(emu);
+    emu.frameRemainder = 10;
+    const budget = FRAME_T - 10;
+    const t = runFrame(emu);
+    expect(t).toBeGreaterThanOrEqual(budget);
+    expect(emu.frameRemainder).toBe(t - budget);
+  });
+
+  test('many runFrame calls stay aligned to FRAME_T boundaries', () => {
+    const emu = createEmu(nopRom());
+    reset(emu);
+    let total = 0;
+    for (let i = 0; i < 60; i++) total += runFrame(emu);
+    expect(total).toBe(60 * FRAME_T + emu.frameRemainder);
+  });
+
   test('vblank wait loop exits instead of spinning forever', () => {
     const emu = createEmu(vblankWaitRom());
     reset(emu);

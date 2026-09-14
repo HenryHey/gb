@@ -19,7 +19,7 @@ export function createEmu(rom, { onCartRamWrite } = {}) {
   const cart = createCart(romBuf);
   const bus = createBus({ cart, io, ppu, onCartRamWrite });
   const cpu = createCpu(bus);
-  return { cpu, bus, io, rom: romBuf, cart, ppu };
+  return { cpu, bus, io, rom: romBuf, cart, ppu, frameRemainder: 0 };
 }
 
 export function reset(emu) {
@@ -43,6 +43,7 @@ export function reset(emu) {
   emu.ppu.lcdc = emu.io.regs[0x40];
   emu.ppu.bgp = emu.io.regs[0x47];
   emu.ppu.framebuffer.fill(255);
+  emu.frameRemainder = 0;
 }
 
 export function cpuStep(emu) {
@@ -81,7 +82,14 @@ export function runTCycles(emu, target) {
   return t;
 }
 
-/** Run exactly one DMG frame (70224 T-cycles). */
+/**
+ * Run one DMG frame (70224 T-cycles). Instruction-level stepping may overshoot
+ * the per-frame budget; `frameRemainder` carries overshoot into the next call
+ * so N frames advance N × 70224 T-cycles (plus the last frame's overshoot).
+ */
 export function runFrame(emu) {
-  return runTCycles(emu, FRAME_T);
+  const budget = FRAME_T - emu.frameRemainder;
+  const ran = runTCycles(emu, budget);
+  emu.frameRemainder = ran - budget;
+  return ran;
 }

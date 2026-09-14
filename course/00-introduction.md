@@ -59,11 +59,16 @@ function stepInstruction() {
 
 function runFrame() {
   const FRAME = 70224; // T-cycles
-  while (cyclesThisFrame < FRAME) stepInstruction();
+  const budget = FRAME - frameRemainder; // carry overshoot from last frame
+  let ran = 0;
+  while (ran < budget) ran += stepInstruction();
+  frameRemainder = ran - budget;
   blitToCanvas();
   requestAnimationFrame(runFrame);
 }
 ```
+
+Whole instructions can overshoot the budget; subtract the extra T-cycles from the next frame so playback stays aligned to 70224 T per frame on average.
 
 Everything you add later — STAT interrupts, TIMA overflow, joypad — is either *more work inside `execute`* or *more work inside those `step` functions*. If you feel lost in chapter 11, come back here.
 
