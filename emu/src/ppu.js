@@ -144,6 +144,9 @@ function renderScanline(ppu, vram, oam) {
   if (y >= 144) return;
 
   const bgIdx = new Uint8Array(160);
+  const bgShades = paletteShades(ppu.bgp);
+  const obp0Shades = paletteShades(ppu.obp0);
+  const obp1Shades = paletteShades(ppu.obp1);
 
   if (ppu.lcdc & 0x20 && ppu.lcdc & 0x01 && y === ppu.wy) {
     ppu.wyTriggered = true;
@@ -168,7 +171,7 @@ function renderScanline(ppu, vram, oam) {
     }
 
     bgIdx[x] = idx;
-    putPixel(ppu.framebuffer, x, y, paletteShades(ppu.bgp, GREEN)[idx]);
+    putPixel(ppu.framebuffer, x, y, bgShades[idx]);
   }
   if (usedWindow) ppu.windowLine = (ppu.windowLine + 1) & 0xff;
 
@@ -196,9 +199,7 @@ function renderScanline(ppu, vram, oam) {
     const addr = tile * 16 + rowInTile * 2; // OBJ tiles always $8000-based in vram[]
 
     // OAM flags bit 4: 0 → OBP0 ($FF48), 1 → OBP1 ($FF49)
-    const obp = flags & 0x10 ? ppu.obp1 : ppu.obp0;
-
-    const shades = paletteShades(obp, GREEN);
+    const shades = flags & 0x10 ? obp1Shades : obp0Shades;
 
     for (let xFine = 0; xFine < 8; xFine++) {
       const x = screenX + xFine;

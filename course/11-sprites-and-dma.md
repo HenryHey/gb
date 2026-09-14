@@ -129,8 +129,8 @@ Keep a per-line array of BG color indices (0–3), not just RGB, so priority can
 
 Extend chapter 10’s `renderScanline`:
 
-1. Allocate `bgIdx[160]`.
-2. Render BG+window as in chapter 10 — store each pixel’s **VRAM color index** in `bgIdx[x]`, then `putPixel` with `paletteShades(ppu.bgp, GREEN)[idx]`.
+1. Allocate `bgIdx[160]` and precompute `bgShades`, `obp0Shades`, `obp1Shades` once per line (256 palette regs × 4 entries — do not call `paletteShades` inside the 160-pixel loop).
+2. Render BG+window as in chapter 10 — store each pixel’s **VRAM color index** in `bgIdx[x]`, then `putPixel` with `bgShades[idx]`.
 3. If LCDC bit 1 is set and `oam` is present, run the sprite pass below on top of that row.
 4. If LCDC bit 1 is clear, skip step 3.
 
@@ -144,6 +144,9 @@ function renderScanline(ppu, vram, oam) {
   if (y >= 144) return;
 
   const bgIdx = new Uint8Array(160);
+  const bgShades = paletteShades(ppu.bgp);
+  const obp0Shades = paletteShades(ppu.obp0);
+  const obp1Shades = paletteShades(ppu.obp1);
 
   const winOn = ppu.lcdc & 0x20 && ppu.lcdc & 0x01 && y >= ppu.wy && ppu.wx <= 166;
   let usedWindow = false;
@@ -161,7 +164,7 @@ function renderScanline(ppu, vram, oam) {
     }
 
     bgIdx[x] = idx;
-    putPixel(ppu.framebuffer, x, y, paletteShades(ppu.bgp, GREEN)[idx]);
+    putPixel(ppu.framebuffer, x, y, bgShades[idx]);
   }
   if (usedWindow) ppu.windowLine++;
 
@@ -190,8 +193,7 @@ function renderScanline(ppu, vram, oam) {
     const rowInTile = row & 7;
     const addr = tile * 16 + rowInTile * 2; // OBJ tiles always $8000-based in vram[]
 
-    const obp = flags & 0x10 ? ppu.obp1 : ppu.obp0;
-    const shades = paletteShades(obp, GREEN);
+    const shades = flags & 0x10 ? obp1Shades : obp0Shades;
 
     for (let xFine = 0; xFine < 8; xFine++) {
       const x = screenX + xFine;
